@@ -194,9 +194,9 @@
     <form method="POST" action="{{ route('login') }}">
         @csrf
         <div class="form-floating">
-            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email"
-                   placeholder="Электрон почта" autofocus>
-            <label for="email">Электрон почта</label>
+            <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username"
+                   placeholder="Фойдаланувчи логини" autofocus>
+            <label for="username">Фойдаланувчи логини</label>
         </div>
         @error('email')
         <div class="text-danger small mb-3 mx-3">
@@ -209,7 +209,7 @@
         </div>
 
         <div class="form-check text-start my-3">
-            <input class="form-check-input" type="checkbox" value="remember-me" name="remember-me" id="remember">
+            <input class="form-check-input" type="checkbox" value="1" name="remember" id="remember">
             <label class="form-check-label" for="remember">
                 Эслаб қолиш
             </label>

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UpdateController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +22,21 @@ Route::get('/', function () {
 });
 
 Auth::routes();
-Route::get('/register', function () {return redirect('/login');});
-Route::post('/register', function () {return redirect('/login');});
+Route::get('/register', function () {
+    return redirect('/login');
+});
+Route::post('/register', function () {
+    return redirect('/login');
+});
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::prefix('home')->middleware(['auth'])->group(function () {
+    Route::get('/course/{course}', [HomeController::class, 'get_course']);
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/meets', [HomeController::class, 'meets_get']);
+    Route::post('/meets', [HomeController::class, 'meets_post']);
+
+    Route::get('/token', [HomeController::class, 'token_get']);
+    Route::post('/token', [HomeController::class, 'token_post']);
+
+});
+Route::get('/update', [UpdateController::class, 'login']);
