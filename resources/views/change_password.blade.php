@@ -7,9 +7,9 @@
                 <div class="card">
                     <div class="card-header fw-bold">
                         <div class="d-flex">
-                            <div class="flex-grow-1 py-1">Токен олиш</div>
+                            <div class="flex-grow-1 py-1">Паролни ўзгартириш</div>
                             <div>
-                                <a href="{{ url('/home/meets') }}" class="btn btn-success btn-sm">
+                                <a href="{{ url('/home') }}" class="btn btn-success btn-sm">
                                     Бекор қилиш
                                 </a>
                             </div>
@@ -19,20 +19,19 @@
                         <form action="?" method="post">
                             @csrf
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="accountId" name="accountId" required>
-                                <label for="accountId">Account ID</label>
+                                <input type="password" class="form-control" name="newPassword" id="newPassword"
+                                       placeholder="Янги паролни киритинг" autofocus required>
+                                <label for="newPassword">Янги паролни киритинг</label>
                             </div>
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="clientId" name="clientId" required>
-                                <label for="clientId">Client ID</label>
+                                <input type="password" class="form-control" name="reEnterPassword"
+                                       id="reEnterPassword" placeholder="Янги паролни такрорланг" required>
+                                <label for="reEnterPassword">Янги паролни такрорланг</label>
                             </div>
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="clientSecret" name="clientSecret" required>
-                                <label for="clientSecret">Client Secret</label>
-                            </div>
+
                             <div class="text-center">
-                                <button class="btn btn-success w-100">
-                                    Олиш
+                                <button type="submit" class="btn btn-success w-100 py-3">
+                                    Ўзгартириш
                                 </button>
                             </div>
                         </form>

@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->foreign('_from')->references('hemis_id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('_to');
             $table->foreign('_to')->references('hemis_id')->on('groups')->onDelete('cascade');
-
+            $table->enum('status', ['w', 's', 'o'])->default('w');
             $table->text('start_url');
             $table->text('join_url');
             $table->unsignedBigInteger('duration')->default(80);

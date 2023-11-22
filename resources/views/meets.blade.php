@@ -17,6 +17,21 @@
                     </div>
                     <div class="card-body">
                         <form action="?" method="post">
+                            @if($teachers)
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="teacher"
+                                            name="teacher" aria-label="Профессор-ўқитувчини танланг">
+                                        <option selected disabled></option>
+                                        @foreach($teachers as $teacher)
+                                            <option value="{{ $teacher->hemis_id }}">
+                                                {{ $teacher->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="teacher">Профессор-ўқитувчини танланг</label>
+                                </div>
+                            @endif
+
                             <div class="btn-group w-100 mb-3" role="group">
                                 <input type="radio" class="btn-check" name="course" value="1" id="course_1"
                                        checked>
@@ -30,7 +45,7 @@
                                 <div class="col-md-9">
                                     <div class="form-floating mb-3">
                                         <select class="form-select" id="group"
-                                                name="group" aria-label="Floating label select example">
+                                                name="group" aria-label="Гуруҳни танланг" required>
                                             <option selected disabled></option>
                                             @foreach($groups as $group)
                                                 <option value="{{ $group->hemis_id }}">
@@ -67,6 +82,20 @@
             </div>
         </div>
     </div>
+    @if (Session::has('error'))
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong class="me-auto">Тизимда хатолик</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"
+                            aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {!! Session::get('error') !!}
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection
 
 @section('script')

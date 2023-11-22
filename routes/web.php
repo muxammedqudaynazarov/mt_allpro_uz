@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/login');
-    //return view('welcome');
 });
 
 Auth::routes();
@@ -31,12 +30,18 @@ Route::post('/register', function () {
 
 Route::prefix('home')->middleware(['auth'])->group(function () {
     Route::get('/course/{course}', [HomeController::class, 'get_course']);
+    Route::get('/username/{name}', [HomeController::class, 'user_name']);
+    Route::get('/delete/{meet_id}', [HomeController::class, 'meet_delete']);
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/meets', [HomeController::class, 'meets_get']);
     Route::post('/meets', [HomeController::class, 'meets_post']);
 
-    Route::get('/token', [HomeController::class, 'token_get']);
-    Route::post('/token', [HomeController::class, 'token_post']);
+    Route::get('/change', [HomeController::class, 'change_password']);
+    Route::post('/change', [HomeController::class, 'change_password_post']);
+
+    Route::get('/teacher_insert', [HomeController::class, 'teacher_insert']);
+    Route::post('/teacher_insert', [HomeController::class, 'teacher_insert_post']);
 
 });
-Route::get('/update', [UpdateController::class, 'login']);
+Route::get('/update', [UpdateController::class, 'teachers']);
+Route::get('/generate_token', [UpdateController::class, 'generate_token']);

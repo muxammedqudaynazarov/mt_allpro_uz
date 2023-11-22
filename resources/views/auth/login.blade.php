@@ -209,7 +209,7 @@
         </div>
 
         <div class="form-check text-start my-3">
-            <input class="form-check-input" type="checkbox" value="1" name="remember" id="remember">
+            <input class="form-check-input" type="checkbox" value="1" name="remember" id="remember" checked>
             <label class="form-check-label" for="remember">
                 Эслаб қолиш
             </label>
