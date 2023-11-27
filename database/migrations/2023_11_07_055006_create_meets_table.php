@@ -22,9 +22,9 @@ return new class extends Migration {
             $table->text('start_url');
             $table->text('join_url');
             $table->unsignedBigInteger('duration')->default(80);
-            $table->timestamp('started_at');
-            $table->timestamp('ended_at');
-            $table->timestamp('created_at');
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('ended_at')->nullable();
+            $table->timestamp('created_at')->nullable();
         });
     }
 

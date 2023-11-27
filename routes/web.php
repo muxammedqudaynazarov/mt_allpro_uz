@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UpdateController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -16,17 +17,22 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return redirect('/login');
-});
+Route::get('/', [ScheduleController::class, 'index']);
 
 Auth::routes();
+Route::get('/logout', function () {
+    Auth::logout();
+    return redirect('/login');
+});
 Route::get('/register', function () {
     return redirect('/login');
 });
 Route::post('/register', function () {
     return redirect('/login');
 });
+
+Route::get('/groups/{group_id}', [ScheduleController::class, 'schedule']);
+Route::get('/course/{course}', [ScheduleController::class, 'course']);
 
 Route::prefix('home')->middleware(['auth'])->group(function () {
     Route::get('/course/{course}', [HomeController::class, 'get_course']);
@@ -42,6 +48,8 @@ Route::prefix('home')->middleware(['auth'])->group(function () {
     Route::get('/teacher_insert', [HomeController::class, 'teacher_insert']);
     Route::post('/teacher_insert', [HomeController::class, 'teacher_insert_post']);
 
+    Route::get('/groups', [HomeController::class, 'groups']);
+    Route::get('/groups/change_status/{group_id}', [HomeController::class, 'change_status']);
 });
 Route::get('/update', [UpdateController::class, 'teachers']);
 Route::get('/generate_token', [UpdateController::class, 'generate_token']);

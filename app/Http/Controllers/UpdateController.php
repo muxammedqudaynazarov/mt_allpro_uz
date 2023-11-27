@@ -48,16 +48,16 @@ class UpdateController extends Controller
             ],
             [
                 'config' => [
-                    'account_id' => 'DJfGBDZNQQO92BtyNZGoGw',
-                    'client_id' => 'lkS28U66QgudQhroG_YJBQ',
-                    'client_secret' => 'pU8ElEVW5aNS2gGHBs4uisjsG0SsDeRd',
+                    'account_id' => '9HDedbiuQ7mB8MtxCkQYRQ',
+                    'client_id' => 'ekvSCzjpQjm4AKcT6Macjg',
+                    'client_secret' => 'x0hAnZSE9irWP5cDjVxzUUNxd4XI7NlX',
                 ],
                 'clients' => [
-                    'berdaquniversitet1@gmail.com',
-                    'berdaquniversitet2@gmail.com',
-                    'berdaquniversitet3@gmail.com',
-                    'berdaquniversitet4@gmail.com',
-                    'berdaquniversitet5@gmail.com',
+                    'berdaquniversitet1@mail.ru',
+                    'a1.ekonomika@mail.ru',
+                    '2a1.yurisprudenciya@mail.ru',
+                    '1b1.iqsodiyot@mail.ru',
+                    '1a1.ekonomika@mail.ru',
                 ]
             ],
         ];
@@ -93,6 +93,7 @@ class UpdateController extends Controller
                 break;
             }
         }
+        return redirect('/home')->with('success', 'Тизим калитлари янгиланди!');
     }
 
     public function teachers()

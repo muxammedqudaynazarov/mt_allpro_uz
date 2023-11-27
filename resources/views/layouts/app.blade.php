@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Бердақ номидаги Қорақалпоқ давлат унивеситети Масофавий таълимни бошқариш тизими</title>
+    <title>Berdaq nomidagi Qoraqalpoq davlat univesiteti Masofaviy taʼlimni boshqarish tizimi</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.png') }}">
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
@@ -17,33 +17,59 @@
 </head>
 <body style="font-family: 'Rubik', sans-serif;">
 <div id="app">
-    <nav class="navbar bg-body-tertiary">
+
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container">
             <a class="navbar-brand" href="{{ url('/') }}">
                 MT.allpro.uz
-                <div style="font-size: 11px">
-                    {{ auth()->user()->name }}
-                </div>
             </a>
-            <ul class="navbar-nav ms-auto">
-                @guest
-                @else
-                    <li class="nav-item">
-                        <a class="btn btn-outline-success btn-sm" href="{{ url('home/change') }}">
-                            Паролни ўзгартириш
-                        </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
-                        <a class="btn btn-outline-success btn-sm" href="{{ route('logout') }}"
-                           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            Тизимдан чиқиш
+                </ul>
+                <div class="d-flex" role="search">
+                    @auth
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0 small">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                                   aria-expanded="false">
+                                    @php
+                                        $exp = explode(' ', auth()->user()->name);
+                                        echo $exp[0] . ' ' . $exp[1];
+                                    @endphp
+                                    <br>
+                                    @if(auth()->user()->role == 'admin')
+                                        Administrator
+                                    @else
+                                        O‘qituvchi
+                                    @endif
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url('home/change') }}">
+                                            Parolni o‘zgartirish
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url('logout') }}">
+                                            Tizimdan chiqish
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    @else
+                        <a class="dropdown-item" href="{{ url('login') }}">
+                            Saytga kirish
                         </a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                            @csrf
-                        </form>
-                    </li>
-                @endguest
-            </ul>
-
+                    @endif
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -55,7 +81,7 @@
         <div class="toast-container position-fixed bottom-0 end-0 p-3">
             <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
                 <div class="toast-header bg-success text-light">
-                    <strong class="me-auto">Тизим янгиланди</strong>
+                    <strong class="me-auto">Tizim yangilandi</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="toast"
                             aria-label="Close"></button>
                 </div>
@@ -69,7 +95,7 @@
         <div class="toast-container position-fixed bottom-0 end-0 p-3">
             <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
                 <div class="toast-header bg-dark text-light">
-                    <strong class="me-auto">Тизимда хатолик</strong>
+                    <strong class="me-auto">Tizimda xatolik</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="toast"
                             aria-label="Close"></button>
                 </div>

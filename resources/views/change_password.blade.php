@@ -7,10 +7,10 @@
                 <div class="card">
                     <div class="card-header fw-bold">
                         <div class="d-flex">
-                            <div class="flex-grow-1 py-1">Паролни ўзгартириш</div>
+                            <div class="flex-grow-1 py-1">Parolni o‘zgartirish</div>
                             <div>
                                 <a href="{{ url('/home') }}" class="btn btn-success btn-sm">
-                                    Бекор қилиш
+                                    Bekor qilish
                                 </a>
                             </div>
                         </div>
@@ -20,18 +20,18 @@
                             @csrf
                             <div class="form-floating mb-3">
                                 <input type="password" class="form-control" name="newPassword" id="newPassword"
-                                       placeholder="Янги паролни киритинг" autofocus required>
-                                <label for="newPassword">Янги паролни киритинг</label>
+                                       placeholder="Yangi parolni kiriting" autofocus required>
+                                <label for="newPassword">Yangi parolni kiriting</label>
                             </div>
                             <div class="form-floating mb-3">
                                 <input type="password" class="form-control" name="reEnterPassword"
-                                       id="reEnterPassword" placeholder="Янги паролни такрорланг" required>
-                                <label for="reEnterPassword">Янги паролни такрорланг</label>
+                                       id="reEnterPassword" placeholder="Yangi parolni takrorlang" required>
+                                <label for="reEnterPassword">Yangi parolni takrorlang</label>
                             </div>
 
                             <div class="text-center">
                                 <button type="submit" class="btn btn-success w-100 py-3">
-                                    Ўзгартириш
+                                    O‘zgartirish
                                 </button>
                             </div>
                         </form>

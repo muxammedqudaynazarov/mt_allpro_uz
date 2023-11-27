@@ -43,20 +43,27 @@
 
                             <div class="row">
                                 <div class="col-md-9">
+                                    <div class="small text-danger">
+                                        Рўйхатда фақат бўш гуруҳлар кўринади.
+                                    </div>
                                     <div class="form-floating mb-3">
                                         <select class="form-select" id="group"
                                                 name="group" aria-label="Гуруҳни танланг" required>
                                             <option selected disabled></option>
                                             @foreach($groups as $group)
-                                                <option value="{{ $group->hemis_id }}">
-                                                    {{ $group->name }}
-                                                </option>
+                                                @if(\App\Models\Application::in_empty_group($group->hemis_id))
+                                                    <option value="{{ $group->hemis_id }}">
+                                                        {{ $group->name }}
+                                                        ({{ substr($group->email, 0, 2) }}***{{ substr($group->email, -9) }})
+                                                    </option>
+                                                @endif
                                             @endforeach
                                         </select>
                                         <label for="group">Гуруҳни танланг</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
+                                    <div class="small">&nbsp;</div>
                                     <div class="form-floating mb-3">
                                         <input type="number" class="form-control" id="duration" disabled
                                                name="duration" value="80" placeholder="Дарс давомийлиги (мин.)">

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -34,13 +36,18 @@ class HomeController extends Controller
             ->where('active', '1')
             ->get()->toArray();
         foreach ($get as $v) {
-            echo '<option value="' . $v->hemis_id . '">' . $v->name . '</option>';
+            if (\App\Models\Application::in_empty_group($v->hemis_id)) {
+                echo '<option value="' . $v->hemis_id . '">' . $v->name .
+                    '(' . substr($v->email, 0, 2) . '***' . substr($v->email, -11) . ')' .
+                    '</option>';
+            }
         }
     }
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-
+        if (\auth()->user()->change_password == '0') return \redirect('/home/change');
+        $t = false;
         if (auth()->user()->role == 'admin') {
             $teachers = DB::table('users')
                 ->where('active', '1')
@@ -52,6 +59,7 @@ class HomeController extends Controller
                     ->where('_from', $request->query()['teacher_id'])
                     ->orderBy('created_at', 'desc')
                     ->paginate(10)->withQueryString();
+                $t = $request->query()['teacher_id'];
             } else {
                 $meets = DB::table('meets')
                     ->orderBy('created_at', 'desc')
@@ -64,7 +72,16 @@ class HomeController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate(10)->withQueryString();
         }
-        return view('home', ['meets' => $meets, 'teachers' => $teachers]);
+        return view('home', [
+            'meets' => $meets,
+            'teachers' => $teachers,
+            't' => $t,
+            'lessons' => DB::table('meets')->count(),
+            'lessons_o' => DB::table('meets')
+                ->where('status', 'w')
+                ->orWhere('status', 's')->count(),
+            'lessons_c' => DB::table('meets')->where('status', 'o')->count(),
+        ]);
     }
 
     public function meet_delete($meeting_id)
@@ -95,16 +112,19 @@ class HomeController extends Controller
                 ->update([
                     'status' => 'o',
                 ]);
-            return redirect()->back()->with('success', 'Конференция мувофаққиятли тугатилди');
+            return redirect()->back()->with('success', 'Konferentsiya muvofaqqiyatli tugatildi');
         } else {
-            return redirect()->back()->with('error', 'Конференция топилмади');
+            return redirect()->back()->with('error', 'Konferentsiya topilmadi');
         }
     }
 
     public function meets_get()
     {
+        if (\auth()->user()->change_password == '0') return \redirect('/home/change');
         $groups = DB::table('groups')
-            ->where('course', '1')->get()->toArray();
+            ->where('course', '1')
+            ->where('active', '1')
+            ->get()->toArray();
         if (auth()->user()->role == 'admin') {
             $teachers = DB::table('users')
                 ->where('active', '1')
@@ -118,6 +138,8 @@ class HomeController extends Controller
 
     public function meets_post(Request $request)
     {
+        if (\auth()->user()->change_password == '0') return \redirect('/home/change');
+
         if (isset($request->group)) {
             $group = DB::table('groups')
                 ->where('hemis_id', $request->group)
@@ -158,6 +180,19 @@ class HomeController extends Controller
                     ],
                 ];
 
+                $from_id = auth()->user()->hemis_id;
+                $telegram_id = auth()->user()->telegram_id;
+
+                if (auth()->user()->role == 'admin') {
+                    $from_id = $request->teacher;
+                    if (!isset($from_id)) return redirect()->back()
+                        ->with('error', 'Kerakli maydonlar to‘ldirilishi shart!');
+                    $user = DB::table('users')
+                        ->where('hemis_id', $request->teacher)
+                        ->first();
+                    $telegram_id = $user->telegram_id;
+                }
+
                 $ch = curl_init($api_url);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -165,13 +200,7 @@ class HomeController extends Controller
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
                 $response = json_decode(curl_exec($ch));
                 curl_close($ch);
-                $from_id = auth()->user()->hemis_id;
-                if (auth()->user()->role == 'admin') {
-                    $from_id = $request->teacher;
-                    $user = DB::table('users')
-                        ->where('hemis_id', $request->teacher)
-                        ->first();
-                }
+
                 if (isset($response->id)) {
                     $time = time() + 80 * 60;
                     DB::table('meets')->insert([
@@ -188,8 +217,10 @@ class HomeController extends Controller
                     ]);
 
                     $text = '<b>Assalawma áleykum, ';
+
                     if (auth()->user()->role == 'admin') $text .= $user->name;
                     else $text .= auth()->user()->name;
+
                     $text .= '. Sizge ZOOM arqalı sabaq ótiw linki jaratıldı. ' .
                         'Tómendegi «SABAQTÍ BASLAW» túymesin basıp sabaq ótiwdi baslasańız boladı.</b>' .
                         "\n\n" .
@@ -197,9 +228,12 @@ class HomeController extends Controller
                         "\n\n" .
                         "<b>Studentler ushın kiriw linki:\n</b>";
                     $text .= '<code>' . $response->join_url . '</code>';
+
                     $botApi = '5684948299:AAHa3NhGYHfxVcXemExopbJYPDEOG-3ytuw';
+
+
                     $data_telegram = [
-                        'chat_id' => auth()->user()->telegram_id,
+                        'chat_id' => $telegram_id,
                         'text' => $text,
                         'parse_mode' => 'html',
                         'reply_markup' => json_encode([
@@ -217,7 +251,12 @@ class HomeController extends Controller
                             ]
                         ])
                     ];
-                    file_get_contents("https://api.telegram.org/bot$botApi/sendMessage?" . http_build_query($data_telegram));
+                    $context = stream_context_create(['http' => ['ignore_errors' => true]]);
+                    $result_fgc =
+                        file_get_contents("https://api.telegram.org/bot$botApi/sendMessage?" . http_build_query($data_telegram)
+                            , false, $context);
+                    $result_fgc = json_decode($result_fgc);
+                    /*
                     $admins = DB::table('users')->select('telegram_id')
                         ->where('role', 'admin')->get()->toArray();
 
@@ -243,17 +282,17 @@ class HomeController extends Controller
                         ];
                         file_get_contents("https://api.telegram.org/bot$botApi/sendMessage?" .
                             http_build_query($data_telegram_admin));
-                    }
+                    }*/
 
-                    return redirect('/home')->with(['success', 'Дарс яратилди!']);
+                    return redirect('/home')->with('success', 'Dars yaratildi!');
                 } else {
-                    return redirect()->back()->with(['error', 'Тизимда техник ишлар олиб борилмоқда...']);
+                    return redirect()->back()->with('error', 'Tizimda texnik ishlar olib borilmoqda...');
                 }
             } else {
-                return redirect()->back()->with(['error', 'Бундай гуруҳ топилмади ёки рухсат этилмаган!']);
+                return redirect()->back()->with('error', 'Bunday guruh topilmadi yoki ruxsat etilmagan!');
             }
         } else {
-            return redirect()->back()->with(['error', 'Дарс ўтилиши керак бўлган гуруҳ белгиланмаган!']);
+            return redirect()->back()->with('error', 'Guruh belgilanmadi!');
         }
     }
 
@@ -268,19 +307,20 @@ class HomeController extends Controller
             if ($request->newPassword == $request->reEnterPassword) {
                 DB::table('users')->where('id', auth()->id())
                     ->update([
+                        'change_password' => '1',
                         'password' => Hash::make($request->newPassword),
                         'updated_at' => DB::raw('NOW()'),
                     ]);
-                return redirect('/home')->with('success', 'Пароль муваффақиятли ўзгартирилди!');
-            } else return redirect()->back()->with('error', 'Пароллар бир-бирини тасдиқламади!');
-        } else return redirect()->back()->with('error', 'Пароль қиймати 8 белгидан кам!');
+                return redirect('/home')->with('success', 'Parol muvaffaqiyatli o‘zgartirildi!');
+            } else return redirect()->back()->with('error', 'Parollar bir-birini tasdiqlamadi!');
+        } else return redirect()->back()->with('error', 'Parol qiymati 8 belgidan kam!');
     }
 
     public function teacher_insert()
     {
         if (auth()->user()->role == 'admin') {
             return view('teacher_add');
-        } else return redirect()->back()->with('error', 'Ушбу саҳифага ўтиб бўлмайди!');
+        } else return redirect()->back()->with('error', 'Ushbu sahifaga o‘tib bo‘lmaydi!');
     }
 
     public function teacher_insert_post(Request $request)
@@ -296,8 +336,8 @@ class HomeController extends Controller
                     'role' => $request->role,
                     'active' => $request->active,
                 ]);
-            return redirect('/home')->with(['success', 'Ўқитувчи базага қушилди!']);
-        } else return redirect()->back()->with('error', 'Ушбу саҳифага ўтиб бўлмайди!');
+            return redirect('/home')->with(['success', 'O‘qituvchi bazaga q‘oshildi!']);
+        } else return redirect()->back()->with('error', 'Ushbu sahifaga o‘tib bo‘lmaydi!');
     }
 
     public function user_name($name)
@@ -310,8 +350,27 @@ class HomeController extends Controller
             } else {
                 return strtolower($name);
             }
-        } else return redirect()->back()->with('error', 'Ушбу саҳифага ўтиб бўлмайди!');
+        } else return redirect()->back()->with('error', 'Ushbu sahifaga o‘tib bo‘lmaydi!');
     }
 
+    public function groups()
+    {
+        $groups = DB::table('groups')->orderBy('course')->get()->toArray();
+        return view('groups', ['groups' => $groups]);
+    }
+
+    public function change_status($group_id)
+    {
+        $data = DB::table('groups')
+            ->where('hemis_id', $group_id)
+            ->first();
+        $change = 1;
+        if ($data->active == '0') $change = '1';
+        if ($data->active == '1') $change = '0';
+        DB::table('groups')->where('hemis_id', $group_id)
+            ->update([
+                'active' => $change,
+            ]);
+    }
 
 }

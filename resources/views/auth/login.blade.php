@@ -7,7 +7,8 @@
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.118.2">
-    <title>MT.allpro.uz :: Кириш</title>
+    <title>Бердақ номидаги Қорақалпоқ давлат унивеситети Масофавий таълимни бошқариш тизими</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.png') }}">
     <link href="https://getbootstrap.com/docs/5.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <meta name="theme-color" content="#712cf9">
@@ -102,7 +103,7 @@
             z-index: 2;
         }
 
-        .form-signin input[type="email"] {
+        .form-signin input[type="text"] {
             margin-bottom: -1px;
             border-bottom-right-radius: 0;
             border-bottom-left-radius: 0;
@@ -194,27 +195,28 @@
     <form method="POST" action="{{ route('login') }}">
         @csrf
         <div class="form-floating">
-            <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username"
-                   placeholder="Фойдаланувчи логини" autofocus>
-            <label for="username">Фойдаланувчи логини</label>
+            <input type="text" class="form-control @error('username') is-invalid @enderror" id="username"
+                   name="username"
+                   placeholder="Foydalanuvchi logini" autofocus>
+            <label for="username">Foydalanuvchi logini</label>
         </div>
         @error('email')
         <div class="text-danger small mb-3 mx-3">
-            Логин ёки пароль хато. Тизимга кириш имконияти мавжуд эмас!
+            Login yoki parol xato. Tizimga kirish imkoniyati mavjud emas!
         </div>
         @enderror
         <div class="form-floating">
-            <input type="password" class="form-control" id="password" name="password" placeholder="Пароль">
-            <label for="password">Пароль</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Parol">
+            <label for="password">Parol</label>
         </div>
 
         <div class="form-check text-start my-3">
             <input class="form-check-input" type="checkbox" value="1" name="remember" id="remember" checked>
             <label class="form-check-label" for="remember">
-                Эслаб қолиш
+                Eslab qolish
             </label>
         </div>
-        <button type="submit" class="btn btn-success w-100 py-2">КИРИШ</button>
+        <button type="submit" class="btn btn-success w-100 py-2">KIRISH</button>
     </form>
 </main>
 <script src="https://getbootstrap.com/docs/5.3/dist/js/bootstrap.bundle.min.js"
