@@ -14,12 +14,14 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('username')->unique();
-            $table->unsignedBigInteger('hemis_id')->index();
+            $table->unsignedBigInteger('hemis_id')->index()->nullable();
             $table->bigInteger('telegram_id');
+            $table->string('phone');
+            $table->text('current_role')->default('teacher');
+            $table->json('roles_list');
             $table->string('password');
-            $table->enum('role', ['admin', 'user'])->default('user');
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->rememberToken();
-            $table->enum('active', ['0', '1'])->default('1');
             $table->timestamps();
         });
     }

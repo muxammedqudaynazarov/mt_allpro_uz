@@ -2,65 +2,112 @@
 
 @section('content')
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header fw-bold">
-                        <div class="d-flex">
-                            <div class="flex-grow-1 py-1">Ўқитувчи яратиш</div>
-                            <div>
-                                <a href="{{ url('/home') }}" class="btn btn-success btn-sm">
-                                    Бекор қилиш
+        <div class="justify-content-center">
+            <div class="card">
+                <div class="card-header fw-bold">
+                    <div class="d-flex">
+                        <div class="flex-grow-1 py-1">Админ панель</div>
+                        @can('teachers:create')
+                            <div class="mx-1">
+                                <a href="{{ route('teachers.create') }}" class="btn btn-success btn-sm">
+                                    Ўқитувчи қўшиш
                                 </a>
                             </div>
+                        @endcan
+                        <div class="mx-1">
+                            <a href="{{ url('/home') }}" class="btn btn-success btn-sm">
+                                Асосийга қайтиш
+                            </a>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <form action="{{ route('teachers.store') }}" method="post">
-                            @csrf
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-floating mb-3">
-                                        <input type="number" class="form-control" id="hemis_id" name="hemis_id"
-                                               required>
-                                        <label for="hemis_id">HEMIS ID</label>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr class="text-center">
+                            <th>#</th>
+                            <th>Ўқитувчи Ф.И.Ш.</th>
+                            <th>Телефон</th>
+                            <th>Маъсул</th>
+                            <th>Қўшилган вақти</th>
+                            @can('teachers:password')
+                                <th>Пароль</th>
+                            @endcan
+                            @can('teachers:status')
+                                <th>Блок</th>
+                            @endcan
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach($teachers as $teacher)
+                            <tr>
+                                <td class="align-middle text-center">{{ $teacher->id }}</td>
+                                <td class="align-middle">
+                                    <div class="fw-bold">
+                                        {{ $teacher->name }}
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating mb-3">
-                                        <input type="number" class="form-control" id="telegram_id" name="telegram_id"
-                                               required>
-                                        <label for="telegram_id">Telegram ID</label>
+                                    <div class="small">
+                                        {{ $teacher->username }}
                                     </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" id="name" name="name" required>
-                                        <label for="name">Ўқитувчининг тўлиқ Ф.И.Ш.</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-floating mb-3">
-                                        <input type="number" class="form-control" id="phone" name="phone"
-                                               required>
-                                        <label for="phone">Телефон рақами</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" id="username" name="username"
-                                               required>
-                                        <label for="username">Ўқитувчи логини</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <button class="btn btn-success w-100 py-3">
-                                    Яратиш
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                                </td>
+                                <td class="align-middle text-center">
+                                    {{ $teacher->phone }}
+                                </td>
+                                <td class="align-middle text-center">
+                                    @if($teacher->admin_id)
+                                        {{ $teacher->admin->name }}
+                                    @endif
+                                </td>
+                                <td class="align-middle text-center">
+                                    {{ $teacher->created_at }}
+                                </td>
+                                @can('teachers:password')
+                                    <td class="align-middle text-center">
+                                        @if($teacher->id != auth()->id())
+                                            <a href="{{ url('/home/teachers/'.$teacher->id.'/password') }}"
+                                               class="btn btn-info" style="font-size: 10px">
+                                                Паролни тиклаш
+                                            </a>
+                                        @endif
+                                    </td>
+                                @endcan
+                                @can('teachers:status')
+                                    <td class="align-middle text-center">
+                                        @if($teacher->id != auth()->id())
+                                            <a href="{{ url('/home/teachers/'.$teacher->id.'/status') }}"
+                                               class="btn btn-warning" style="font-size: 10px">
+                                                @if ($teacher->status == 'active')
+                                                    Блоклаш
+                                                @else
+                                                    Блокдан очиш
+                                                @endif
+                                            </a>
+                                        @endif
+                                    </td>
+                                @endcan
+                                <td class="align-middle text-center">
+                                    @can('teachers:edit2')
+                                        <a href="{{ route('teachers.edit', $teacher->id) }}"
+                                           class="btn btn-success" style="font-size: 10px">
+                                            янгилаш
+                                        </a>
+                                    @endcan
+                                    @can('teachers:delete')
+                                        <form action="{{route('teachers.destroy', $teacher->id)}}}"
+                                              method="post" class="d-inline-block">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-primary m-1" type="submit" style="font-size: 10px"
+                                                    onclick="return confirm('Ушбу фойдаланувчини ўчирмоқчимисиз?')">
+                                                ўчириш
+                                            </button>
+                                        </form>
+                                    @endcan
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

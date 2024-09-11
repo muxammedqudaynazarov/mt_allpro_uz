@@ -12,14 +12,18 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('groups', function (Blueprint $table) {
-            $table->unsignedBigInteger('hemis_id')->primary();
-            $table->bigInteger('telegram_id')->nullable();
+            $table->id();
+            $table->unsignedBigInteger('hemis_id');
+            $table->foreignId('admin_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->string('name');
             $table->string('email');
             $table->text('api')->nullable();
+            $table->text('account_id')->nullable();
+            $table->text('client_id')->nullable();
+            $table->text('client_secret')->nullable();
             $table->enum('active', ['0', '1'])->default('1');
             $table->string('course', 2);
-            $table->timestamp('updated_at')->default(DB::raw('NOW()'));
+            $table->timestamps();
         });
     }
 

@@ -11,20 +11,19 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('meets', function (Blueprint $table) {
-            $table->unsignedBigInteger('meet_id')->unique()->primary();
+            $table->id();
+            $table->unsignedBigInteger('meet_id')->unique();
             $table->text('host_id')->nullable();
             $table->text('topic');
-            $table->unsignedBigInteger('_from');
-            $table->foreign('_from')->references('hemis_id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('_to');
-            $table->foreign('_to')->references('hemis_id')->on('groups')->onDelete('cascade');
-            $table->enum('status', ['w', 's', 'o'])->default('w');
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
+            $table->foreignId('time_id')->constrained('times')->cascadeOnDelete();
+            $table->enum('type', ['n', 'c', 'e'])->default('n');
             $table->text('start_url');
             $table->text('join_url');
-            $table->unsignedBigInteger('duration')->default(80);
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
-            $table->timestamp('created_at')->nullable();
+            $table->timestamps();
         });
     }
 

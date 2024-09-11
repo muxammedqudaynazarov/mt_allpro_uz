@@ -16,29 +16,16 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form action="?" method="post">
-                            @if($teachers)
-                                <div class="form-floating mb-3">
-                                    <select class="form-select" id="teacher"
-                                            name="teacher" aria-label="Профессор-ўқитувчини танланг">
-                                        <option selected disabled></option>
-                                        @foreach($teachers as $teacher)
-                                            <option value="{{ $teacher->hemis_id }}">
-                                                {{ $teacher->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <label for="teacher">Профессор-ўқитувчини танланг</label>
-                                </div>
-                            @endif
-
+                        <form action="{{ route('meets.store') }}" method="post">
                             <div class="btn-group w-100 mb-3" role="group">
-                                <input type="radio" class="btn-check" name="course" value="1" id="course_1"
-                                       checked>
+                                <input type="radio" class="btn-check" name="course" value="1" id="course_1" checked>
                                 <label class="btn btn-outline-primary" for="course_1">1-курс</label>
 
                                 <input type="radio" class="btn-check" name="course" value="2" id="course_2">
                                 <label class="btn btn-outline-primary" for="course_2">2-курс</label>
+
+                                <input type="radio" class="btn-check" name="course" value="3" id="course_3">
+                                <label class="btn btn-outline-primary" for="course_3">3-курс</label>
                             </div>
 
                             <div class="row">
@@ -51,12 +38,9 @@
                                                 name="group" aria-label="Гуруҳни танланг" required>
                                             <option selected disabled></option>
                                             @foreach($groups as $group)
-                                                @if(\App\Models\Application::in_empty_group($group->hemis_id))
-                                                    <option value="{{ $group->hemis_id }}">
-                                                        {{ $group->name }}
-                                                        ({{ substr($group->email, 0, 2) }}***{{ substr($group->email, -9) }})
-                                                    </option>
-                                                @endif
+                                                <option value="{{ $group->id }}">
+                                                    {{ $group->name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                         <label for="group">Гуруҳни танланг</label>
@@ -65,9 +49,16 @@
                                 <div class="col-md-3">
                                     <div class="small">&nbsp;</div>
                                     <div class="form-floating mb-3">
-                                        <input type="number" class="form-control" id="duration" disabled
-                                               name="duration" value="80" placeholder="Дарс давомийлиги (мин.)">
-                                        <label for="duration">Дарс давомийлиги (мин.)</label>
+                                        <select class="form-select" id="time"
+                                                name="time" aria-label="Дарс вақти" required>
+                                            <option selected disabled></option>
+                                            @foreach($times as $time)
+                                                <option value="{{ $time->code }}">
+                                                    {{ $time->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <label for="time">Дарс вақти</label>
                                     </div>
                                 </div>
                             </div>
