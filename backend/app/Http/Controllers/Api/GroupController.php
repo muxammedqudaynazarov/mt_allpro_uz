@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\GroupResource;
+use App\Models\Group;
+use App\Models\Lesson;
+use App\Models\User;
+use App\Support\Audit;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+
+class GroupController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        Gate::authorize('viewAny', Group::class);
+
+        $groups = Group::query()
+            ->visibleTo($request->user())
+            ->with(['zoomAccount', 'admin'])
+            ->withCount(['lessons', 'lessons as live_lessons_count' => fn ($q) => $q->live()])
+            ->orderBy('course')
+            ->orderBy('name')
+            ->get();
+
+        return GroupResource::collection($groups);
+    }
+
+    public function store(Request $request): GroupResource
+    {
+        Gate::authorize('create', Group::class);
+        $group = Group::create($this->validated($request));
+        Audit::log('group.created', "Guruh qoʻshildi: {$group->name}", $group);
+
+        return new GroupResource($group->load(['zoomAccount', 'admin']));
+    }
+
+    public function update(Request $request, Group $group): GroupResource
+    {
+        Gate::authorize('update', $group);
+        $group->update($this->validated($request, $group));
+        Audit::log('group.updated', "Guruh tahrirlandi: {$group->name}", $group, ['changes' => array_keys($group->getChanges())]);
+
+        return new GroupResource($group->load(['zoomAccount', 'admin'])->loadCount('lessons'));
+    }
+
+    public function toggle(Group $group): GroupResource
+    {
+        Gate::authorize('toggle', $group);
+        $group->update(['is_active' => ! $group->is_active]);
+        Audit::log('group.toggled', ($group->is_active ? 'Guruh faollashtirildi: ' : 'Guruh oʻchirib qoʻyildi: ').$group->name, $group);
+
+        return new GroupResource($group->load(['zoomAccount', 'admin'])->loadCount('lessons'));
+    }
+
+    public function destroy(Group $group): Response
+    {
+        Gate::authorize('delete', $group);
+        if (Lesson::query()->where('group_id', $group->id)->open()->exists()) {
+            throw ValidationException::withMessages(['group' => 'Guruhda davom etayotgan yoki rejalashtirilgan dars bor. Avval uni yakunlang.']);
+        }
+        $group->delete();
+        Audit::log('group.deleted', "Guruh oʻchirildi: {$group->name}", $group);
+
+        return response()->noContent();
+    }
+
+    /** @return array<string, mixed> */
+    private function validated(Request $request, ?Group $group = null): array
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'hemis_id' => ['nullable', 'string', 'max:64', Rule::unique('groups', 'hemis_id')->ignore($group?->id)],
+            'course' => ['required', 'integer', 'between:1,6'],
+            'zoom_account_id' => ['required', 'integer', Rule::exists('zoom_accounts', 'id')],
+            'zoom_user_email' => ['required', 'email', 'max:255'],
+            'admin_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'is_active' => ['sometimes', 'boolean'],
+        ], [
+            'name.required' => 'Guruh nomini kiriting.',
+            'hemis_id.unique' => 'Bu HEMIS ID boshqa guruhga biriktirilgan.',
+            'zoom_account_id.required' => 'Zoom akkauntni tanlang.',
+            'zoom_user_email.required' => 'Zoom foydalanuvchisi emailini kiriting.',
+            'zoom_user_email.email' => 'Email notoʻgʻri.',
+        ]);
+
+        if (! empty($data['admin_id']) && ! User::find($data['admin_id'])?->isAdmin()) {
+            throw ValidationException::withMessages(['admin_id' => 'Masʼul sifatida faqat administratorni tanlash mumkin.']);
+        }
+        $data['zoom_user_email'] = mb_strtolower(trim($data['zoom_user_email']));
+
+        return $data;
+    }
+}

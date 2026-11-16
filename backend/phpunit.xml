@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:dGVzdGluZy10ZXN0aW5nLXRlc3RpbmctdGVzdGluZzE="/>
+        <env name="APP_URL" value="http://localhost"/>
+        <env name="FRONTEND_URL" value="http://localhost"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="SESSION_ENCRYPT" value="false"/>
+        <env name="SESSION_SECURE_COOKIE" value="false"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost"/>
+        <env name="LOG_CHANNEL" value="null"/>
+        <env name="HEMIS_BASE_URL" value="https://hemis.test"/>
+        <env name="HEMIS_CLIENT_ID" value="hemis-client"/>
+        <env name="HEMIS_CLIENT_SECRET" value="hemis-secret"/>
+        <env name="HEMIS_REDIRECT_URI" value="http://localhost/auth/hemis/callback"/>
+        <env name="HEMIS_UNIVERSITY_ID" value="42"/>
+        <env name="TELEGRAM_BOT_TOKEN" value="123:test"/>
+        <env name="TELEGRAM_BOT_USERNAME" value="mt_test_bot"/>
+        <env name="TELEGRAM_WEBHOOK_SECRET" value="webhook-secret"/>
+        <env name="TELEGRAM_API_URL" value="https://api.telegram.org"/>
+        <env name="ZOOM_API_URL" value="https://api.zoom.us/v2"/>
+        <env name="ZOOM_OAUTH_URL" value="https://zoom.us/oauth/token"/>
+        <env name="HEMIS_AUTO_REGISTER" value="true"/>
+        <env name="HEMIS_ALLOWED_TYPES" value="employee"/>
+        <env name="LESSON_DEFAULT_DURATION" value="80"/>
+    </php>
+</phpunit>

@@ -1,0 +1,320 @@
+import { useState } from 'react'
+import { useSearchParams } from 'react-router'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Ban, CheckCircle2, Search, Send, ShieldCheck, Trash2, UserRoundCheck, UsersRound } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuth } from '@/auth/AuthProvider'
+import { api, cleanParams, errorMessage } from '@/lib/api'
+import { formatDateTime } from '@/lib/format'
+import { ROLE_LABELS, USER_STATUS_LABELS } from '@/lib/labels'
+import type { Paginated, Role, UserListItem, UserStatus } from '@/lib/types'
+import { useDebounced } from '@/hooks/useDebounced'
+import { ActionMenu } from '@/components/ui/ActionMenu'
+import { Avatar } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Input, Select } from '@/components/ui/Field'
+import { Modal } from '@/components/ui/Modal'
+import { PageHeader, Panel } from '@/components/ui/Page'
+import { Pagination } from '@/components/ui/Pagination'
+import { Segmented } from '@/components/ui/Segmented'
+import { SectionLoader } from '@/components/ui/Spinner'
+
+type Tab = 'pending' | 'active' | 'blocked' | 'all'
+type Counts = Record<Tab, number>
+
+const statusTone: Record<UserStatus, 'amber' | 'leaf' | 'onair'> = { pending: 'amber', active: 'leaf', blocked: 'onair' }
+
+function useUpdateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: { id: number; status?: UserStatus; roles?: Role[]; managed_by_id?: number | null; hemis_id?: string | null }) =>
+      (await api.patch(`/api/users/${id}`, payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admins: UserListItem[]; onClose: () => void }) {
+  const [roles, setRoles] = useState<Role[]>(user?.roles ?? [])
+  const [managedBy, setManagedBy] = useState<string>(user?.managed_by ? String(user.managed_by.id) : '')
+  const [hemisId, setHemisId] = useState<string>(user?.hemis_id ?? '')
+  const update = useUpdateUser()
+  if (!user) return null
+  const toggle = (role: Role) => setRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]))
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Xodim sozlamalari"
+      description={user.name}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Bekor qilish
+          </Button>
+          <Button
+            loading={update.isPending}
+            disabled={!roles.length}
+            onClick={() =>
+              update.mutate(
+                { id: user.id, roles, managed_by_id: managedBy ? Number(managedBy) : null, hemis_id: hemisId.trim() || null },
+                {
+                  onSuccess: () => {
+                    toast.success('Saqlandi')
+                    onClose()
+                  },
+                },
+              )
+            }
+          >
+            Saqlash
+          </Button>
+        </>
+      }
+    >
+      <fieldset>
+        <legend className="text-sm font-medium text-ink-800">Rollar</legend>
+        <div className="mt-3 space-y-2">
+          {(['teacher', 'admin', 'super_admin'] as Role[]).map((role) => (
+            <label key={role} className="flex cursor-pointer items-start gap-3 rounded-field p-3 ring-1 ring-steel-200 ring-inset has-checked:bg-azure-50 has-checked:ring-azure-300">
+              <input type="checkbox" className="mt-0.5 size-4 accent-azure-500" checked={roles.includes(role)} onChange={() => toggle(role)} />
+              <span>
+                <span className="block text-sm font-medium">{ROLE_LABELS[role]}</span>
+                <span className="block text-sm text-steel-600">
+                  {role === 'teacher' && 'Dars yaratadi va oʻz darslarini boshqaradi.'}
+                  {role === 'admin' && 'Oʻziga biriktirilgan guruh va xodimlarni boshqaradi.'}
+                  {role === 'super_admin' && 'Tizimning barcha sozlamalariga toʻliq kirish.'}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <Input
+        label="HEMIS ID"
+        wrapperClassName="mt-5"
+        inputMode="numeric"
+        value={hemisId}
+        onChange={(event) => setHemisId(event.target.value)}
+        hint="Eski tizimdan koʻchirilgan xodimni uning HEMIS hisobiga bogʻlash uchun."
+      />
+      <Select label="Masʼul administrator" wrapperClassName="mt-5" value={managedBy} onChange={(event) => setManagedBy(event.target.value)}>
+        <option value="">Biriktirilmagan</option>
+        {admins
+          .filter((admin) => admin.id !== user.id)
+          .map((admin) => (
+            <option key={admin.id} value={admin.id}>
+              {admin.name}
+            </option>
+          ))}
+      </Select>
+    </Modal>
+  )
+}
+
+export default function UsersPage() {
+  const { user: me, isSuperAdmin } = useAuth()
+  const queryClient = useQueryClient()
+  const [params, setParams] = useSearchParams()
+  const tab = (params.get('status') as Tab) || 'all'
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [editing, setEditing] = useState<UserListItem | null>(null)
+  const [deleting, setDeleting] = useState<UserListItem | null>(null)
+  const debounced = useDebounced(search)
+  const update = useUpdateUser()
+
+  const counts = useQuery({
+    queryKey: ['users', 'counts'],
+    queryFn: async () => (await api.get<{ data: Counts }>('/api/users/counts')).data.data,
+  })
+
+  const users = useQuery({
+    queryKey: ['users', 'list', tab, debounced, page],
+    queryFn: async () =>
+      (await api.get<Paginated<UserListItem>>('/api/users', { params: cleanParams({ status: tab === 'all' ? '' : tab, search: debounced, page }) })).data,
+    placeholderData: keepPreviousData,
+  })
+
+  const admins = useQuery({
+    queryKey: ['users', 'admins'],
+    queryFn: async () => (await api.get<Paginated<UserListItem>>('/api/users', { params: { role: 'admin', per_page: 100 } })).data.data,
+    enabled: isSuperAdmin,
+  })
+
+  const remove = useMutation({
+    mutationFn: async (id: number) => api.delete(`/api/users/${id}`),
+    onSuccess: () => {
+      toast.success('Xodim oʻchirildi')
+      setDeleting(null)
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+
+  const setStatus = (user: UserListItem, status: UserStatus, message: string) =>
+    update.mutate({ id: user.id, status }, { onSuccess: () => toast.success(message) })
+
+  return (
+    <>
+      <PageHeader title="Xodimlar" description="HEMIS orqali kirgan xodimlar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring." />
+
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <Segmented<Tab>
+          label="Holat"
+          value={tab}
+          onChange={(value) => {
+            const next = new URLSearchParams(params)
+            if (value === 'all') next.delete('status')
+            else next.set('status', value)
+            setParams(next, { replace: true })
+            setPage(1)
+          }}
+          options={[
+            { value: 'all', label: 'Barchasi', count: counts.data?.all },
+            { value: 'pending', label: 'Tasdiq kutmoqda', count: counts.data?.pending },
+            { value: 'active', label: 'Faol' },
+            { value: 'blocked', label: 'Bloklangan' },
+          ]}
+        />
+        <Input
+          aria-label="Qidirish"
+          placeholder="Ism, telefon yoki HEMIS ID"
+          leading={<Search className="size-4" />}
+          wrapperClassName="lg:w-80"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value)
+            setPage(1)
+          }}
+        />
+      </div>
+
+      <Panel padded={false}>
+        {users.isPending ? (
+          <SectionLoader />
+        ) : !users.data?.data.length ? (
+          <EmptyState
+            icon={<UsersRound className="size-5" />}
+            title={tab === 'pending' ? 'Tasdiq kutayotgan xodimlar yoʻq' : 'Xodimlar topilmadi'}
+            description={tab === 'pending' ? 'Yangi xodim HEMIS orqali kirganda u shu yerda paydo boʻladi.' : 'Qidiruv soʻzini oʻzgartirib koʻring.'}
+          />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[52rem] text-left text-sm">
+                <thead className="border-b border-steel-100 text-steel-600">
+                  <tr>
+                    <th className="w-[38%] px-5 py-3 font-medium">Xodim</th>
+                    <th className="px-3 py-3 font-medium">Rol</th>
+                    <th className="px-3 py-3 font-medium">Holat</th>
+                    <th className="px-3 py-3 font-medium">Oxirgi kirish</th>
+                    <th className="px-3 py-3 text-right font-medium">Darslar</th>
+                    <th className="px-5 py-3">
+                      <span className="sr-only">Amallar</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-steel-100">
+                  {users.data.data.map((user) => {
+                    const self = user.id === me?.id
+                    return (
+                      <tr key={user.id} className="hover:bg-steel-50/60">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={user.name} src={user.picture_url} />
+                            <div className="max-w-72 min-w-0">
+                              <p className="flex items-center gap-1.5 font-medium text-ink-900">
+                                <span className="truncate">{user.name}</span>
+                                {user.telegram_linked && <Send className="size-3.5 shrink-0 text-azure-500" aria-label="Telegram ulangan" />}
+                              </p>
+                              <p className="truncate text-steel-600">
+                                {[user.hemis_id && `HEMIS ${user.hemis_id}`, user.phone, user.department].filter(Boolean).join(', ') || '—'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles.length ? user.roles.map((role) => <Badge key={role} tone={role === 'teacher' ? 'neutral' : 'azure'}>{ROLE_LABELS[role]}</Badge>) : <span className="text-steel-500">—</span>}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <Badge tone={statusTone[user.status]} dot>
+                            {USER_STATUS_LABELS[user.status]}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-steel-700">{user.last_login_at ? formatDateTime(user.last_login_at) : '—'}</td>
+                        <td className="px-3 py-3 text-right tabular-nums">{user.lessons_count}</td>
+                        <td className="px-5 py-2 text-right">
+                          {user.status === 'pending' ? (
+                            <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', 'Xodim tasdiqlandi')}>
+                              Tasdiqlash
+                            </Button>
+                          ) : (
+                            !self && (
+                              <ActionMenu
+                                items={[
+                                  {
+                                    label: 'Faollashtirish',
+                                    icon: <UserRoundCheck className="size-4" />,
+                                    hidden: user.status === 'active',
+                                    onClick: () => setStatus(user, 'active', 'Xodim faollashtirildi'),
+                                  },
+                                  {
+                                    label: 'Bloklash',
+                                    icon: <Ban className="size-4" />,
+                                    hidden: user.status === 'blocked',
+                                    onClick: () => setStatus(user, 'blocked', 'Xodim bloklandi'),
+                                  },
+                                  {
+                                    label: 'Rol va sozlamalar',
+                                    icon: <ShieldCheck className="size-4" />,
+                                    hidden: !isSuperAdmin,
+                                    onClick: () => setEditing(user),
+                                  },
+                                  {
+                                    label: 'Oʻchirish',
+                                    icon: <Trash2 className="size-4" />,
+                                    danger: true,
+                                    hidden: !isSuperAdmin,
+                                    onClick: () => setDeleting(user),
+                                  },
+                                ]}
+                              />
+                            )
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={users.data.meta.current_page} lastPage={users.data.meta.last_page} total={users.data.meta.total} onChange={setPage} />
+          </>
+        )}
+      </Panel>
+
+      {editing && <RolesModal key={editing.id} user={editing} admins={admins.data ?? []} onClose={() => setEditing(null)} />}
+
+      <ConfirmDialog
+        open={!!deleting}
+        title="Xodimni oʻchirasizmi?"
+        description={`${deleting?.name ?? ''} tizimdan oʻchiriladi va kira olmaydi. Uning darslari tarixi hisobotlarda saqlanib qoladi.`}
+        confirmLabel="Oʻchirish"
+        tone="danger"
+        loading={remove.isPending}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
+      />
+    </>
+  )
+}

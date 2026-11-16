@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import "@fontsource-variable/onest";
+@import "@fontsource-variable/unbounded";
+
+/*
+  Dizayn tokenlari.
+  Ranglar universitetning "MT" logotipidan olingan: chuqur navy (ink),
+  logotipdagi moviy (azure) va kulrang po'lat (steel).
+  "onair" — faqat jonli (efirdagi) darslar uchun ishlatiladigan qizil.
+*/
+@theme {
+  --font-sans: "Onest Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Unbounded Variable", "Onest Variable", ui-sans-serif, sans-serif;
+
+  --color-ink-50: #eef2f8;
+  --color-ink-100: #dbe3f0;
+  --color-ink-200: #b7c6de;
+  --color-ink-300: #8ea3c4;
+  --color-ink-400: #6580a8;
+  --color-ink-500: #46638f;
+  --color-ink-600: #334d75;
+  --color-ink-700: #253c5f;
+  --color-ink-800: #1a2e4c;
+  --color-ink-900: #13284a;
+  --color-ink-950: #0c1b33;
+
+  --color-azure-50: #ecf4fd;
+  --color-azure-100: #d6e7fa;
+  --color-azure-200: #aecff4;
+  --color-azure-300: #7fb2ec;
+  --color-azure-400: #4f93e2;
+  --color-azure-500: #2f7bd0;
+  --color-azure-600: #2263b0;
+  --color-azure-700: #1d4f8c;
+  --color-azure-800: #1b4373;
+  --color-azure-900: #1a3960;
+
+  --color-steel-50: #f5f7f9;
+  --color-steel-100: #e9edf1;
+  --color-steel-200: #d4dbe3;
+  --color-steel-300: #b6c1cd;
+  --color-steel-400: #9aa6b4;
+  --color-steel-500: #7b8897;
+  --color-steel-600: #5f6b7a;
+  --color-steel-700: #4c5664;
+  --color-steel-800: #3c444f;
+  --color-steel-900: #2b3139;
+
+  --color-mist: #eef2f7;
+
+  --color-onair-50: #fdeceb;
+  --color-onair-100: #fad3d0;
+  --color-onair-500: #d9372b;
+  --color-onair-600: #b92a20;
+
+  --color-leaf-50: #e7f6ee;
+  --color-leaf-500: #1e8e5a;
+  --color-leaf-600: #17734a;
+
+  --color-amber-50: #fdf4e3;
+  --color-amber-500: #b7791f;
+  --color-amber-600: #93601a;
+
+  --radius-field: 0.625rem;
+  --radius-panel: 1rem;
+
+  --animate-onair: onair 1.6s ease-in-out infinite;
+
+  @keyframes onair {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.82); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-mist font-sans text-ink-900 antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  ::selection {
+    @apply bg-azure-200 text-ink-950;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-azure-500);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

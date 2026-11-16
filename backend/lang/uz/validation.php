@@ -1,0 +1,57 @@
+<?php
+
+// Asosiy tekshiruv xabarlari o'zbek tilida. Maxsus xabarlar controllerlarda berilgan.
+return [
+    'accepted' => ':attribute qabul qilinishi kerak.',
+    'after_or_equal' => ':attribute :date sanasidan oldin boʻlmasligi kerak.',
+    'array' => ':attribute roʻyxat boʻlishi kerak.',
+    'between' => [
+        'numeric' => ':attribute :min va :max oraligʻida boʻlishi kerak.',
+        'string' => ':attribute :min–:max belgidan iborat boʻlishi kerak.',
+        'array' => ':attribute :min–:max ta elementdan iborat boʻlishi kerak.',
+    ],
+    'boolean' => ':attribute “ha” yoki “yoʻq” boʻlishi kerak.',
+    'date' => ':attribute sana boʻlishi kerak.',
+    'date_format' => ':attribute :format koʻrinishida boʻlishi kerak.',
+    'email' => ':attribute toʻgʻri email manzil boʻlishi kerak.',
+    'enum' => 'Tanlangan :attribute notoʻgʻri.',
+    'exists' => 'Tanlangan :attribute topilmadi.',
+    'in' => 'Tanlangan :attribute notoʻgʻri.',
+    'integer' => ':attribute butun son boʻlishi kerak.',
+    'max' => [
+        'numeric' => ':attribute :max dan katta boʻlmasligi kerak.',
+        'string' => ':attribute :max belgidan oshmasligi kerak.',
+        'array' => ':attribute :max ta elementdan oshmasligi kerak.',
+    ],
+    'min' => [
+        'numeric' => ':attribute kamida :min boʻlishi kerak.',
+        'string' => ':attribute kamida :min belgidan iborat boʻlishi kerak.',
+        'array' => ':attribute kamida :min ta elementdan iborat boʻlishi kerak.',
+    ],
+    'required' => ':attribute maydoni toʻldirilishi shart.',
+    'string' => ':attribute matn boʻlishi kerak.',
+    'unique' => 'Bunday :attribute allaqachon mavjud.',
+
+    'attributes' => [
+        'name' => 'nomi',
+        'login' => 'login',
+        'password' => 'parol',
+        'course' => 'kurs',
+        'group_id' => 'guruh',
+        'slot_id' => 'dars vaqti',
+        'topic' => 'mavzu',
+        'starts_at' => 'boshlanish vaqti',
+        'duration_minutes' => 'davomiylik',
+        'account_id' => 'Account ID',
+        'client_id' => 'Client ID',
+        'client_secret' => 'Client Secret',
+        'zoom_account_id' => 'Zoom akkaunt',
+        'zoom_user_email' => 'Zoom foydalanuvchisi',
+        'admin_id' => 'masʼul administrator',
+        'hemis_id' => 'HEMIS ID',
+        'from' => 'boshlanish sanasi',
+        'to' => 'tugash sanasi',
+        'status' => 'holat',
+        'roles' => 'rollar',
+    ],
+];
