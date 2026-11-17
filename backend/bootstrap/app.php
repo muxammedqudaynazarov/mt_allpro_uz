@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DetectUntrustedProxy;
 use App\Http\Middleware\EnsureAccountStatus;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SecurityHeaders;
@@ -30,7 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SetLocale::class);
         $middleware->appendToGroup('api', SetLocale::class);
         $middleware->appendToGroup('web', SetLocale::class);
-        $middleware->trustProxies(at: env('TRUSTED_PROXIES', '127.0.0.1'));
+        // Ishonchli proksilar: config/trustedproxy.php (TRUSTED_PROXIES). Noto'g'ri bo'lsa — app:check aytadi.
+        $middleware->prepend(DetectUntrustedProxy::class);
         $middleware->alias([
             'account' => EnsureAccountStatus::class,
             'role' => EnsureRole::class,

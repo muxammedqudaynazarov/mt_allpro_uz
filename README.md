@@ -56,7 +56,7 @@ Tizim Laravel 10 dan Laravel 13 ga boshidan qayta yozildi. Eski versiyadagi xato
 | Bir guruh/Zoom hisobida bir vaqtda ikkita dars yaratish mumkin edi | Guruh va Zoom host bandligi qulf ostida tekshiriladi, o'qituvchi bo'sh hostni tanlaydi |
 | Tanlangan juftlik ishlatilmasdi, dars hech qachon "tugadi" holatiga o'tmasdi | Dars juftlik vaqtiga rejalashtiriladi, holat avtomatik yangilanadi |
 | Telegram ID ni `@getmyid_bot` orqali qo'lda kiritish kerak edi | Xodim bitta tugma (yoki QR kod) bilan Telegram'ni ulaydi |
-| Test yo'q edi | 125 ta avtomatik test (ruxsatlar, HEMIS, Zoom, webhook, video, hisobotlar), GitHub Actions'da har push'da |
+| Test yo'q edi | 120 dan ortiq avtomatik test (ruxsatlar, HEMIS, Zoom, webhook, video, hisobotlar), GitHub Actions'da har push'da |
 
 Batafsil: [docs/ISHLAB_CHIQISH.md](docs/ISHLAB_CHIQISH.md#xavfsizlik).
 

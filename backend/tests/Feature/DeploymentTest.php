@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\DetectUntrustedProxy;
 use App\Models\Lesson;
 use App\Models\Recording;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 /** Serverdagi .env xatolari kirishni buzmasligi va app:check ularni topishi. */
@@ -125,6 +128,64 @@ class DeploymentTest extends TestCase
      * (Alohida test: test muhitida bitta testdagi ikkinchi prefiksli so'rov holat saqlab qoladi;
      * haqiqiy HTTP'da har so'rov mustaqil — tekshirilgan.)
      */
+    /** Proksi orqali kelgan so'rov: yozuvlar ro'yxatidagi video havolasini qaytaradi. */
+    private function recordingUrlVia(string $remoteAddr): string
+    {
+        $teacher = User::factory()->create();
+        $lesson = Lesson::factory()->finished()->create(['user_id' => $teacher->id]);
+        Recording::create([
+            'lesson_id' => $lesson->id, 'zoom_meeting_id' => '1', 'zoom_meeting_uuid' => 'u', 'zoom_file_id' => 'f',
+            'file_type' => 'MP4', 'status' => Recording::DOWNLOADED, 'path' => 'x.mp4', 'size' => 1,
+        ]);
+
+        return (string) $this->actingAsUser($teacher)
+            ->withServerVariables(['REMOTE_ADDR' => $remoteAddr])
+            ->withHeaders(['X-Forwarded-Prefix' => '/zoom', 'X-Forwarded-Proto' => 'https', 'X-Forwarded-Host' => 'dist.karsu.uz'])
+            ->getJson("/api/lessons/{$lesson->id}/recordings")
+            ->assertOk()
+            ->json('data.0.url');
+    }
+
+    /** TRUSTED_PROXIES konfiguratsiyadan o'qiladi (config keshlanganda ham — env() emas). */
+    public function test_trusted_proxy_ip_comes_from_config(): void
+    {
+        config(['trustedproxy.proxies' => '10.0.0.5']);
+
+        $this->assertStringStartsWith('https://dist.karsu.uz/zoom/api/recordings/', $this->recordingUrlVia('10.0.0.5'));
+        $this->assertNull(Cache::get(DetectUntrustedProxy::CACHE_KEY));
+    }
+
+    /** dist.karsu.uz IP'si TRUSTED_PROXIES da bo'lmasa: sarlavhalarga ishonilmaydi, app:check aniq IP'ni aytadi. */
+    public function test_untrusted_proxy_is_reported_by_check_command(): void
+    {
+        config(['trustedproxy.proxies' => '10.0.0.5']);
+
+        $this->assertStringNotContainsString('dist.karsu.uz', $this->recordingUrlVia('10.0.0.9'));
+        $this->assertSame('10.0.0.9', Cache::get(DetectUntrustedProxy::CACHE_KEY)['ip'] ?? null);
+
+        $this->assertSame(1, Artisan::call('app:check'));
+        $output = Artisan::output();
+        $this->assertStringContainsString('Proksi soʻrovlari 10.0.0.9 manzilidan kelgan', $output);
+        $this->assertStringContainsString('TRUSTED_PROXIES=10.0.0.9', $output);
+    }
+
+    /**
+     * .env faqat config/ fayllarida o'qilishi kerak: `php artisan optimize` dan keyin boshqa joydagi
+     * env() null qaytaradi (TRUSTED_PROXIES shu sababli jimgina 127.0.0.1 ga qaytgan edi).
+     */
+    public function test_env_is_read_only_in_config_files(): void
+    {
+        $offenders = [];
+        foreach (['app', 'bootstrap', 'routes', 'database'] as $dir) {
+            foreach (File::allFiles(base_path($dir)) as $file) {
+                if ($file->getExtension() === 'php' && ! str_contains($file->getPathname(), '/cache/') && preg_match('/(?<![\w>:$])env\(/', $file->getContents())) {
+                    $offenders[] = $file->getRelativePathname();
+                }
+            }
+        }
+        $this->assertSame([], $offenders);
+    }
+
     public function test_generated_urls_keep_forwarded_prefix(): void
     {
         $teacher = User::factory()->create();

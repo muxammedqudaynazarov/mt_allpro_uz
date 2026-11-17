@@ -5,12 +5,15 @@ namespace App\Console\Commands;
 use App\Enums\LessonStatus;
 use App\Enums\Role;
 use App\Enums\UserStatus;
+use App\Http\Middleware\DetectUntrustedProxy;
 use App\Models\Lesson;
 use App\Models\User;
 use App\Models\ZoomAccount;
 use App\Services\Hemis\HemisOAuth;
 use App\Services\Telegram\TelegramBot;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Throwable;
@@ -85,11 +88,31 @@ class CheckSetup extends Command
             $this->check(rtrim((string) config('session.path'), '/') === $path, 'SESSION_PATH sayt yoʻliga mos', "Sayt {$path} yoʻlida, lekin SESSION_PATH=".config('session.path').". .env da SESSION_PATH={$path} qiling.", warning: true);
         }
         $this->frontendBuild($path);
+        $this->proxy();
         $this->check($frontendHost === $host, 'FRONTEND_URL va APP_URL bir domenda', "FRONTEND_URL ({$frontendHost}) APP_URL ({$host}) bilan bir xil boʻlishi kerak: HEMIS orqali kirgandan keyin shu manzilga qaytiladi.");
         $this->check(! config('session.secure') || $https, 'Cookie sozlamasi APP_URL ga mos', 'SESSION_SECURE_COOKIE=true, lekin APP_URL https emas — brauzer cookie saqlamaydi va kirish ishlamaydi. SSL oʻrnating yoki SESSION_SECURE_COOKIE=false qiling.');
         $this->check($https || app()->isLocal(), 'HTTPS', 'APP_URL http:// bilan boshlanadi. Serverda SSL (https) oʻrnatish tavsiya etiladi.', warning: true);
         $this->check(! config('app.debug') || app()->isLocal(), 'APP_DEBUG=false', 'APP_DEBUG=true — xato tafsilotlari hammaga koʻrinadi. Serverda false qiling.', warning: true);
         $this->check(config('app.locale') === 'kaa', 'APP_LOCALE=kaa', 'APP_LOCALE='.config('app.locale').' — asosiy til qoraqalpoqcha boʻlishi uchun APP_LOCALE=kaa qiling.', warning: true);
+    }
+
+    /** dist.karsu.uz boshqa serverdan proksi qilsa: uning IP manzili TRUSTED_PROXIES da bo'lishi kerak. */
+    private function proxy(): void
+    {
+        $proxies = (string) (is_array($value = config('trustedproxy.proxies')) ? implode(',', $value) : $value);
+        $this->line('  TRUSTED_PROXIES: '.($proxies !== '' ? $proxies : '—'));
+
+        try {
+            $seen = Cache::get(DetectUntrustedProxy::CACHE_KEY);
+        } catch (Throwable) {
+            return;
+        }
+        if (! is_array($seen) || ! isset($seen['ip'])) {
+            return;
+        }
+        $at = Carbon::parse((string) $seen['at'])->timezone(config('app.timezone'))->format('d.m.Y H:i');
+        $this->check(false, '', "Proksi soʻrovlari {$seen['ip']} manzilidan kelgan ({$at}), lekin u TRUSTED_PROXIES da yoʻq — havolalar va kirish buziladi."
+            ."\n    Bu dist.karsu.uz serveri boʻlsa: .env da TRUSTED_PROXIES={$seen['ip']}, keyin php artisan optimize");
     }
 
     /** Frontend APP_URL dagi yo'l uchun yig'ilganmi (aks holda sahifa oq ekran bo'lib qoladi). */
