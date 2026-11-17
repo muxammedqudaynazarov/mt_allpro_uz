@@ -29,9 +29,10 @@ class EndLesson
 
         Audit::log(
             $wasStarted ? 'lesson.ended' : 'lesson.cancelled',
-            ($wasStarted ? 'Dars yakunlandi: ' : 'Dars bekor qilindi: ').$lesson->group->name,
+            $wasStarted ? 'Dars yakunlandi: :group' : 'Dars bekor qilindi: :group',
             $lesson,
             actor: $actor,
+            replace: ['group' => $lesson->group->name],
         );
 
         return $lesson;

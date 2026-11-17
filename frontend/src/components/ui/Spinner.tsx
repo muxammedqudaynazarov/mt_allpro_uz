@@ -1,9 +1,11 @@
 import { Loader2 } from 'lucide-react'
 import { cn } from './cn'
 import { Logo } from './Logo'
+import { useT } from '@/i18n/I18nProvider'
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('size-5 animate-spin text-azure-500', className)} aria-label="Yuklanmoqda" />
+  const t = useT()
+  return <Loader2 className={cn('size-5 animate-spin text-azure-500', className)} aria-label={t('Yuklanmoqda')} />
 }
 
 export function FullPageLoader() {

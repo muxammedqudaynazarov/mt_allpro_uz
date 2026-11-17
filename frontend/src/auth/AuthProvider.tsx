@@ -1,5 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useI18n } from '@/i18n/I18nProvider'
+import { isLocale, storedLocale } from '@/i18n/locale'
 import { api, isStatus } from '@/lib/api'
 import type { AppConfig, Me, Role } from '@/lib/types'
 
@@ -43,6 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const user = meQuery.data ?? null
+  const { locale, setLocale } = useI18n()
+
+  // Yangi qurilmada kirganda profildagi tanlangan til qo'llanadi.
+  useEffect(() => {
+    if (user && isLocale(user.locale) && user.locale !== locale && !storedLocale()) {
+      setLocale(user.locale, { remember: false })
+    }
+  }, [user, locale, setLocale])
 
   const hasRole = useCallback((...roles: Role[]) => !!user && roles.some((role) => user.roles.includes(role)), [user])
   const can = useCallback((permission: string) => !!user && user.permissions.includes(permission), [user])

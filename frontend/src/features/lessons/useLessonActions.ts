@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { tGlobal as t } from '@/i18n/I18nProvider'
 import { api, errorMessage } from '@/lib/api'
 import { formatTime } from '@/lib/format'
 import type { Lesson } from '@/lib/types'
@@ -7,20 +8,20 @@ import type { Lesson } from '@/lib/types'
 export function telegramShareUrl(lesson: Lesson): string {
   const lines = [
     `${lesson.group.name}`,
-    lesson.topic ? `Mavzu: ${lesson.topic}` : null,
-    `Vaqti: ${formatTime(lesson.starts_at)}–${formatTime(lesson.ends_at)}`,
-    lesson.passcode ? `Kod: ${lesson.passcode}` : null,
+    lesson.topic ? t('Mavzu: {topic}', { topic: lesson.topic }) : null,
+    t('Vaqti: {time}', { time: `${formatTime(lesson.starts_at)}–${formatTime(lesson.ends_at)}` }),
+    lesson.passcode ? t('Kod: {code}', { code: lesson.passcode }) : null,
   ].filter(Boolean)
   const params = new URLSearchParams({ url: lesson.join_url ?? '', text: lines.join('\n') })
   return `https://t.me/share/url?${params.toString()}`
 }
 
-export async function copyText(text: string, success = 'Havola nusxalandi') {
+export async function copyText(text: string, success?: string) {
   try {
     await navigator.clipboard.writeText(text)
-    toast.success(success)
+    toast.success(success ?? t('Havola nusxalandi'))
   } catch {
-    toast.error('Nusxalab boʻlmadi. Havolani qoʻlda belgilab oling.')
+    toast.error(t('Nusxalab boʻlmadi. Havolani qoʻlda belgilab oling.'))
   }
 }
 
@@ -51,16 +52,16 @@ export function useLessonActions() {
       }
     },
     onSuccess: invalidate,
-    onError: (error) => toast.error(errorMessage(error, 'Darsni boshlab boʻlmadi.')),
+    onError: (error) => toast.error(errorMessage(error, t('Darsni boshlab boʻlmadi.'))),
   })
 
   const end = useMutation({
     mutationFn: async (lesson: Lesson) => (await api.post<{ data: Lesson }>(`/api/lessons/${lesson.id}/end`)).data.data,
     onSuccess: () => {
-      toast.success('Dars yakunlandi')
+      toast.success(t('Dars yakunlandi'))
       invalidate()
     },
-    onError: (error) => toast.error(errorMessage(error, 'Darsni yakunlab boʻlmadi.')),
+    onError: (error) => toast.error(errorMessage(error, t('Darsni yakunlab boʻlmadi.'))),
   })
 
   return { start, end, invalidate }

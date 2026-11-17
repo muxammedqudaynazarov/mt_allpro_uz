@@ -66,7 +66,7 @@ class CreateAdmin extends Command
         $user->deleted_at = null;
         $user->save();
 
-        Audit::log('admin.cli', "Konsol orqali administrator yaratildi/yangilandi: {$user->name}", $user, actor: $user);
+        Audit::log('admin.cli', 'Konsol orqali administrator yaratildi/yangilandi: :name', $user, actor: $user, replace: ['name' => $user->name]);
         $this->info("Tayyor: {$user->name} ({$login}) — {$role->label()}");
 
         return self::SUCCESS;

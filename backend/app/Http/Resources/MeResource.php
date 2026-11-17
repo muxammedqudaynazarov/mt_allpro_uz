@@ -22,6 +22,7 @@ class MeResource extends JsonResource
             'department' => $this->department,
             'hemis_id' => $this->hemis_id,
             'status' => $this->status->value,
+            'locale' => $this->preferredLocale(),
             'roles' => array_values($this->roles ?? []),
             'permissions' => $this->permissions(),
             'has_password' => $this->password !== null,

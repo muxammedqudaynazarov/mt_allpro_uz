@@ -79,7 +79,7 @@ class HemisController extends Controller
         }
 
         if ($user->status === UserStatus::Blocked) {
-            Audit::log('auth.blocked', "Bloklangan xodim kirishga urindi: {$user->name}", $user, actor: $user);
+            Audit::log('auth.blocked', 'Bloklangan xodim kirishga urindi: :name', $user, actor: $user, replace: ['name' => $user->name]);
 
             return $this->toLogin('blocked');
         }
@@ -104,7 +104,7 @@ class HemisController extends Controller
         Auth::guard('web')->login($user, remember: true);
         $request->session()->regenerate();
 
-        Audit::log($isNew ? 'auth.registered' : 'auth.login', ($isNew ? 'HEMIS orqali roʻyxatdan oʻtdi: ' : 'HEMIS orqali kirdi: ').$user->name, $user, actor: $user);
+        Audit::log($isNew ? 'auth.registered' : 'auth.login', $isNew ? 'HEMIS orqali roʻyxatdan oʻtdi: :name' : 'HEMIS orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->name]);
         if ($isNew) {
             $this->notifier->userPending($user);
         }

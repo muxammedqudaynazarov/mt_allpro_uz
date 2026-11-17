@@ -10,8 +10,10 @@ return [
     'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost')),
 
     'timezone' => env('APP_TIMEZONE', 'Asia/Tashkent'),
-    'locale' => env('APP_LOCALE', 'uz'),
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    // Asosiy til — qoraqalpoqcha (lotin). Foydalanuvchi interfeysda o'zbekchaga o'tishi mumkin.
+    'locale' => env('APP_LOCALE', 'kaa'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'uz'),
+    'supported_locales' => ['kaa', 'uz'],
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     'cipher' => 'AES-256-CBC',

@@ -1,0 +1,58 @@
+<?php
+
+// Tiykarǵı tekseriw xabarları qaraqalpaq tilinde (latın jazıwı).
+return [
+    'accepted' => ':attribute qabıl etiliwi kerek.',
+    'after_or_equal' => ':attribute :date sánesinen aldın bolmawı kerek.',
+    'array' => ':attribute dizim bolıwı kerek.',
+    'between' => [
+        'numeric' => ':attribute :min hám :max aralıǵında bolıwı kerek.',
+        'string' => ':attribute :min–:max belgiden ibarat bolıwı kerek.',
+        'array' => ':attribute :min–:max elementten ibarat bolıwı kerek.',
+    ],
+    'boolean' => ':attribute “awa” yamasa “yaq” bolıwı kerek.',
+    'date' => ':attribute sáne bolıwı kerek.',
+    'date_format' => ':attribute :format kórinisinde bolıwı kerek.',
+    'email' => ':attribute durıs email mánzil bolıwı kerek.',
+    'enum' => 'Tańlanǵan :attribute qáte.',
+    'exists' => 'Tańlanǵan :attribute tabılmadı.',
+    'in' => 'Tańlanǵan :attribute qáte.',
+    'integer' => ':attribute pútin san bolıwı kerek.',
+    'max' => [
+        'numeric' => ':attribute :max nan úlken bolmawı kerek.',
+        'string' => ':attribute :max belgiden aspawı kerek.',
+        'array' => ':attribute :max elementten aspawı kerek.',
+    ],
+    'min' => [
+        'numeric' => ':attribute keminde :min bolıwı kerek.',
+        'string' => ':attribute keminde :min belgiden ibarat bolıwı kerek.',
+        'array' => ':attribute keminde :min elementten ibarat bolıwı kerek.',
+    ],
+    'required' => ':attribute maydanı toltırılıwı shárt.',
+    'string' => ':attribute tekst bolıwı kerek.',
+    'unique' => 'Bunday :attribute áldeqashan bar.',
+
+    'attributes' => [
+        'name' => 'atı',
+        'login' => 'login',
+        'password' => 'parol',
+        'course' => 'kurs',
+        'group_id' => 'topar',
+        'slot_id' => 'sabaq waqtı',
+        'topic' => 'tema',
+        'starts_at' => 'baslanıw waqtı',
+        'duration_minutes' => 'dawamlılıq',
+        'account_id' => 'Account ID',
+        'client_id' => 'Client ID',
+        'client_secret' => 'Client Secret',
+        'zoom_account_id' => 'Zoom akkaunt',
+        'zoom_user_email' => 'Zoom paydalanıwshısı',
+        'admin_id' => 'juwapker administrator',
+        'hemis_id' => 'HEMIS ID',
+        'from' => 'baslanıw sánesi',
+        'to' => 'tamamlanıw sánesi',
+        'status' => 'jaǵday',
+        'roles' => 'roller',
+        'locale' => 'til',
+    ],
+];

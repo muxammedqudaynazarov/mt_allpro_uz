@@ -22,8 +22,10 @@ import { api } from '@/lib/api'
 import { ROLE_LABELS, topRole } from '@/lib/labels'
 import type { Role } from '@/lib/types'
 import { Avatar } from '@/components/ui/Avatar'
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch'
 import { Logo } from '@/components/ui/Logo'
 import { cn } from '@/components/ui/cn'
+import { useT } from '@/i18n/I18nProvider'
 
 interface NavItem {
   to: string
@@ -40,6 +42,7 @@ interface NavSection {
 }
 
 function useNav(): NavSection[] {
+  const t = useT()
   const { isAdmin, user } = useAuth()
   const pending = useQuery({
     queryKey: ['users', 'pending-count'],
@@ -51,44 +54,45 @@ function useNav(): NavSection[] {
   return [
     {
       items: [
-        { to: '/', label: 'Bosh sahifa', icon: <LayoutDashboard />, end: true },
-        { to: '/lessons/new', label: 'Dars yaratish', icon: <PlusCircle /> },
-        { to: '/lessons', label: 'Darslar', icon: <CalendarClock />, end: true },
+        { to: '/', label: t('Bosh sahifa'), icon: <LayoutDashboard />, end: true },
+        { to: '/lessons/new', label: t('Dars yaratish'), icon: <PlusCircle /> },
+        { to: '/lessons', label: t('Darslar'), icon: <CalendarClock />, end: true },
       ],
     },
     {
-      title: 'Boshqaruv',
+      title: t('Boshqaruv'),
       items: [
-        { to: '/users', label: 'Xodimlar', icon: <Users />, roles: ['admin', 'super_admin'], badge: pending.data },
-        { to: '/groups', label: 'Guruhlar', icon: <UsersRound />, roles: ['admin', 'super_admin'] },
-        { to: '/reports', label: 'Hisobotlar', icon: <BarChart3 />, roles: ['admin', 'super_admin'] },
+        { to: '/users', label: t('Xodimlar'), icon: <Users />, roles: ['admin', 'super_admin'], badge: pending.data },
+        { to: '/groups', label: t('Guruhlar'), icon: <UsersRound />, roles: ['admin', 'super_admin'] },
+        { to: '/reports', label: t('Hisobotlar'), icon: <BarChart3 />, roles: ['admin', 'super_admin'] },
       ],
     },
     {
-      title: 'Sozlamalar',
+      title: t('Sozlamalar'),
       items: [
-        { to: '/zoom-accounts', label: 'Zoom akkauntlar', icon: <Video />, roles: ['super_admin'] },
-        { to: '/slots', label: 'Dars vaqtlari', icon: <Clock3 />, roles: ['super_admin'] },
-        { to: '/audit', label: 'Amallar tarixi', icon: <ScrollText />, roles: ['super_admin'] },
+        { to: '/zoom-accounts', label: t('Zoom akkauntlar'), icon: <Video />, roles: ['super_admin'] },
+        { to: '/slots', label: t('Dars vaqtlari'), icon: <Clock3 />, roles: ['super_admin'] },
+        { to: '/audit', label: t('Amallar tarixi'), icon: <ScrollText />, roles: ['super_admin'] },
       ],
     },
   ]
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useT()
   const { hasRole, user } = useAuth()
   const sections = useNav()
 
   if (user?.status !== 'active') {
     return (
       <div className="flex-1 px-6 text-sm leading-relaxed text-ink-300">
-        Hisobingiz tasdiqlangach, menyu shu yerda paydo boʻladi.
+        {t('Hisobingiz tasdiqlangach, menyu shu yerda paydo boʻladi.')}
       </div>
     )
   }
 
   return (
-    <nav className="flex-1 space-y-7 overflow-y-auto px-3 py-2" aria-label="Asosiy menyu">
+    <nav className="flex-1 space-y-7 overflow-y-auto px-3 py-2" aria-label={t('Asosiy menyu')}>
       {sections.map((section, index) => {
         const items = section.items.filter((item) => !item.roles || hasRole(...item.roles))
         if (!items.length) return null
@@ -130,12 +134,17 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function UserCard({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useT()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   if (!user) return null
 
   return (
     <div className="border-t border-white/10 p-3">
+      <div className="flex items-center justify-between px-2 pb-3">
+        <span className="text-xs text-ink-300">{t('Til')}</span>
+        <LanguageSwitch tone="dark" />
+      </div>
       <NavLink
         to="/profile"
         onClick={onNavigate}
@@ -146,7 +155,7 @@ function UserCard({ onNavigate }: { onNavigate?: () => void }) {
         <Avatar name={user.name} src={user.picture_url} className="ring-white/20" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium text-white">{user.short_name}</span>
-          <span className="block truncate text-xs text-ink-300">{ROLE_LABELS[topRole(user.roles)]}</span>
+          <span className="block truncate text-xs text-ink-300">{t(ROLE_LABELS[topRole(user.roles)])}</span>
         </span>
         <UserRound className="size-4 text-ink-300" aria-hidden />
       </NavLink>
@@ -159,14 +168,14 @@ function UserCard({ onNavigate }: { onNavigate?: () => void }) {
         className="mt-1 flex h-9 w-full items-center gap-3 rounded-field px-3 text-sm text-ink-300 transition-colors hover:bg-white/5 hover:text-white"
       >
         <LogOut className="size-4" />
-        Chiqish
+        {t('Chiqish')}
       </button>
     </div>
   )
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { config } = useAuth()
+  const t = useT()
   return (
     <div className="flex h-full flex-col bg-ink-900">
       <div className="flex items-center gap-3 px-5 pt-6 pb-7">
@@ -174,8 +183,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Logo className="size-7" />
         </span>
         <span className="leading-tight">
-          <span className="block font-display text-[0.95rem] font-semibold text-white">Masofaviy taʼlim</span>
-          <span className="block text-xs text-ink-300">{config?.university ?? 'Qoraqalpoq davlat universiteti'}</span>
+          <span className="block font-display text-[0.95rem] font-semibold text-white">{t('Masofaviy taʼlim')}</span>
+          <span className="block text-xs text-ink-300">{t('Qoraqalpoq davlat universiteti')}</span>
         </span>
       </div>
       <NavList onNavigate={onNavigate} />
@@ -185,6 +194,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function AppShell() {
+  const t = useT()
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
@@ -195,7 +205,7 @@ export function AppShell() {
   return (
     <div className="min-h-dvh">
       <a href="#content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-field focus:bg-white focus:px-4 focus:py-2">
-        Asosiy qismga oʻtish
+        {t('Asosiy qismga oʻtish')}
       </a>
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-68 lg:block">
@@ -210,7 +220,7 @@ export function AppShell() {
             type="button"
             onClick={() => setMobileOpen(false)}
             className="absolute top-5 -right-12 rounded-full bg-white/10 p-2 text-white"
-            aria-label="Menyuni yopish"
+            aria-label={t('Menyuni yopish')}
           >
             <X className="size-5" />
           </button>
@@ -219,11 +229,12 @@ export function AppShell() {
 
       <div className="lg:pl-68">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-steel-200/70 bg-white/90 px-4 backdrop-blur lg:hidden">
-          <button type="button" onClick={() => setMobileOpen(true)} className="-ml-1 rounded-field p-2 text-ink-800 hover:bg-steel-100" aria-label="Menyuni ochish">
+          <button type="button" onClick={() => setMobileOpen(true)} className="-ml-1 rounded-field p-2 text-ink-800 hover:bg-steel-100" aria-label={t('Menyuni ochish')}>
             <MenuIcon className="size-5" />
           </button>
           <Logo className="size-7" />
-          <span className="font-display text-sm font-semibold">Masofaviy taʼlim</span>
+          <span className="flex-1 font-display text-sm font-semibold">{t('Masofaviy taʼlim')}</span>
+          <LanguageSwitch />
         </header>
 
         <main id="content" className="w-full px-4 py-7 sm:px-6 lg:px-10 lg:py-10 2xl:px-14">

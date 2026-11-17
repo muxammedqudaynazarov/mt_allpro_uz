@@ -26,11 +26,11 @@ class EnsureAccountStatus
                 $request->session()->regenerateToken();
             }
 
-            return response()->json(['message' => 'Hisobingiz bloklangan.', 'code' => 'blocked'], 401);
+            return response()->json(['message' => __('Hisobingiz bloklangan.'), 'code' => 'blocked'], 401);
         }
 
         if ($required === 'active' && $user && $user->status !== UserStatus::Active) {
-            return response()->json(['message' => 'Hisobingiz hali administrator tomonidan tasdiqlanmagan.', 'code' => 'pending'], 403);
+            return response()->json(['message' => __('Hisobingiz hali administrator tomonidan tasdiqlanmagan.'), 'code' => 'pending'], 403);
         }
 
         return $next($request);

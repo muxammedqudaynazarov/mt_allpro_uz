@@ -1,4 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { tGlobal } from '@/i18n/I18nProvider'
+import { getLocale } from '@/i18n/locale'
 
 /**
  * Backend bilan ishlash uchun yagona axios nusxasi.
@@ -33,6 +35,8 @@ export function ensureCsrf(force = false) {
 const unsafeMethods = ['post', 'put', 'patch', 'delete']
 
 api.interceptors.request.use(async (config) => {
+  // Backend xabarlari (tekshiruv xatolari, Zoom xatolari) tanlangan tilda qaytadi.
+  config.headers.set('X-Locale', getLocale())
   if (config.method && unsafeMethods.includes(config.method.toLowerCase())) {
     await ensureCsrf()
   }
@@ -61,7 +65,7 @@ export interface ApiErrorBody {
 }
 
 /** Xatolikdan foydalanuvchiga ko'rsatiladigan matnni ajratib oladi. */
-export function errorMessage(error: unknown, fallback = 'Soʻrovni bajarib boʻlmadi. Qayta urinib koʻring.'): string {
+export function errorMessage(error: unknown, fallback?: string): string {
   if (axios.isAxiosError(error)) {
     const body = error.response?.data as ApiErrorBody | undefined
     if (body?.errors) {
@@ -69,11 +73,11 @@ export function errorMessage(error: unknown, fallback = 'Soʻrovni bajarib boʻl
       if (first) return first
     }
     if (body?.message) return body.message
-    if (!error.response) return 'Server bilan aloqa yoʻq. Internet ulanishini tekshiring.'
-    if (error.response.status === 403) return 'Bu amal uchun ruxsatingiz yoʻq.'
-    if (error.response.status === 429) return 'Juda koʻp urinish. Birozdan soʻng qayta urinib koʻring.'
+    if (!error.response) return tGlobal('Server bilan aloqa yoʻq. Internet ulanishini tekshiring.')
+    if (error.response.status === 403) return tGlobal('Bu amal uchun ruxsatingiz yoʻq.')
+    if (error.response.status === 429) return tGlobal('Juda koʻp urinish. Birozdan soʻng qayta urinib koʻring.')
   }
-  return fallback
+  return fallback ?? tGlobal('Soʻrovni bajarib boʻlmadi. Qayta urinib koʻring.')
 }
 
 export function fieldErrors(error: unknown): Record<string, string> {

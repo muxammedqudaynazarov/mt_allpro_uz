@@ -4,8 +4,10 @@ import { Button, buttonClass } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import type { Lesson } from '@/lib/types'
 import { copyText, telegramShareUrl, useLessonActions } from './useLessonActions'
+import { useT } from '@/i18n/I18nProvider'
 
 export function LessonActions({ lesson, compact = false }: { lesson: Lesson; compact?: boolean }) {
+  const t = useT()
   const { start, end } = useLessonActions()
   const [confirmEnd, setConfirmEnd] = useState(false)
   const active = lesson.status === 'live' || lesson.status === 'scheduled'
@@ -20,13 +22,13 @@ export function LessonActions({ lesson, compact = false }: { lesson: Lesson; com
           loading={start.isPending && start.variables?.id === lesson.id}
           onClick={() => start.mutate(lesson)}
         >
-          Darsni boshlash
+          {t('Darsni boshlash')}
         </Button>
       )}
       {lesson.join_url && (
         <>
           <Button size={compact ? 'sm' : 'md'} variant="secondary" icon={<Copy className="size-4" />} onClick={() => copyText(lesson.join_url!)}>
-            {compact ? 'Nusxalash' : 'Havolani nusxalash'}
+            {compact ? t('Nusxalash') : t('Havolani nusxalash')}
           </Button>
           <a
             href={telegramShareUrl(lesson)}
@@ -35,20 +37,20 @@ export function LessonActions({ lesson, compact = false }: { lesson: Lesson; com
             className={buttonClass({ variant: 'secondary', size: compact ? 'sm' : 'md' })}
           >
             <Send className="size-4" />
-            Telegram
+            {t('Telegram')}
           </a>
         </>
       )}
       {lesson.can.end && (
         <Button size={compact ? 'sm' : 'md'} variant="danger" icon={<Square className="size-3.5" />} onClick={() => setConfirmEnd(true)}>
-          Yakunlash
+          {t('Yakunlash')}
         </Button>
       )}
       <ConfirmDialog
         open={confirmEnd}
-        title="Darsni yakunlaysizmi?"
-        description={`${lesson.group.name} guruhidagi Zoom uchrashuvi barcha ishtirokchilar uchun yopiladi. Bu amalni ortga qaytarib boʻlmaydi.`}
-        confirmLabel="Darsni yakunlash"
+        title={t('Darsni yakunlaysizmi?')}
+        description={t('{group} guruhidagi Zoom uchrashuvi barcha ishtirokchilar uchun yopiladi. Bu amalni ortga qaytarib boʻlmaydi.', { group: lesson.group.name })}
+        confirmLabel={t('Darsni yakunlash')}
         tone="danger"
         loading={end.isPending}
         onClose={() => setConfirmEnd(false)}

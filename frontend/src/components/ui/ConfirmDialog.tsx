@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Button } from './Button'
 import { Modal } from './Modal'
+import { useT } from '@/i18n/I18nProvider'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -14,6 +15,7 @@ interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({ open, title, description, confirmLabel, tone = 'primary', loading, onConfirm, onClose }: ConfirmDialogProps) {
+  const t = useT()
   return (
     <Modal
       open={open}
@@ -23,7 +25,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, tone = '
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Bekor qilish
+            {t('Bekor qilish')}
           </Button>
           <Button variant={tone === 'danger' ? 'onair' : 'primary'} loading={loading} onClick={onConfirm}>
             {confirmLabel}

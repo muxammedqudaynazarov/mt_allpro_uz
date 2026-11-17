@@ -53,5 +53,6 @@ return [
         'to' => 'tugash sanasi',
         'status' => 'holat',
         'roles' => 'rollar',
+        'locale' => 'til',
     ],
 ];

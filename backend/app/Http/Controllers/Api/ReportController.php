@@ -19,7 +19,7 @@ class ReportController extends Controller
         ]);
         $from = Carbon::parse($data['from'])->startOfDay();
         $to = Carbon::parse($data['to'])->endOfDay();
-        abort_if($from->diffInDays($to) > 400, 422, 'Hisobot davri 400 kundan oshmasligi kerak.');
+        abort_if($from->diffInDays($to) > 400, 422, __('Hisobot davri 400 kundan oshmasligi kerak.'));
 
         $lessons = Lesson::query()
             ->visibleTo($request->user())

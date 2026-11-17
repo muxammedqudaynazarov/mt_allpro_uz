@@ -5,9 +5,12 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Field'
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch'
 import { Logo } from '@/components/ui/Logo'
 import { Ornament } from '@/components/ui/Ornament'
+import { useT } from '@/i18n/I18nProvider'
 
+// Matnlar o'zbekcha manba — ko'rsatishda t(...) orqali tarjima qilinadi.
 const CALLBACK_ERRORS: Record<string, string> = {
   hemis_denied: 'HEMIS orqali kirish bekor qilindi.',
   hemis_failed: 'HEMIS bilan bogʻlanib boʻlmadi. Birozdan soʻng qayta urinib koʻring yoki administratorga murojaat qiling.',
@@ -25,6 +28,7 @@ const STEPS = [
 ]
 
 function AdminLoginForm() {
+  const t = useT()
   const { refresh } = useAuth()
   const navigate = useNavigate()
   const [login, setLogin] = useState('')
@@ -53,9 +57,9 @@ function AdminLoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <Input label="Login" name="login" autoComplete="username" value={login} onChange={(e) => setLogin(e.target.value)} error={errors.login} required />
+      <Input label={t('Login')} name="login" autoComplete="username" value={login} onChange={(e) => setLogin(e.target.value)} error={errors.login} required />
       <Input
-        label="Parol"
+        label={t('Parol')}
         name="password"
         type="password"
         autoComplete="current-password"
@@ -66,13 +70,14 @@ function AdminLoginForm() {
       />
       {formError && <p className="text-sm text-onair-600">{formError}</p>}
       <Button type="submit" variant="secondary" className="w-full" loading={loading} icon={<KeyRound className="size-4" />}>
-        Kirish
+        {t('Kirish')}
       </Button>
     </form>
   )
 }
 
 export default function LoginPage() {
+  const t = useT()
   const { config } = useAuth()
   const [params] = useSearchParams()
   const [adminMode, setAdminMode] = useState(false)
@@ -88,20 +93,20 @@ export default function LoginPage() {
             <Logo className="size-9" />
           </span>
           <span className="text-sm leading-snug text-ink-200">
-            Berdaq nomidagi
+            {t('Berdaq nomidagi')}
             <br />
-            Qoraqalpoq davlat universiteti
+            {t('Qoraqalpoq davlat universiteti')}
           </span>
         </div>
 
         <div className="max-w-xl">
           <h1 className="font-display text-[3.25rem] leading-[1.02] font-semibold tracking-[-0.02em] xl:text-[4rem]">
-            Masofaviy
+            {t('Masofaviy')}
             <br />
-            taʼlim tizimi
+            {t('taʼlim tizimi')}
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-200">
-            Sirtqi va masofaviy guruhlar uchun Zoom darslarini yaratish, boshlash va nazorat qilish.
+            {t('Sirtqi va masofaviy guruhlar uchun Zoom darslarini yaratish, boshlash va nazorat qilish.')}
           </p>
         </div>
 
@@ -109,32 +114,33 @@ export default function LoginPage() {
           {STEPS.map((step, index) => (
             <li key={step.title}>
               <span className="font-display text-sm text-azure-300">{index + 1}</span>
-              <p className="mt-2 font-medium">{step.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-ink-300">{step.text}</p>
+              <p className="mt-2 font-medium">{t(step.title)}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-300">{t(step.text)}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="flex flex-col justify-center px-5 py-12 sm:px-10">
+      <section className="relative flex flex-col justify-center px-5 py-12 sm:px-10">
+        <LanguageSwitch className="absolute top-5 right-5" />
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-10 flex items-center gap-3 lg:hidden">
             <Logo className="size-11" />
             <div>
-              <p className="font-display text-lg font-semibold">Masofaviy taʼlim</p>
-              <p className="text-sm text-steel-600">Qoraqalpoq davlat universiteti</p>
+              <p className="font-display text-lg font-semibold">{t('Masofaviy taʼlim')}</p>
+              <p className="text-sm text-steel-600">{t('Qoraqalpoq davlat universiteti')}</p>
             </div>
           </div>
 
-          <h2 className="text-2xl font-semibold tracking-tight text-ink-900">Tizimga kirish</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-ink-900">{t('Tizimga kirish')}</h2>
           <p className="mt-2 text-[0.9375rem] leading-relaxed text-steel-600">
-            Universitetning HEMIS hisobingiz bilan kiring. Birinchi kirishda hisobingizni administrator tasdiqlaydi.
+            {t('Universitetning HEMIS hisobingiz bilan kiring. Birinchi kirishda hisobingizni administrator tasdiqlaydi.')}
           </p>
 
           {error && (
             <div role="alert" className="mt-6 flex gap-3 rounded-field bg-onair-50 p-4 text-sm text-onair-600">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <p>{CALLBACK_ERRORS[error] ?? CALLBACK_ERRORS.hemis_failed}</p>
+              <p>{t(CALLBACK_ERRORS[error] ?? CALLBACK_ERRORS.hemis_failed)}</p>
             </div>
           )}
 
@@ -148,11 +154,11 @@ export default function LoginPage() {
                   window.location.href = '/auth/hemis/redirect'
                 }}
               >
-                HEMIS orqali kirish
+                {t('HEMIS orqali kirish')}
               </Button>
             ) : (
               <p className="rounded-field bg-amber-50 p-4 text-sm text-amber-600">
-                HEMIS orqali kirish hali sozlanmagan. Administrator .env faylida HEMIS_* sozlamalarini kiritishi kerak.
+                {t('HEMIS orqali kirish hali sozlanmagan. Administrator .env faylida HEMIS_* sozlamalarini kiritishi kerak.')}
               </p>
             )}
           </div>
@@ -160,12 +166,12 @@ export default function LoginPage() {
           <div className="mt-10 border-t border-steel-200 pt-6">
             {adminMode ? (
               <>
-                <p className="mb-4 text-sm font-medium text-ink-800">Administrator sifatida kirish</p>
+                <p className="mb-4 text-sm font-medium text-ink-800">{t('Administrator sifatida kirish')}</p>
                 <AdminLoginForm />
               </>
             ) : (
               <button type="button" onClick={() => setAdminMode(true)} className="text-sm text-steel-600 underline-offset-4 hover:text-ink-900 hover:underline">
-                Administrator login va paroli bilan kirish
+                {t('Administrator login va paroli bilan kirish')}
               </button>
             )}
           </div>

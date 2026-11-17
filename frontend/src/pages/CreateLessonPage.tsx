@@ -16,6 +16,7 @@ import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { cn } from '@/components/ui/cn'
 import { copyText, telegramShareUrl, useLessonActions } from '@/features/lessons/useLessonActions'
+import { useT } from '@/i18n/I18nProvider'
 
 type SlotChoice = 'now' | number
 
@@ -36,6 +37,7 @@ function Step({ index, title, hint, children }: { index: number; title: string; 
 }
 
 function CreatedModal({ lesson, onClose }: { lesson: Lesson | null; onClose: () => void }) {
+  const t = useT()
   const { user } = useAuth()
   const { start } = useLessonActions()
   if (!lesson) return null
@@ -43,16 +45,16 @@ function CreatedModal({ lesson, onClose }: { lesson: Lesson | null; onClose: () 
     <Modal
       open={!!lesson}
       onClose={onClose}
-      title="Dars yaratildi"
+      title={t('Dars yaratildi')}
       description={`${lesson.group.name}, ${formatTime(lesson.starts_at)}–${formatTime(lesson.ends_at)}`}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Bosh sahifaga qaytish
+            {t('Bosh sahifaga qaytish')}
           </Button>
           {lesson.can.start && (
             <Button icon={<Play className="size-4" />} loading={start.isPending} onClick={() => start.mutate(lesson)}>
-              Darsni boshlash
+              {t('Darsni boshlash')}
             </Button>
           )}
         </>
@@ -60,33 +62,33 @@ function CreatedModal({ lesson, onClose }: { lesson: Lesson | null; onClose: () 
     >
       <div className="space-y-5">
         <div>
-          <p className="text-sm font-medium text-ink-800">Talabalar uchun havola</p>
+          <p className="text-sm font-medium text-ink-800">{t('Talabalar uchun havola')}</p>
           <div className="mt-2 flex gap-2">
             <input
               readOnly
               value={lesson.join_url ?? ''}
               onFocus={(event) => event.currentTarget.select()}
               className="h-11 min-w-0 flex-1 rounded-field bg-steel-50 px-3.5 text-sm text-ink-800 ring-1 ring-steel-200 ring-inset"
-              aria-label="Talabalar uchun havola"
+              aria-label={t('Talabalar uchun havola')}
             />
             <Button variant="secondary" className="h-11" icon={<Copy className="size-4" />} onClick={() => copyText(lesson.join_url ?? '')}>
-              Nusxalash
+              {t('Nusxalash')}
             </Button>
           </div>
           {lesson.passcode && (
             <p className="mt-2 text-sm text-steel-600">
-              Kirish kodi: <span className="font-semibold text-ink-900 tabular-nums">{lesson.passcode}</span>
+              {t('Kirish kodi:')} <span className="font-semibold text-ink-900 tabular-nums">{lesson.passcode}</span>
             </p>
           )}
         </div>
         <a href={telegramShareUrl(lesson)} target="_blank" rel="noopener noreferrer" className={buttonClass({ variant: 'secondary', className: 'w-full' })}>
           <Send className="size-4" />
-          Guruhga Telegram orqali yuborish
+          {t('Guruhga Telegram orqali yuborish')}
         </a>
         {user?.telegram.linked && (
           <p className="flex items-center gap-2 text-sm text-leaf-600">
             <Check className="size-4" />
-            Havolalar Telegram’ingizga ham yuborildi.
+            {t('Havolalar Telegram’ingizga ham yuborildi.')}
           </p>
         )}
       </div>
@@ -95,6 +97,7 @@ function CreatedModal({ lesson, onClose }: { lesson: Lesson | null; onClose: () 
 }
 
 export default function CreateLessonPage() {
+  const t = useT()
   const navigate = useNavigate()
   const [slot, setSlot] = useState<SlotChoice>('now')
   const [course, setCourse] = useState<string>('')
@@ -141,7 +144,7 @@ export default function CreateLessonPage() {
     onError: (error) => {
       const fields = fieldErrors(error)
       setErrors(fields)
-      if (!Object.keys(fields).length) toast.error(errorMessage(error, 'Darsni yaratib boʻlmadi.'))
+      if (!Object.keys(fields).length) toast.error(errorMessage(error, t('Darsni yaratib boʻlmadi.')))
     },
   })
 
@@ -155,24 +158,24 @@ export default function CreateLessonPage() {
 
   return (
     <>
-      <PageHeader title="Dars yaratish" description="Vaqt va guruhni tanlang — Zoom uchrashuvi avtomatik yaratiladi va havola sizga yuboriladi." />
+      <PageHeader title={t('Dars yaratish')} description={t('Vaqt va guruhni tanlang — Zoom uchrashuvi avtomatik yaratiladi va havola sizga yuboriladi.')} />
 
       {options.isPending ? (
         <SectionLoader />
       ) : !options.data?.groups.length ? (
         <EmptyState
           className="rounded-panel bg-white ring-1 ring-steel-200"
-          title="Faol guruhlar yoʻq"
-          description="Dars yaratish uchun administrator kamida bitta guruhni Zoom akkauntiga biriktirib, faollashtirishi kerak."
+          title={t('Faol guruhlar yoʻq')}
+          description={t('Dars yaratish uchun administrator kamida bitta guruhni Zoom akkauntiga biriktirib, faollashtirishi kerak.')}
         />
       ) : (
         <form onSubmit={submit} className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="rounded-panel bg-white p-6 ring-1 ring-steel-200/70 sm:p-8">
-            <Step index={1} title="Qachon?" hint="Bugungi paralardan birini yoki darhol boshlashni tanlang.">
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Dars vaqti">
+            <Step index={1} title={t('Qachon?')} hint={t('Bugungi paralardan birini yoki darhol boshlashni tanlang.')}>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Dars vaqti')}>
                 <SlotPill active={slot === 'now'} onClick={() => setSlot('now')}>
                   <Zap className="size-4" />
-                  Hozir, {formatDuration(options.data.default_duration)}
+                  {t('Hozir, {time}', { time: formatDuration(options.data.default_duration) })}
                 </SlotPill>
                 {options.data.slots.map((item) => (
                   <SlotPill key={item.id} active={slot === item.id} disabled={!item.available} onClick={() => setSlot(item.id)}>
@@ -186,20 +189,20 @@ export default function CreateLessonPage() {
               {errors.slot_id && <p className="mt-2 text-sm text-onair-600">{errors.slot_id}</p>}
             </Step>
 
-            <Step index={2} title="Qaysi guruh?" hint="Band guruhlarda shu vaqtda boshqa dars bor — ular tanlanmaydi.">
+            <Step index={2} title={t('Qaysi guruh?')} hint={t('Band guruhlarda shu vaqtda boshqa dars bor — ular tanlanmaydi.')}>
               {courses.length > 1 && (
                 <Segmented
                   className="mb-4"
-                  label="Kurs"
+                  label={t('Kurs')}
                   value={course}
                   onChange={(value) => {
                     setCourse(value)
                     setGroupId(null)
                   }}
-                  options={courses.map((value) => ({ value: String(value), label: `${value}-kurs` }))}
+                  options={courses.map((value) => ({ value: String(value), label: t('{n}-kurs', { n: value }) }))}
                 />
               )}
-              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" role="radiogroup" aria-label="Guruh">
+              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" role="radiogroup" aria-label={t('Guruh')}>
                 {groups.map((group) => {
                   const active = group.id === groupId
                   return (
@@ -228,7 +231,7 @@ export default function CreateLessonPage() {
                       <span className="min-w-0">
                         <span className="block text-[0.9375rem] leading-snug font-medium text-ink-900">{group.name}</span>
                         <span className={cn('mt-1 block text-sm', group.busy ? 'text-onair-600' : 'text-leaf-600')}>
-                          {group.busy ? `Band${group.busy_until ? `, ${formatTime(group.busy_until)} gacha` : ''}` : 'Boʻsh'}
+                          {group.busy ? (group.busy_until ? t('Band, {time} gacha', { time: formatTime(group.busy_until) }) : t('Band')) : t('Boʻsh')}
                         </span>
                       </span>
                     </button>
@@ -238,13 +241,13 @@ export default function CreateLessonPage() {
               {errors.group_id && <p className="mt-2 text-sm text-onair-600">{errors.group_id}</p>}
             </Step>
 
-            <Step index={3} title="Mavzu" hint="Ixtiyoriy. Koʻrsatilmasa, guruh nomi ishlatiladi.">
+            <Step index={3} title={t('Mavzu')} hint={t('Ixtiyoriy. Koʻrsatilmasa, guruh nomi ishlatiladi.')}>
               <Textarea
-                aria-label="Dars mavzusi"
+                aria-label={t('Dars mavzusi')}
                 value={topic}
                 maxLength={200}
                 onChange={(event) => setTopic(event.target.value)}
-                placeholder="Masalan: Chiziqli algebra, 5-mavzu"
+                placeholder={t('Masalan: Chiziqli algebra, 5-mavzu')}
                 error={errors.topic}
               />
             </Step>
@@ -252,27 +255,27 @@ export default function CreateLessonPage() {
 
           <aside className="lg:sticky lg:top-10 lg:self-start">
             <div className="rounded-panel bg-white p-6 ring-1 ring-steel-200/70">
-              <h2 className="text-base font-semibold">Yaratiladigan dars</h2>
+              <h2 className="text-base font-semibold">{t('Yaratiladigan dars')}</h2>
               <dl className="mt-5 space-y-4 text-sm">
                 <div>
-                  <dt className="text-steel-600">Guruh</dt>
-                  <dd className="mt-0.5 font-medium text-ink-900">{selectedGroup?.name ?? 'Tanlanmagan'}</dd>
+                  <dt className="text-steel-600">{t('Guruh')}</dt>
+                  <dd className="mt-0.5 font-medium text-ink-900">{selectedGroup?.name ?? t('Tanlanmagan')}</dd>
                 </div>
                 <div>
-                  <dt className="text-steel-600">Vaqt</dt>
+                  <dt className="text-steel-600">{t('Vaqt')}</dt>
                   <dd className="mt-0.5 font-medium text-ink-900 tabular-nums">
-                    {selectedSlot ? `${selectedSlot.name}, ${selectedSlot.starts_at}–${selectedSlot.ends_at}` : `Hozirdan boshlab`}
+                    {selectedSlot ? `${selectedSlot.name}, ${selectedSlot.starts_at}–${selectedSlot.ends_at}` : t('Hozirdan boshlab')}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-steel-600">Davomiyligi</dt>
+                  <dt className="text-steel-600">{t('Davomiyligi')}</dt>
                   <dd className="mt-0.5 font-medium text-ink-900">{formatDuration(duration)}</dd>
                 </div>
               </dl>
               <Button type="submit" size="lg" className="mt-6 w-full" disabled={!groupId} loading={create.isPending}>
-                Darsni yaratish
+                {t('Darsni yaratish')}
               </Button>
-              {!groupId && <p className="mt-3 text-center text-sm text-steel-500">Avval guruhni tanlang</p>}
+              {!groupId && <p className="mt-3 text-center text-sm text-steel-500">{t('Avval guruhni tanlang')}</p>}
             </div>
           </aside>
         </form>

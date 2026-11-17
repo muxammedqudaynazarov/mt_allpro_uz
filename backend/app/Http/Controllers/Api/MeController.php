@@ -11,11 +11,23 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class MeController extends Controller
 {
     public function show(Request $request): MeResource
     {
+        return new MeResource($request->user()->load('managedBy'));
+    }
+
+    /** Profil sozlamalari: hozircha faqat interfeys tili. */
+    public function update(Request $request): MeResource
+    {
+        $data = $request->validate([
+            'locale' => ['required', Rule::in((array) config('app.supported_locales', ['kaa', 'uz']))],
+        ]);
+        $request->user()->forceFill(['locale' => $data['locale']])->save();
+
         return new MeResource($request->user()->load('managedBy'));
     }
 
@@ -26,7 +38,7 @@ class MeController extends Controller
      */
     public function telegramLink(Request $request, TelegramBot $telegram): JsonResponse
     {
-        abort_unless($telegram->enabled(), 422, 'Telegram bot sozlanmagan.');
+        abort_unless($telegram->enabled(), 422, __('Telegram bot sozlanmagan.'));
 
         $token = Str::random(32);
         Cache::put('telegram-link:'.$token, $request->user()->id, now()->addMinutes(15));

@@ -8,8 +8,10 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { Pagination } from '@/components/ui/Pagination'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { useT } from '@/i18n/I18nProvider'
 
 export default function AuditPage() {
+  const t = useT()
   const [page, setPage] = useState(1)
   const logs = useQuery({
     queryKey: ['audit', page],
@@ -19,12 +21,12 @@ export default function AuditPage() {
 
   return (
     <>
-      <PageHeader title="Amallar tarixi" description="Kim, qachon va qaysi amalni bajargani. Xavfsizlik tekshiruvi uchun saqlanadi." />
+      <PageHeader title={t('Amallar tarixi')} description={t('Kim, qachon va qaysi amalni bajargani. Xavfsizlik tekshiruvi uchun saqlanadi.')} />
       <Panel padded={false}>
         {logs.isPending ? (
           <SectionLoader />
         ) : !logs.data?.data.length ? (
-          <EmptyState icon={<ScrollText className="size-5" />} title="Hozircha yozuvlar yoʻq" />
+          <EmptyState icon={<ScrollText className="size-5" />} title={t('Hozircha yozuvlar yoʻq')} />
         ) : (
           <>
             <ul className="divide-y divide-steel-100">
@@ -34,7 +36,7 @@ export default function AuditPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-[0.9375rem] text-ink-900">{log.description}</p>
                     <p className="text-sm text-steel-600">
-                      {log.user?.name ?? 'Tizim'}
+                      {log.user?.name ?? t('Tizim')}
                       {log.ip && <span className="text-steel-400">, IP {log.ip}</span>}
                     </p>
                   </div>

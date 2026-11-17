@@ -55,13 +55,13 @@ class ZoomClient
                     'account_id' => $account->account_id,
                 ]));
         } catch (ConnectionException $e) {
-            throw new ExternalServiceException('Zoom serveriga ulanib boʻlmadi. Internet aloqasini tekshiring.', ['error' => $e->getMessage()]);
+            throw new ExternalServiceException(__('Zoom serveriga ulanib boʻlmadi. Internet aloqasini tekshiring.'), ['error' => $e->getMessage()]);
         }
 
         if ($response->failed() || ! $response->json('access_token')) {
             $account->forceFill(['last_error' => $this->describe($response), 'last_checked_at' => now()])->saveQuietly();
             Log::warning('Zoom token olinmadi', ['account' => $account->id, 'status' => $response->status(), 'body' => $response->json()]);
-            throw new ExternalServiceException("“{$account->name}” Zoom akkauntining kalitlari notoʻgʻri yoki eskirgan. Bosh administratorga xabar bering.");
+            throw new ExternalServiceException(__('“:name” Zoom akkauntining kalitlari notoʻgʻri yoki eskirgan. Bosh administratorga xabar bering.', ['name' => $account->name]));
         }
 
         $token = (string) $response->json('access_token');
@@ -102,10 +102,10 @@ class ZoomClient
         ]);
 
         if ($response->status() === 404) {
-            throw new ExternalServiceException("Zoom’da {$hostEmail} foydalanuvchisi topilmadi. Guruh sozlamalarini tekshiring.", status: 422);
+            throw new ExternalServiceException(__('Zoom’da :email foydalanuvchisi topilmadi. Guruh sozlamalarini tekshiring.', ['email' => $hostEmail]), status: 422);
         }
         if ($response->failed() || ! $response->json('id')) {
-            $this->fail('Zoom uchrashuvini yaratib boʻlmadi', $response, ['host' => $hostEmail]);
+            $this->fail(__('Zoom uchrashuvini yaratib boʻlmadi'), $response, ['host' => $hostEmail]);
         }
 
         return [
@@ -140,7 +140,7 @@ class ZoomClient
             return;
         }
 
-        $this->fail('Zoom uchrashuvini yakunlab boʻlmadi', $delete, ['meeting' => $meetingId]);
+        $this->fail(__('Zoom uchrashuvini yakunlab boʻlmadi'), $delete, ['meeting' => $meetingId]);
     }
 
     /** @return list<array{id: string, email: string, name: string, type: int}> */
@@ -155,7 +155,7 @@ class ZoomClient
                 'next_page_token' => $next,
             ]));
             if ($response->failed()) {
-                $this->fail('Zoom foydalanuvchilari roʻyxatini olib boʻlmadi', $response);
+                $this->fail(__('Zoom foydalanuvchilari roʻyxatini olib boʻlmadi'), $response);
             }
             foreach ($response->json('users', []) as $user) {
                 $users[] = [
@@ -178,7 +178,7 @@ class ZoomClient
             try {
                 return $this->request($this->token($account, $fresh))->{$method}($this->apiUrl.$path, $payload);
             } catch (ConnectionException $e) {
-                throw new ExternalServiceException('Zoom serveriga ulanib boʻlmadi. Birozdan soʻng qayta urinib koʻring.', ['error' => $e->getMessage()]);
+                throw new ExternalServiceException(__('Zoom serveriga ulanib boʻlmadi. Birozdan soʻng qayta urinib koʻring.'), ['error' => $e->getMessage()]);
             }
         };
 
@@ -188,7 +188,7 @@ class ZoomClient
             $response = $attempt(true);
         }
         if ($response->status() === 429) {
-            throw new ExternalServiceException('Zoom soʻrovlar chegarasiga yetildi. Bir daqiqadan soʻng qayta urinib koʻring.', status: 503);
+            throw new ExternalServiceException(__('Zoom soʻrovlar chegarasiga yetildi. Bir daqiqadan soʻng qayta urinib koʻring.'), status: 503);
         }
 
         return $response;

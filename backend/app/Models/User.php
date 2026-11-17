@@ -30,7 +30,7 @@ class User extends Authenticatable
         'name', 'first_name', 'last_name', 'middle_name',
         'hemis_id', 'hemis_uuid', 'hemis_login', 'department', 'picture_url',
         'email', 'phone', 'login', 'password',
-        'roles', 'status', 'managed_by_id',
+        'roles', 'status', 'locale', 'managed_by_id',
         'telegram_chat_id', 'telegram_username', 'last_login_at',
     ];
 
@@ -91,6 +91,14 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole(Role::Admin, Role::SuperAdmin);
+    }
+
+    /** Telegram xabarlari va server matnlari uchun foydalanuvchi tili. */
+    public function preferredLocale(): string
+    {
+        return in_array($this->locale, (array) config('app.supported_locales', ['kaa', 'uz']), true)
+            ? $this->locale
+            : (string) config('app.locale');
     }
 
     public function isActive(): bool

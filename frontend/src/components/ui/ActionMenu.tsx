@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { MoreHorizontal } from 'lucide-react'
+import { useT } from '@/i18n/I18nProvider'
 import { cn } from './cn'
 
 export interface ActionItem {
@@ -11,12 +12,13 @@ export interface ActionItem {
   hidden?: boolean
 }
 
-export function ActionMenu({ items, label = 'Amallar' }: { items: ActionItem[]; label?: string }) {
+export function ActionMenu({ items, label }: { items: ActionItem[]; label?: string }) {
+  const t = useT()
   const visible = items.filter((item) => !item.hidden)
   if (!visible.length) return null
   return (
     <Menu>
-      <MenuButton className="rounded-field p-2 text-steel-500 hover:bg-steel-100 hover:text-ink-900" aria-label={label}>
+      <MenuButton className="rounded-field p-2 text-steel-500 hover:bg-steel-100 hover:text-ink-900" aria-label={label ?? t('Amallar')}>
         <MoreHorizontal className="size-5" />
       </MenuButton>
       <MenuItems

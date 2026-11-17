@@ -18,6 +18,7 @@ export interface Me {
   department: string | null
   hemis_id: string | null
   status: UserStatus
+  locale: 'kaa' | 'uz'
   roles: Role[]
   permissions: string[]
   has_password: boolean

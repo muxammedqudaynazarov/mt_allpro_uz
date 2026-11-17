@@ -15,8 +15,10 @@ import { Modal } from '@/components/ui/Modal'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { Switch } from '@/components/ui/Switch'
+import { useT } from '@/i18n/I18nProvider'
 
 function SlotModal({ slot, onClose }: { slot: LessonSlot | 'new'; onClose: () => void }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const editing = slot !== 'new'
   const [form, setForm] = useState({
@@ -34,7 +36,7 @@ function SlotModal({ slot, onClose }: { slot: LessonSlot | 'new'; onClose: () =>
       return editing ? api.put(`/api/lesson-slots/${slot.id}`, payload) : api.post('/api/lesson-slots', payload)
     },
     onSuccess: () => {
-      toast.success('Dars vaqti saqlandi')
+      toast.success(t('Dars vaqti saqlandi'))
       queryClient.invalidateQueries({ queryKey: ['lesson-slots'] })
       queryClient.invalidateQueries({ queryKey: ['lesson-options'] })
       onClose()
@@ -56,26 +58,26 @@ function SlotModal({ slot, onClose }: { slot: LessonSlot | 'new'; onClose: () =>
       open
       onClose={onClose}
       size="sm"
-      title={editing ? 'Dars vaqtini tahrirlash' : 'Dars vaqti qoʻshish'}
+      title={editing ? t('Dars vaqtini tahrirlash') : t('Dars vaqti qoʻshish')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Bekor qilish
+            {t('Bekor qilish')}
           </Button>
           <Button type="submit" form="slot-form" loading={save.isPending}>
-            Saqlash
+            {t('Saqlash')}
           </Button>
         </>
       }
     >
       <form id="slot-form" onSubmit={submit} className="grid grid-cols-2 gap-4">
-        <Input wrapperClassName="col-span-2" label="Nomi" placeholder="1-para" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} required />
-        <Input label="Boshlanishi" type="time" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} error={errors.starts_at} required />
-        <Input label="Davomiyligi, daqiqa" type="number" min={10} max={240} value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} error={errors.duration_minutes} required />
-        <Input label="Tartib raqami" type="number" min={0} value={form.sort} onChange={(e) => setForm({ ...form, sort: e.target.value })} error={errors.sort} />
+        <Input wrapperClassName="col-span-2" label={t('Nomi')} placeholder={t('1-para')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} required />
+        <Input label={t('Boshlanishi')} type="time" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} error={errors.starts_at} required />
+        <Input label={t('Davomiyligi, daqiqa')} type="number" min={10} max={240} value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} error={errors.duration_minutes} required />
+        <Input label={t('Tartib raqami')} type="number" min={0} value={form.sort} onChange={(e) => setForm({ ...form, sort: e.target.value })} error={errors.sort} />
         <label className="flex items-center gap-3 self-end pb-2.5">
-          <Switch checked={form.is_active} onChange={(value) => setForm({ ...form, is_active: value })} label="Faol" />
-          <span className="text-sm font-medium">Faol</span>
+          <Switch checked={form.is_active} onChange={(value) => setForm({ ...form, is_active: value })} label={t('Faol')} />
+          <span className="text-sm font-medium">{t('Faol')}</span>
         </label>
       </form>
     </Modal>
@@ -83,6 +85,7 @@ function SlotModal({ slot, onClose }: { slot: LessonSlot | 'new'; onClose: () =>
 }
 
 export default function SlotsPage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<LessonSlot | 'new' | null>(null)
   const [deleting, setDeleting] = useState<LessonSlot | null>(null)
@@ -95,7 +98,7 @@ export default function SlotsPage() {
   const remove = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/lesson-slots/${id}`),
     onSuccess: () => {
-      toast.success('Dars vaqti oʻchirildi')
+      toast.success(t('Dars vaqti oʻchirildi'))
       setDeleting(null)
       queryClient.invalidateQueries({ queryKey: ['lesson-slots'] })
     },
@@ -105,11 +108,11 @@ export default function SlotsPage() {
   return (
     <>
       <PageHeader
-        title="Dars vaqtlari"
-        description="Oʻqituvchilar dars yaratishda shu paralardan birini tanlaydi. Davomiylik Zoom uchrashuvining uzunligini belgilaydi."
+        title={t('Dars vaqtlari')}
+        description={t('Oʻqituvchilar dars yaratishda shu paralardan birini tanlaydi. Davomiylik Zoom uchrashuvining uzunligini belgilaydi.')}
         actions={
           <Button icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
-            Vaqt qoʻshish
+            {t('Vaqt qoʻshish')}
           </Button>
         }
       />
@@ -117,7 +120,7 @@ export default function SlotsPage() {
         {slots.isPending ? (
           <SectionLoader />
         ) : !slots.data?.length ? (
-          <EmptyState icon={<Clock3 className="size-5" />} title="Dars vaqtlari kiritilmagan" description="Kamida bitta para qoʻshing. Ularsiz faqat “Hozir” rejimida dars yaratish mumkin." />
+          <EmptyState icon={<Clock3 className="size-5" />} title={t('Dars vaqtlari kiritilmagan')} description={t('Kamida bitta para qoʻshing. Ularsiz faqat “Hozir” rejimida dars yaratish mumkin.')} />
         ) : (
           <ol className="divide-y divide-steel-100">
             {slots.data.map((slot, index) => (
@@ -129,11 +132,11 @@ export default function SlotsPage() {
                     {slot.starts_at}–{slot.ends_at}, {formatDuration(slot.duration_minutes)}
                   </p>
                 </div>
-                {!slot.is_active && <Badge>Nofaol</Badge>}
+                {!slot.is_active && <Badge>{t('Nofaol')}</Badge>}
                 <ActionMenu
                   items={[
-                    { label: 'Tahrirlash', icon: <Pencil className="size-4" />, onClick: () => setEditing(slot) },
-                    { label: 'Oʻchirish', icon: <Trash2 className="size-4" />, danger: true, onClick: () => setDeleting(slot) },
+                    { label: t('Tahrirlash'), icon: <Pencil className="size-4" />, onClick: () => setEditing(slot) },
+                    { label: t('Oʻchirish'), icon: <Trash2 className="size-4" />, danger: true, onClick: () => setDeleting(slot) },
                   ]}
                 />
               </li>
@@ -144,9 +147,9 @@ export default function SlotsPage() {
       {editing && <SlotModal slot={editing} onClose={() => setEditing(null)} />}
       <ConfirmDialog
         open={!!deleting}
-        title="Dars vaqtini oʻchirasizmi?"
-        description="Oldin shu vaqtda oʻtkazilgan darslar tarixda qoladi."
-        confirmLabel="Oʻchirish"
+        title={t('Dars vaqtini oʻchirasizmi?')}
+        description={t('Oldin shu vaqtda oʻtkazilgan darslar tarixda qoladi.')}
+        confirmLabel={t('Oʻchirish')}
         tone="danger"
         loading={remove.isPending}
         onClose={() => setDeleting(null)}

@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { cn } from './cn'
+import { useT } from '@/i18n/I18nProvider'
 
 /**
  * Universitetning "MT" (Masofaviy Ta'lim) belgisi — logotipning soddalashtirilgan
@@ -8,9 +9,10 @@ import { cn } from './cn'
  * (display:none) nusxa boshqalarining rangini "o'g'irlaydi".
  */
 export function Logo({ className, onDark = false }: { className?: string; onDark?: boolean }) {
+  const t = useT()
   const id = useId().replace(/:/g, '')
   return (
-    <svg viewBox="0 0 64 64" className={cn('shrink-0', className)} role="img" aria-label="Masofaviy taʼlim">
+    <svg viewBox="0 0 64 64" className={cn('shrink-0', className)} role="img" aria-label={t('Masofaviy taʼlim')}>
       <defs>
         <linearGradient id={`${id}-m`} x1="0" x2="1">
           <stop offset="0" stopColor="#4f9be6" />

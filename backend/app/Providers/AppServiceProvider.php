@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('lesson-create', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip())
-            ->response(fn () => response()->json(['message' => 'Juda koʻp urinish. Bir daqiqadan soʻng qayta urinib koʻring.'], 429)));
+            ->response(fn () => response()->json(['message' => __('Juda koʻp urinish. Bir daqiqadan soʻng qayta urinib koʻring.')], 429)));
         // Universitet tarmog'ida ko'p xodim bitta IP orqali chiqadi — chegara yetarlicha keng.
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('telegram', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));

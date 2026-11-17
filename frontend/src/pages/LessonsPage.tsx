@@ -13,10 +13,12 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { LessonRow } from '@/features/lessons/LessonRow'
+import { useT } from '@/i18n/I18nProvider'
 
 type StatusFilter = 'all' | 'live' | 'scheduled' | 'finished'
 
 export default function LessonsPage() {
+  const t = useT()
   const { isAdmin } = useAuth()
   const [params, setParams] = useSearchParams()
   const [page, setPage] = useState(1)
@@ -55,8 +57,8 @@ export default function LessonsPage() {
   return (
     <>
       <PageHeader
-        title="Darslar"
-        description={isAdmin ? 'Siz yaratgan va masʼul guruhlaringizdagi barcha darslar.' : 'Siz yaratgan darslar tarixi.'}
+        title={t('Darslar')}
+        description={isAdmin ? t('Siz yaratgan va masʼul guruhlaringizdagi barcha darslar.') : t('Siz yaratgan darslar tarixi.')}
         actions={
           <>
             {isAdmin && (
@@ -67,7 +69,7 @@ export default function LessonsPage() {
             )}
             <Link to="/lessons/new" className={buttonClass()}>
               <CalendarPlus className="size-4" />
-              Dars yaratish
+              {t('Dars yaratish')}
             </Link>
           </>
         }
@@ -75,20 +77,20 @@ export default function LessonsPage() {
 
       <div className="mb-5 space-y-3">
         <Segmented<StatusFilter>
-          label="Holat"
+          label={t('Holat')}
           value={status}
           onChange={(value) => update('status', value === 'all' ? '' : value)}
           options={[
-            { value: 'all', label: 'Barchasi' },
-            { value: 'live', label: 'Efirda' },
-            { value: 'scheduled', label: 'Rejalashtirilgan' },
-            { value: 'finished', label: 'Yakunlangan' },
+            { value: 'all', label: t('Barchasi') },
+            { value: 'live', label: t('Efirda') },
+            { value: 'scheduled', label: t('Rejalashtirilgan') },
+            { value: 'finished', label: t('Yakunlangan') },
           ]}
         />
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_10.5rem_10.5rem]">
           {isAdmin && (
-            <Select aria-label="Guruh" wrapperClassName="col-span-2 lg:col-span-1" value={filters.group_id} onChange={(event) => update('group_id', event.target.value)}>
-              <option value="">Barcha guruhlar</option>
+            <Select aria-label={t('Guruh')} wrapperClassName="col-span-2 lg:col-span-1" value={filters.group_id} onChange={(event) => update('group_id', event.target.value)}>
+              <option value="">{t('Barcha guruhlar')}</option>
               {groups.data?.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
@@ -97,13 +99,13 @@ export default function LessonsPage() {
             </Select>
           )}
           {isAdmin && (
-            <Select aria-label="Kimniki" wrapperClassName="col-span-2 lg:col-span-1" value={filters.mine} onChange={(event) => update('mine', event.target.value)}>
-              <option value="">Hamma oʻqituvchilar</option>
-              <option value="1">Faqat meniki</option>
+            <Select aria-label={t('Kimniki')} wrapperClassName="col-span-2 lg:col-span-1" value={filters.mine} onChange={(event) => update('mine', event.target.value)}>
+              <option value="">{t('Hamma oʻqituvchilar')}</option>
+              <option value="1">{t('Faqat meniki')}</option>
             </Select>
           )}
-          <Input type="date" aria-label="Sanadan" title="Sanadan" value={filters.from} max={filters.to || undefined} onChange={(event) => update('from', event.target.value)} />
-          <Input type="date" aria-label="Sanagacha" title="Sanagacha" value={filters.to} min={filters.from || undefined} onChange={(event) => update('to', event.target.value)} />
+          <Input type="date" aria-label={t('Sanadan')} title={t('Sanadan')} value={filters.from} max={filters.to || undefined} onChange={(event) => update('from', event.target.value)} />
+          <Input type="date" aria-label={t('Sanagacha')} title={t('Sanagacha')} value={filters.to} min={filters.from || undefined} onChange={(event) => update('to', event.target.value)} />
         </div>
       </div>
 
@@ -113,8 +115,8 @@ export default function LessonsPage() {
         ) : !lessons.data?.data.length ? (
           <EmptyState
             icon={<CalendarX2 className="size-5" />}
-            title="Darslar topilmadi"
-            description="Filtrlarni oʻzgartirib koʻring yoki yangi dars yarating."
+            title={t('Darslar topilmadi')}
+            description={t('Filtrlarni oʻzgartirib koʻring yoki yangi dars yarating.')}
           />
         ) : (
           <>

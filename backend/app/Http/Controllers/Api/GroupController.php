@@ -36,7 +36,7 @@ class GroupController extends Controller
     {
         Gate::authorize('create', Group::class);
         $group = Group::create($this->validated($request));
-        Audit::log('group.created', "Guruh qoʻshildi: {$group->name}", $group);
+        Audit::log('group.created', 'Guruh qoʻshildi: :name', $group, replace: ['name' => $group->name]);
 
         return new GroupResource($group->load(['zoomAccount', 'admin']));
     }
@@ -45,7 +45,7 @@ class GroupController extends Controller
     {
         Gate::authorize('update', $group);
         $group->update($this->validated($request, $group));
-        Audit::log('group.updated', "Guruh tahrirlandi: {$group->name}", $group, ['changes' => array_keys($group->getChanges())]);
+        Audit::log('group.updated', 'Guruh tahrirlandi: :name', $group, ['changes' => array_keys($group->getChanges())], replace: ['name' => $group->name]);
 
         return new GroupResource($group->load(['zoomAccount', 'admin'])->loadCount('lessons'));
     }
@@ -54,7 +54,7 @@ class GroupController extends Controller
     {
         Gate::authorize('toggle', $group);
         $group->update(['is_active' => ! $group->is_active]);
-        Audit::log('group.toggled', ($group->is_active ? 'Guruh faollashtirildi: ' : 'Guruh oʻchirib qoʻyildi: ').$group->name, $group);
+        Audit::log('group.toggled', $group->is_active ? 'Guruh faollashtirildi: :name' : 'Guruh oʻchirib qoʻyildi: :name', $group, replace: ['name' => $group->name]);
 
         return new GroupResource($group->load(['zoomAccount', 'admin'])->loadCount('lessons'));
     }
@@ -63,10 +63,10 @@ class GroupController extends Controller
     {
         Gate::authorize('delete', $group);
         if (Lesson::query()->where('group_id', $group->id)->open()->exists()) {
-            throw ValidationException::withMessages(['group' => 'Guruhda davom etayotgan yoki rejalashtirilgan dars bor. Avval uni yakunlang.']);
+            throw ValidationException::withMessages(['group' => __('Guruhda davom etayotgan yoki rejalashtirilgan dars bor. Avval uni yakunlang.')]);
         }
         $group->delete();
-        Audit::log('group.deleted', "Guruh oʻchirildi: {$group->name}", $group);
+        Audit::log('group.deleted', 'Guruh oʻchirildi: :name', $group, replace: ['name' => $group->name]);
 
         return response()->noContent();
     }
@@ -83,15 +83,15 @@ class GroupController extends Controller
             'admin_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
             'is_active' => ['sometimes', 'boolean'],
         ], [
-            'name.required' => 'Guruh nomini kiriting.',
-            'hemis_id.unique' => 'Bu HEMIS ID boshqa guruhga biriktirilgan.',
-            'zoom_account_id.required' => 'Zoom akkauntni tanlang.',
-            'zoom_user_email.required' => 'Zoom foydalanuvchisi emailini kiriting.',
-            'zoom_user_email.email' => 'Email notoʻgʻri.',
+            'name.required' => __('Guruh nomini kiriting.'),
+            'hemis_id.unique' => __('Bu HEMIS ID boshqa guruhga biriktirilgan.'),
+            'zoom_account_id.required' => __('Zoom akkauntni tanlang.'),
+            'zoom_user_email.required' => __('Zoom foydalanuvchisi emailini kiriting.'),
+            'zoom_user_email.email' => __('Email notoʻgʻri.'),
         ]);
 
         if (! empty($data['admin_id']) && ! User::find($data['admin_id'])?->isAdmin()) {
-            throw ValidationException::withMessages(['admin_id' => 'Masʼul sifatida faqat administratorni tanlash mumkin.']);
+            throw ValidationException::withMessages(['admin_id' => __('Masʼul sifatida faqat administratorni tanlash mumkin.')]);
         }
         $data['zoom_user_email'] = mb_strtolower(trim($data['zoom_user_email']));
 

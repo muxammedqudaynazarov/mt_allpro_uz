@@ -32,7 +32,7 @@ class SessionController extends Controller
         $key = 'login:'.Str::lower($data['login']).'|'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages([
-                'login' => 'Juda koʻp urinish. '.RateLimiter::availableIn($key).' soniyadan soʻng qayta urinib koʻring.',
+                'login' => __('Juda koʻp urinish. :seconds soniyadan soʻng qayta urinib koʻring.', ['seconds' => RateLimiter::availableIn($key)]),
             ]);
         }
 
@@ -42,14 +42,14 @@ class SessionController extends Controller
         if (! $valid || ! $user->isAdmin() || $user->status !== UserStatus::Active) {
             RateLimiter::hit($key, 60);
             // Bir xil xabar: login mavjudligini oshkor qilmaymiz.
-            throw ValidationException::withMessages(['login' => 'Login yoki parol notoʻgʻri.']);
+            throw ValidationException::withMessages(['login' => __('Login yoki parol notoʻgʻri.')]);
         }
 
         RateLimiter::clear($key);
         Auth::guard('web')->login($user, (bool) ($data['remember'] ?? false));
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
-        Audit::log('auth.login_password', "Login/parol orqali kirdi: {$user->name}", $user, actor: $user);
+        Audit::log('auth.login_password', 'Login/parol orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->name]);
 
         return new MeResource($user);
     }

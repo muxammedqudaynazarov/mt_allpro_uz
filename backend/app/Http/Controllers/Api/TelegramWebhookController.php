@@ -31,9 +31,11 @@ class TelegramWebhookController extends Controller
         $chatId = (string) ($message['chat']['id'] ?? '');
         $text = trim((string) ($message['text'] ?? ''));
         $site = rtrim((string) config('app.frontend_url'), '/');
+        // Hali ulanmagan foydalanuvchi uchun til Telegram sozlamasidan olinadi.
+        $l = ($message['from']['language_code'] ?? null) === 'uz' ? 'uz' : config('app.locale');
 
         if (! preg_match('/^\/start(?:@\w+)?(?:\s+([A-Za-z0-9]{32}))?$/', $text, $match)) {
-            $bot->send($chatId, "Bu bot Masofaviy taʼlim tizimi xabarlarini yuboradi.\n\nHisobingizni ulash uchun tizimga kiring va «Profil» sahifasidagi «Telegram’ni ulash» tugmasini bosing:\n{$site}/profile");
+            $bot->send($chatId, __('Bu bot Masofaviy taʼlim tizimi xabarlarini yuboradi.', [], $l)."\n\n".__('Hisobingizni ulash uchun tizimga kiring va «Profil» sahifasidagi «Telegram’ni ulash» tugmasini bosing:', [], $l)."\n{$site}/profile");
 
             return response()->json(['ok' => true]);
         }
@@ -42,7 +44,7 @@ class TelegramWebhookController extends Controller
         $user = $userId ? User::find($userId) : null;
 
         if (! $user) {
-            $bot->send($chatId, "Havola eskirgan yoki notoʻgʻri. Tizimdagi «Profil» sahifasidan yangi havola oling:\n{$site}/profile");
+            $bot->send($chatId, __('Havola eskirgan yoki notoʻgʻri. Tizimdagi «Profil» sahifasidan yangi havola oling:', [], $l)."\n{$site}/profile");
 
             return response()->json(['ok' => true]);
         }
@@ -56,8 +58,9 @@ class TelegramWebhookController extends Controller
             ])->save();
         });
 
-        Audit::log('telegram.linked', "Telegram ulandi: {$user->name}", $user, actor: $user);
-        $bot->send($chatId, '<b>Hisobingiz ulandi</b>, '.e($user->firstName()).".\n\nEndi yaratgan darslaringiz havolalari shu yerga keladi.");
+        Audit::log('telegram.linked', 'Telegram ulandi: :name', $user, actor: $user, replace: ['name' => $user->name]);
+        $l = $user->preferredLocale();
+        $bot->send($chatId, '<b>'.__('Hisobingiz ulandi', [], $l).'</b>, '.e($user->firstName()).".\n\n".__('Endi yaratgan darslaringiz havolalari shu yerga keladi.', [], $l));
 
         return response()->json(['ok' => true]);
     }

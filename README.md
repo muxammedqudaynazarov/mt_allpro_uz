@@ -31,6 +31,8 @@ O'qituvchi HEMIS hisobi bilan kiradi, guruh va parani tanlaydi. Tizim shu guruhg
                                    └─ MySQL
 ```
 
+Interfeys **qoraqalpoq tilida** (lotin yozuvi), o'zbek tiliga bitta tugma bilan o'tiladi. Tanlangan til profilda saqlanadi, Telegram xabarlari ham shu tilda keladi.
+
 Frontend va backend bitta domenda ishlaydi, shuning uchun autentifikatsiya xavfsiz cookie-sessiya (Laravel Sanctum) orqali bo'ladi. Tokenlar brauzerning `localStorage` xotirasida saqlanmaydi va CORS sozlash kerak emas.
 
 ## Eski versiyadan nimalar o'zgardi

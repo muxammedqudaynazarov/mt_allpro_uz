@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { X } from 'lucide-react'
 import { cn } from './cn'
+import { useT } from '@/i18n/I18nProvider'
 
 interface ModalProps {
   open: boolean
@@ -16,6 +17,7 @@ interface ModalProps {
 const sizes = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl' }
 
 export function Modal({ open, onClose, title, description, children, footer, size = 'md' }: ModalProps) {
+  const t = useT()
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop
@@ -41,7 +43,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
                 type="button"
                 onClick={onClose}
                 className="-mt-1 -mr-2 rounded-field p-2 text-steel-500 hover:bg-steel-100 hover:text-ink-900"
-                aria-label="Yopish"
+                aria-label={t('Yopish')}
               >
                 <X className="size-5" />
               </button>

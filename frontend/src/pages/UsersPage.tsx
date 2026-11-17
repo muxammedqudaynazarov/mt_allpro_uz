@@ -21,6 +21,7 @@ import { PageHeader, Panel } from '@/components/ui/Page'
 import { Pagination } from '@/components/ui/Pagination'
 import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { useT } from '@/i18n/I18nProvider'
 
 type Tab = 'pending' | 'active' | 'blocked' | 'all'
 type Counts = Record<Tab, number>
@@ -41,6 +42,7 @@ function useUpdateUser() {
 }
 
 function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admins: UserListItem[]; onClose: () => void }) {
+  const t = useT()
   const [roles, setRoles] = useState<Role[]>(user?.roles ?? [])
   const [managedBy, setManagedBy] = useState<string>(user?.managed_by ? String(user.managed_by.id) : '')
   const [hemisId, setHemisId] = useState<string>(user?.hemis_id ?? '')
@@ -52,12 +54,12 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
     <Modal
       open
       onClose={onClose}
-      title="Xodim sozlamalari"
+      title={t('Xodim sozlamalari')}
       description={user.name}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Bekor qilish
+            {t('Bekor qilish')}
           </Button>
           <Button
             loading={update.isPending}
@@ -67,30 +69,30 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
                 { id: user.id, roles, managed_by_id: managedBy ? Number(managedBy) : null, hemis_id: hemisId.trim() || null },
                 {
                   onSuccess: () => {
-                    toast.success('Saqlandi')
+                    toast.success(t('Saqlandi'))
                     onClose()
                   },
                 },
               )
             }
           >
-            Saqlash
+            {t('Saqlash')}
           </Button>
         </>
       }
     >
       <fieldset>
-        <legend className="text-sm font-medium text-ink-800">Rollar</legend>
+        <legend className="text-sm font-medium text-ink-800">{t('Rollar')}</legend>
         <div className="mt-3 space-y-2">
           {(['teacher', 'admin', 'super_admin'] as Role[]).map((role) => (
             <label key={role} className="flex cursor-pointer items-start gap-3 rounded-field p-3 ring-1 ring-steel-200 ring-inset has-checked:bg-azure-50 has-checked:ring-azure-300">
               <input type="checkbox" className="mt-0.5 size-4 accent-azure-500" checked={roles.includes(role)} onChange={() => toggle(role)} />
               <span>
-                <span className="block text-sm font-medium">{ROLE_LABELS[role]}</span>
+                <span className="block text-sm font-medium">{t(ROLE_LABELS[role])}</span>
                 <span className="block text-sm text-steel-600">
-                  {role === 'teacher' && 'Dars yaratadi va oʻz darslarini boshqaradi.'}
-                  {role === 'admin' && 'Oʻziga biriktirilgan guruh va xodimlarni boshqaradi.'}
-                  {role === 'super_admin' && 'Tizimning barcha sozlamalariga toʻliq kirish.'}
+                  {role === 'teacher' && t('Dars yaratadi va oʻz darslarini boshqaradi.')}
+                  {role === 'admin' && t('Oʻziga biriktirilgan guruh va xodimlarni boshqaradi.')}
+                  {role === 'super_admin' && t('Tizimning barcha sozlamalariga toʻliq kirish.')}
                 </span>
               </span>
             </label>
@@ -98,15 +100,15 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
         </div>
       </fieldset>
       <Input
-        label="HEMIS ID"
+        label={t('HEMIS ID')}
         wrapperClassName="mt-5"
         inputMode="numeric"
         value={hemisId}
         onChange={(event) => setHemisId(event.target.value)}
-        hint="Eski tizimdan koʻchirilgan xodimni uning HEMIS hisobiga bogʻlash uchun."
+        hint={t('Eski tizimdan koʻchirilgan xodimni uning HEMIS hisobiga bogʻlash uchun.')}
       />
-      <Select label="Masʼul administrator" wrapperClassName="mt-5" value={managedBy} onChange={(event) => setManagedBy(event.target.value)}>
-        <option value="">Biriktirilmagan</option>
+      <Select label={t('Masʼul administrator')} wrapperClassName="mt-5" value={managedBy} onChange={(event) => setManagedBy(event.target.value)}>
+        <option value="">{t('Biriktirilmagan')}</option>
         {admins
           .filter((admin) => admin.id !== user.id)
           .map((admin) => (
@@ -120,6 +122,7 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
 }
 
 export default function UsersPage() {
+  const t = useT()
   const { user: me, isSuperAdmin } = useAuth()
   const queryClient = useQueryClient()
   const [params, setParams] = useSearchParams()
@@ -152,7 +155,7 @@ export default function UsersPage() {
   const remove = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/users/${id}`),
     onSuccess: () => {
-      toast.success('Xodim oʻchirildi')
+      toast.success(t('Xodim oʻchirildi'))
       setDeleting(null)
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
@@ -164,11 +167,11 @@ export default function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Xodimlar" description="HEMIS orqali kirgan xodimlar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring." />
+      <PageHeader title={t('Xodimlar')} description={t('HEMIS orqali kirgan xodimlar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring.')} />
 
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Segmented<Tab>
-          label="Holat"
+          label={t('Holat')}
           value={tab}
           onChange={(value) => {
             const next = new URLSearchParams(params)
@@ -178,15 +181,15 @@ export default function UsersPage() {
             setPage(1)
           }}
           options={[
-            { value: 'all', label: 'Barchasi', count: counts.data?.all },
-            { value: 'pending', label: 'Tasdiq kutmoqda', count: counts.data?.pending },
-            { value: 'active', label: 'Faol' },
-            { value: 'blocked', label: 'Bloklangan' },
+            { value: 'all', label: t('Barchasi'), count: counts.data?.all },
+            { value: 'pending', label: t('Tasdiq kutmoqda'), count: counts.data?.pending },
+            { value: 'active', label: t('Faol') },
+            { value: 'blocked', label: t('Bloklangan') },
           ]}
         />
         <Input
-          aria-label="Qidirish"
-          placeholder="Ism, telefon yoki HEMIS ID"
+          aria-label={t('Qidirish')}
+          placeholder={t('Ism, telefon yoki HEMIS ID')}
           leading={<Search className="size-4" />}
           wrapperClassName="lg:w-80"
           value={search}
@@ -203,8 +206,8 @@ export default function UsersPage() {
         ) : !users.data?.data.length ? (
           <EmptyState
             icon={<UsersRound className="size-5" />}
-            title={tab === 'pending' ? 'Tasdiq kutayotgan xodimlar yoʻq' : 'Xodimlar topilmadi'}
-            description={tab === 'pending' ? 'Yangi xodim HEMIS orqali kirganda u shu yerda paydo boʻladi.' : 'Qidiruv soʻzini oʻzgartirib koʻring.'}
+            title={tab === 'pending' ? t('Tasdiq kutayotgan xodimlar yoʻq') : t('Xodimlar topilmadi')}
+            description={tab === 'pending' ? t('Yangi xodim HEMIS orqali kirganda u shu yerda paydo boʻladi.') : t('Qidiruv soʻzini oʻzgartirib koʻring.')}
           />
         ) : (
           <>
@@ -212,13 +215,13 @@ export default function UsersPage() {
               <table className="w-full min-w-[52rem] text-left text-sm">
                 <thead className="border-b border-steel-100 text-steel-600">
                   <tr>
-                    <th className="w-[38%] px-5 py-3 font-medium">Xodim</th>
-                    <th className="px-3 py-3 font-medium">Rol</th>
-                    <th className="px-3 py-3 font-medium">Holat</th>
-                    <th className="px-3 py-3 font-medium">Oxirgi kirish</th>
-                    <th className="px-3 py-3 text-right font-medium">Darslar</th>
+                    <th className="w-[38%] px-5 py-3 font-medium">{t('Xodim')}</th>
+                    <th className="px-3 py-3 font-medium">{t('Rol')}</th>
+                    <th className="px-3 py-3 font-medium">{t('Holat')}</th>
+                    <th className="px-3 py-3 font-medium">{t('Oxirgi kirish')}</th>
+                    <th className="px-3 py-3 text-right font-medium">{t('Darslar')}</th>
                     <th className="px-5 py-3">
-                      <span className="sr-only">Amallar</span>
+                      <span className="sr-only">{t('Amallar')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -233,7 +236,7 @@ export default function UsersPage() {
                             <div className="max-w-72 min-w-0">
                               <p className="flex items-center gap-1.5 font-medium text-ink-900">
                                 <span className="truncate">{user.name}</span>
-                                {user.telegram_linked && <Send className="size-3.5 shrink-0 text-azure-500" aria-label="Telegram ulangan" />}
+                                {user.telegram_linked && <Send className="size-3.5 shrink-0 text-azure-500" aria-label={t('Telegram ulangan')} />}
                               </p>
                               <p className="truncate text-steel-600">
                                 {[user.hemis_id && `HEMIS ${user.hemis_id}`, user.phone, user.department].filter(Boolean).join(', ') || '—'}
@@ -243,45 +246,45 @@ export default function UsersPage() {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex flex-wrap gap-1">
-                            {user.roles.length ? user.roles.map((role) => <Badge key={role} tone={role === 'teacher' ? 'neutral' : 'azure'}>{ROLE_LABELS[role]}</Badge>) : <span className="text-steel-500">—</span>}
+                            {user.roles.length ? user.roles.map((role) => <Badge key={role} tone={role === 'teacher' ? 'neutral' : 'azure'}>{t(ROLE_LABELS[role])}</Badge>) : <span className="text-steel-500">—</span>}
                           </div>
                         </td>
                         <td className="px-3 py-3">
                           <Badge tone={statusTone[user.status]} dot>
-                            {USER_STATUS_LABELS[user.status]}
+                            {t(USER_STATUS_LABELS[user.status])}
                           </Badge>
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap text-steel-700">{user.last_login_at ? formatDateTime(user.last_login_at) : '—'}</td>
                         <td className="px-3 py-3 text-right tabular-nums">{user.lessons_count}</td>
                         <td className="px-5 py-2 text-right">
                           {user.status === 'pending' ? (
-                            <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', 'Xodim tasdiqlandi')}>
-                              Tasdiqlash
+                            <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', t('Xodim tasdiqlandi'))}>
+                              {t('Tasdiqlash')}
                             </Button>
                           ) : (
                             !self && (
                               <ActionMenu
                                 items={[
                                   {
-                                    label: 'Faollashtirish',
+                                    label: t('Faollashtirish'),
                                     icon: <UserRoundCheck className="size-4" />,
                                     hidden: user.status === 'active',
-                                    onClick: () => setStatus(user, 'active', 'Xodim faollashtirildi'),
+                                    onClick: () => setStatus(user, 'active', t('Xodim faollashtirildi')),
                                   },
                                   {
-                                    label: 'Bloklash',
+                                    label: t('Bloklash'),
                                     icon: <Ban className="size-4" />,
                                     hidden: user.status === 'blocked',
-                                    onClick: () => setStatus(user, 'blocked', 'Xodim bloklandi'),
+                                    onClick: () => setStatus(user, 'blocked', t('Xodim bloklandi')),
                                   },
                                   {
-                                    label: 'Rol va sozlamalar',
+                                    label: t('Rol va sozlamalar'),
                                     icon: <ShieldCheck className="size-4" />,
                                     hidden: !isSuperAdmin,
                                     onClick: () => setEditing(user),
                                   },
                                   {
-                                    label: 'Oʻchirish',
+                                    label: t('Oʻchirish'),
                                     icon: <Trash2 className="size-4" />,
                                     danger: true,
                                     hidden: !isSuperAdmin,
@@ -307,9 +310,9 @@ export default function UsersPage() {
 
       <ConfirmDialog
         open={!!deleting}
-        title="Xodimni oʻchirasizmi?"
-        description={`${deleting?.name ?? ''} tizimdan oʻchiriladi va kira olmaydi. Uning darslari tarixi hisobotlarda saqlanib qoladi.`}
-        confirmLabel="Oʻchirish"
+        title={t('Xodimni oʻchirasizmi?')}
+        description={t('{name} tizimdan oʻchiriladi va kira olmaydi. Uning darslari tarixi hisobotlarda saqlanib qoladi.', { name: deleting?.name ?? '' })}
+        confirmLabel={t('Oʻchirish')}
         tone="danger"
         loading={remove.isPending}
         onClose={() => setDeleting(null)}

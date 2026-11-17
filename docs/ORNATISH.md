@@ -98,6 +98,7 @@ Eng muhim qiymatlar:
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` (**hech qachon `true` qilmang** — xato sahifasida maxfiy ma'lumot chiqadi) |
 | `APP_URL`, `FRONTEND_URL` | `https://mt.allpro.uz` |
+| `APP_LOCALE` | `kaa` (qoraqalpoqcha, asosiy til) yoki `uz` |
 | `DB_*` | 3-bosqichdagi baza ma'lumotlari |
 | `SANCTUM_STATEFUL_DOMAINS` | `mt.allpro.uz` |
 | `SESSION_SECURE_COOKIE` | `true` |

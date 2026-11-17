@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Input } from '@/components/ui/Field'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { useT } from '@/i18n/I18nProvider'
 
 function monthStart(): string {
   const today = isoDate()
@@ -24,6 +25,7 @@ function Bar({ value, max }: { value: number; max: number }) {
 }
 
 export default function ReportsPage() {
+  const t = useT()
   const [from, setFrom] = useState(monthStart)
   const [to, setTo] = useState(() => isoDate())
 
@@ -37,16 +39,16 @@ export default function ReportsPage() {
   const maxTeacher = Math.max(0, ...(data?.by_teacher.map((row) => row.lessons) ?? []))
   const maxGroup = Math.max(0, ...(data?.by_group.map((row) => row.lessons) ?? []))
   const presets = [
-    { label: 'Shu oy', from: monthStart(), to: isoDate() },
-    { label: 'Oxirgi 7 kun', from: isoDate(addDays(new Date(), -6)), to: isoDate() },
-    { label: 'Oxirgi 30 kun', from: isoDate(addDays(new Date(), -29)), to: isoDate() },
+    { label: t('Shu oy'), from: monthStart(), to: isoDate() },
+    { label: t('Oxirgi 7 kun'), from: isoDate(addDays(new Date(), -6)), to: isoDate() },
+    { label: t('Oxirgi 30 kun'), from: isoDate(addDays(new Date(), -29)), to: isoDate() },
   ]
 
   return (
     <>
       <PageHeader
-        title="Hisobotlar"
-        description="Yakunlangan va davom etayotgan darslar soni hamda davomiyligi."
+        title={t('Hisobotlar')}
+        description={t('Yakunlangan va davom etayotgan darslar soni hamda davomiyligi.')}
         actions={
           <a href={`/api/lessons/export?from=${from}&to=${to}`} className={buttonClass({ variant: 'secondary' })}>
             <Download className="size-4" />
@@ -56,8 +58,8 @@ export default function ReportsPage() {
       />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Input type="date" label="Sanadan" wrapperClassName="sm:w-44" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
-        <Input type="date" label="Sanagacha" wrapperClassName="sm:w-44" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+        <Input type="date" label={t('Sanadan')} wrapperClassName="sm:w-44" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+        <Input type="date" label={t('Sanagacha')} wrapperClassName="sm:w-44" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
         <div className="flex flex-wrap gap-2 sm:pb-0.5">
           {presets.map((preset) => (
             <button
@@ -78,15 +80,15 @@ export default function ReportsPage() {
       {report.isPending ? (
         <SectionLoader />
       ) : !data || !data.totals.lessons ? (
-        <EmptyState className="rounded-panel bg-white ring-1 ring-steel-200" icon={<BarChart3 className="size-5" />} title="Bu davrda darslar yoʻq" description="Boshqa sana oraligʻini tanlang." />
+        <EmptyState className="rounded-panel bg-white ring-1 ring-steel-200" icon={<BarChart3 className="size-5" />} title={t('Bu davrda darslar yoʻq')} description={t('Boshqa sana oraligʻini tanlang.')} />
       ) : (
         <>
           <dl className="mb-6 grid grid-cols-2 overflow-hidden rounded-panel bg-white ring-1 ring-steel-200/70 lg:grid-cols-4">
             {[
-              { label: 'Darslar', value: data.totals.lessons.toLocaleString('ru-RU') },
-              { label: 'Umumiy vaqt', value: formatDuration(data.totals.minutes) },
-              { label: 'Oʻqituvchilar', value: data.totals.teachers },
-              { label: 'Guruhlar', value: data.totals.groups },
+              { label: t('Darslar'), value: data.totals.lessons.toLocaleString('ru-RU') },
+              { label: t('Umumiy vaqt'), value: formatDuration(data.totals.minutes) },
+              { label: t('Oʻqituvchilar'), value: data.totals.teachers },
+              { label: t('Guruhlar'), value: data.totals.groups },
             ].map((item, index) => (
               <div key={item.label} className={`px-5 py-5 ${index % 2 ? 'border-l' : ''} ${index > 1 ? 'border-t lg:border-t-0' : ''} ${index === 2 ? 'lg:border-l' : ''} border-steel-100`}>
                 <dt className="text-sm text-steel-600">{item.label}</dt>
@@ -98,13 +100,13 @@ export default function ReportsPage() {
             {formatDate(data.from)} — {formatDate(data.to)}
           </p>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <Panel title="Oʻqituvchilar boʻyicha" padded={false}>
+            <Panel title={t('Oʻqituvchilar boʻyicha')} padded={false}>
               <table className="w-full text-sm">
                 <thead className="sr-only">
                   <tr>
-                    <th>Oʻqituvchi</th>
-                    <th>Darslar</th>
-                    <th>Vaqt</th>
+                    <th>{t('Oʻqituvchi')}</th>
+                    <th>{t('Darslar')}</th>
+                    <th>{t('Vaqt')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-steel-100">
@@ -123,13 +125,13 @@ export default function ReportsPage() {
                 </tbody>
               </table>
             </Panel>
-            <Panel title="Guruhlar boʻyicha" padded={false}>
+            <Panel title={t('Guruhlar boʻyicha')} padded={false}>
               <table className="w-full text-sm">
                 <thead className="sr-only">
                   <tr>
-                    <th>Guruh</th>
-                    <th>Darslar</th>
-                    <th>Vaqt</th>
+                    <th>{t('Guruh')}</th>
+                    <th>{t('Darslar')}</th>
+                    <th>{t('Vaqt')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-steel-100">

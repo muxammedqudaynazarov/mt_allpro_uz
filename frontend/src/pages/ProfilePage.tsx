@@ -13,8 +13,10 @@ import { Badge } from '@/components/ui/Badge'
 import { Button, buttonClass } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader, Panel } from '@/components/ui/Page'
+import { useT } from '@/i18n/I18nProvider'
 
 function TelegramLinkModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const t = useT()
   const { user, refresh } = useAuth()
 
   // Bot orqali ulanganini bilish uchun profilni har 4 soniyada yangilaymiz.
@@ -25,36 +27,37 @@ function TelegramLinkModal({ url, onClose }: { url: string; onClose: () => void 
 
   useEffect(() => {
     if (user?.telegram.linked) {
-      toast.success('Telegram ulandi')
+      toast.success(t('Telegram ulandi'))
       onClose()
     }
   }, [user?.telegram.linked, onClose])
 
   return (
-    <Modal open onClose={onClose} title="Telegram’ni ulash" description="Havola 15 daqiqa amal qiladi va faqat bir marta ishlaydi.">
+    <Modal open onClose={onClose} title={t('Telegram’ni ulash')} description={t('Havola 15 daqiqa amal qiladi va faqat bir marta ishlaydi.')}>
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
         <div className="rounded-field bg-white p-3 ring-1 ring-steel-200">
           <QRCodeSVG value={url} size={148} fgColor="#13284a" />
         </div>
         <ol className="space-y-3 text-sm leading-relaxed text-steel-700">
           <li>
-            <span className="font-medium text-ink-900">Telefonda:</span> QR kodni kamera bilan skanerlang.
+            <span className="font-medium text-ink-900">{t('Telefonda:')}</span> {t('QR kodni kamera bilan skanerlang.')}
           </li>
           <li>
-            <span className="font-medium text-ink-900">Kompyuterda:</span> pastdagi tugmani bosing.
+            <span className="font-medium text-ink-900">{t('Kompyuterda:')}</span> {t('pastdagi tugmani bosing.')}
           </li>
-          <li>Botda “Start” tugmasini bosing — hisob avtomatik ulanadi.</li>
+          <li>{t('Botda “Start” tugmasini bosing — hisob avtomatik ulanadi.')}</li>
         </ol>
       </div>
       <a href={url} target="_blank" rel="noopener noreferrer" className={buttonClass({ className: 'mt-6 w-full' })}>
         <Send className="size-4" />
-        Telegram’da ochish
+        {t('Telegram’da ochish')}
       </a>
     </Modal>
   )
 }
 
 export default function ProfilePage() {
+  const t = useT()
   const { user, config, refresh } = useAuth()
   const [linkUrl, setLinkUrl] = useState<string | null>(null)
 
@@ -68,7 +71,7 @@ export default function ProfilePage() {
     mutationFn: async () => api.delete('/api/me/telegram'),
     onSuccess: async () => {
       await refresh()
-      toast.success('Telegram uzildi')
+      toast.success(t('Telegram uzildi'))
     },
     onError: (error) => toast.error(errorMessage(error)),
   })
@@ -76,12 +79,12 @@ export default function ProfilePage() {
   if (!user) return null
 
   const rows = [
-    { label: 'HEMIS ID', value: user.hemis_id },
-    { label: 'Boʻlim', value: user.department },
-    { label: 'Telefon', value: user.phone },
-    { label: 'Email', value: user.email },
-    { label: 'Masʼul administrator', value: user.managed_by?.name },
-    { label: 'Oxirgi kirish', value: user.last_login_at ? formatDateTime(user.last_login_at) : null },
+    { label: t('HEMIS ID'), value: user.hemis_id },
+    { label: t('Boʻlim'), value: user.department },
+    { label: t('Telefon'), value: user.phone },
+    { label: t('Email'), value: user.email },
+    { label: t('Masʼul administrator'), value: user.managed_by?.name },
+    { label: t('Oxirgi kirish'), value: user.last_login_at ? formatDateTime(user.last_login_at) : null },
   ]
 
   return (
@@ -89,10 +92,10 @@ export default function ProfilePage() {
       {user.status !== 'active' && (
         <Link to="/pending" className="mb-6 inline-flex items-center gap-2 text-sm text-steel-600 hover:text-ink-900">
           <ArrowLeft className="size-4" />
-          Ortga
+          {t('Ortga')}
         </Link>
       )}
-      <PageHeader title="Profil" description="Maʼlumotlar HEMIS’dan olinadi va har kirishda yangilanadi." />
+      <PageHeader title={t('Profil')} description={t('Maʼlumotlar HEMIS’dan olinadi va har kirishda yangilanadi.')} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <Panel>
@@ -103,11 +106,11 @@ export default function ProfilePage() {
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {user.roles.map((role) => (
                   <Badge key={role} tone="azure">
-                    {ROLE_LABELS[role]}
+                    {t(ROLE_LABELS[role])}
                   </Badge>
                 ))}
                 <Badge tone={user.status === 'active' ? 'leaf' : 'amber'} dot>
-                  {USER_STATUS_LABELS[user.status]}
+                  {t(USER_STATUS_LABELS[user.status])}
                 </Badge>
               </div>
             </div>
@@ -122,26 +125,29 @@ export default function ProfilePage() {
           </dl>
         </Panel>
 
-        <Panel title="Telegram" className="self-start">
+        <Panel title={t('Telegram')} className="self-start">
           {!config?.telegram_enabled ? (
-            <p className="text-sm text-steel-600">Telegram bot hali sozlanmagan.</p>
+            <p className="text-sm text-steel-600">{t('Telegram bot hali sozlanmagan.')}</p>
           ) : user.telegram.linked ? (
             <>
               <p className="text-sm leading-relaxed text-steel-700">
-                Hisobingiz {user.telegram.username ? <strong className="text-ink-900">@{user.telegram.username}</strong> : 'Telegram’ga'} ulangan. Yangi dars
-                havolalari va tizim xabarlari shu yerga keladi.
+                {user.telegram.username
+                  ? t('Hisobingiz @{username} ga ulangan. Yangi dars havolalari va tizim xabarlari shu yerga keladi.', { username: user.telegram.username })
+                  : t('Hisobingiz Telegram’ga ulangan. Yangi dars havolalari va tizim xabarlari shu yerga keladi.')}
               </p>
               <Button variant="danger" size="sm" className="mt-4" icon={<Unlink className="size-4" />} loading={unlink.isPending} onClick={() => unlink.mutate()}>
-                Uzish
+                {t('Uzish')}
               </Button>
             </>
           ) : (
             <>
               <p className="text-sm leading-relaxed text-steel-700">
-                Ulangandan soʻng har bir yangi dars uchun “Darsni boshlash” va “Guruhga yuborish” tugmalari {config.telegram_bot_username ? `@${config.telegram_bot_username}` : 'bot'} orqali keladi.
+                {t('Ulangandan soʻng har bir yangi dars uchun “Darsni boshlash” va “Guruhga yuborish” tugmalari {bot} orqali keladi.', {
+                  bot: config.telegram_bot_username ? `@${config.telegram_bot_username}` : 'bot',
+                })}
               </p>
               <Button className="mt-4 w-full" icon={<Send className="size-4" />} loading={link.isPending} onClick={() => link.mutate()}>
-                Telegram’ni ulash
+                {t('Telegram’ni ulash')}
               </Button>
             </>
           )}

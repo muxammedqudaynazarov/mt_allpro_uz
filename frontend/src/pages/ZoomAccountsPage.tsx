@@ -15,8 +15,10 @@ import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/Page'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { Switch } from '@/components/ui/Switch'
+import { useT } from '@/i18n/I18nProvider'
 
 function AccountModal({ account, onClose }: { account: ZoomAccount | 'new'; onClose: () => void }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const editing = account !== 'new'
   const [form, setForm] = useState({
@@ -34,7 +36,7 @@ function AccountModal({ account, onClose }: { account: ZoomAccount | 'new'; onCl
       return editing ? api.put(`/api/zoom-accounts/${account.id}`, payload) : api.post('/api/zoom-accounts', payload)
     },
     onSuccess: () => {
-      toast.success('Zoom akkaunt saqlandi')
+      toast.success(t('Zoom akkaunt saqlandi'))
       queryClient.invalidateQueries({ queryKey: ['zoom-accounts'] })
       onClose()
     },
@@ -54,36 +56,36 @@ function AccountModal({ account, onClose }: { account: ZoomAccount | 'new'; onCl
     <Modal
       open
       onClose={onClose}
-      title={editing ? 'Zoom akkauntni tahrirlash' : 'Zoom akkaunt qoʻshish'}
-      description="Zoom Marketplace’da yaratilgan Server-to-Server OAuth ilovasining maʼlumotlari."
+      title={editing ? t('Zoom akkauntni tahrirlash') : t('Zoom akkaunt qoʻshish')}
+      description={t('Zoom Marketplace’da yaratilgan Server-to-Server OAuth ilovasining maʼlumotlari.')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Bekor qilish
+            {t('Bekor qilish')}
           </Button>
           <Button type="submit" form="zoom-form" loading={save.isPending}>
-            Saqlash
+            {t('Saqlash')}
           </Button>
         </>
       }
     >
       <form id="zoom-form" onSubmit={submit} className="space-y-4">
-        <Input label="Nomi" placeholder="Masalan: Asosiy akkaunt" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} required />
-        <Input label="Account ID" value={form.account_id} onChange={(e) => setForm({ ...form, account_id: e.target.value })} error={errors.account_id} required autoComplete="off" />
-        <Input label="Client ID" value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })} error={errors.client_id} required autoComplete="off" />
+        <Input label={t('Nomi')} placeholder={t('Masalan: Asosiy akkaunt')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} required />
+        <Input label={t('Account ID')} value={form.account_id} onChange={(e) => setForm({ ...form, account_id: e.target.value })} error={errors.account_id} required autoComplete="off" />
+        <Input label={t('Client ID')} value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })} error={errors.client_id} required autoComplete="off" />
         <Input
-          label="Client Secret"
+          label={t('Client Secret')}
           type="password"
           autoComplete="new-password"
           value={form.client_secret}
           onChange={(e) => setForm({ ...form, client_secret: e.target.value })}
           error={errors.client_secret}
-          hint={editing ? 'Oʻzgartirmoqchi boʻlmasangiz, boʻsh qoldiring. Saqlangan kalit hech qachon koʻrsatilmaydi.' : 'Shifrlangan holda saqlanadi va qayta koʻrsatilmaydi.'}
+          hint={editing ? t('Oʻzgartirmoqchi boʻlmasangiz, boʻsh qoldiring. Saqlangan kalit hech qachon koʻrsatilmaydi.') : t('Shifrlangan holda saqlanadi va qayta koʻrsatilmaydi.')}
           required={!editing}
         />
         <label className="flex items-center gap-3">
-          <Switch checked={form.is_active} onChange={(value) => setForm({ ...form, is_active: value })} label="Faol" />
-          <span className="text-sm font-medium">Faol</span>
+          <Switch checked={form.is_active} onChange={(value) => setForm({ ...form, is_active: value })} label={t('Faol')} />
+          <span className="text-sm font-medium">{t('Faol')}</span>
         </label>
       </form>
     </Modal>
@@ -91,6 +93,7 @@ function AccountModal({ account, onClose }: { account: ZoomAccount | 'new'; onCl
 }
 
 export default function ZoomAccountsPage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<ZoomAccount | 'new' | null>(null)
   const [deleting, setDeleting] = useState<ZoomAccount | null>(null)
@@ -102,15 +105,15 @@ export default function ZoomAccountsPage() {
 
   const test = useMutation({
     mutationFn: async (account: ZoomAccount) => (await api.post<{ data: { users: number } }>(`/api/zoom-accounts/${account.id}/test`)).data.data,
-    onSuccess: (data) => toast.success(`Ulanish ishlayapti: ${data.users} ta Zoom foydalanuvchisi topildi`),
-    onError: (error) => toast.error(errorMessage(error, 'Zoom’ga ulanib boʻlmadi.')),
+    onSuccess: (data) => toast.success(t('Ulanish ishlayapti: {count} ta Zoom foydalanuvchisi topildi', { count: data.users })),
+    onError: (error) => toast.error(errorMessage(error, t('Zoom’ga ulanib boʻlmadi.'))),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['zoom-accounts'] }),
   })
 
   const remove = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/zoom-accounts/${id}`),
     onSuccess: () => {
-      toast.success('Zoom akkaunt oʻchirildi')
+      toast.success(t('Zoom akkaunt oʻchirildi'))
       setDeleting(null)
       queryClient.invalidateQueries({ queryKey: ['zoom-accounts'] })
     },
@@ -120,11 +123,11 @@ export default function ZoomAccountsPage() {
   return (
     <>
       <PageHeader
-        title="Zoom akkauntlar"
-        description="Darslar shu akkauntlar orqali yaratiladi. Kirish kalitlari serverda shifrlangan holda saqlanadi."
+        title={t('Zoom akkauntlar')}
+        description={t('Darslar shu akkauntlar orqali yaratiladi. Kirish kalitlari serverda shifrlangan holda saqlanadi.')}
         actions={
           <Button icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
-            Akkaunt qoʻshish
+            {t('Akkaunt qoʻshish')}
           </Button>
         }
       />
@@ -135,9 +138,9 @@ export default function ZoomAccountsPage() {
         <EmptyState
           className="rounded-panel bg-white ring-1 ring-steel-200"
           icon={<Video className="size-5" />}
-          title="Zoom akkauntlar qoʻshilmagan"
-          description="Zoom Marketplace’da Server-to-Server OAuth ilova yarating va uning Account ID, Client ID, Client Secret qiymatlarini shu yerga kiriting."
-          action={<Button onClick={() => setEditing('new')}>Akkaunt qoʻshish</Button>}
+          title={t('Zoom akkauntlar qoʻshilmagan')}
+          description={t('Zoom Marketplace’da Server-to-Server OAuth ilova yarating va uning Account ID, Client ID, Client Secret qiymatlarini shu yerga kiriting.')}
+          action={<Button onClick={() => setEditing('new')}>{t('Akkaunt qoʻshish')}</Button>}
         />
       ) : (
         <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
@@ -147,24 +150,24 @@ export default function ZoomAccountsPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-base font-semibold">{account.name}</p>
-                    {!account.is_active && <Badge>Nofaol</Badge>}
+                    {!account.is_active && <Badge>{t('Nofaol')}</Badge>}
                   </div>
                   <p className="mt-0.5 text-sm text-steel-600">{account.groups_count} ta guruh biriktirilgan</p>
                 </div>
                 <ActionMenu
                   items={[
-                    { label: 'Tahrirlash', icon: <Pencil className="size-4" />, onClick: () => setEditing(account) },
-                    { label: 'Oʻchirish', icon: <Trash2 className="size-4" />, danger: true, onClick: () => setDeleting(account) },
+                    { label: t('Tahrirlash'), icon: <Pencil className="size-4" />, onClick: () => setEditing(account) },
+                    { label: t('Oʻchirish'), icon: <Trash2 className="size-4" />, danger: true, onClick: () => setDeleting(account) },
                   ]}
                 />
               </div>
               <dl className="mt-4 grid grid-cols-[6.5rem_1fr] gap-x-3 gap-y-1.5 text-sm">
-                <dt className="text-steel-600">Account ID</dt>
+                <dt className="text-steel-600">{t('Account ID')}</dt>
                 <dd className="truncate text-ink-800">{account.account_id}</dd>
-                <dt className="text-steel-600">Client ID</dt>
+                <dt className="text-steel-600">{t('Client ID')}</dt>
                 <dd className="truncate text-ink-800">{account.client_id}</dd>
-                <dt className="text-steel-600">Secret</dt>
-                <dd className="text-ink-800">{account.has_secret ? 'Saqlangan' : <span className="text-onair-600">Kiritilmagan</span>}</dd>
+                <dt className="text-steel-600">{t('Secret')}</dt>
+                <dd className="text-ink-800">{account.has_secret ? t('Saqlangan') : <span className="text-onair-600">{t('Kiritilmagan')}</span>}</dd>
               </dl>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-steel-100 pt-4">
                 <p className="flex items-center gap-2 text-sm">
@@ -172,16 +175,16 @@ export default function ZoomAccountsPage() {
                     <>
                       <TriangleAlert className="size-4 text-onair-500" />
                       <span className="text-onair-600" title={account.last_error}>
-                        Oxirgi ulanishda xato
+                        {t('Oxirgi ulanishda xato')}
                       </span>
                     </>
                   ) : account.last_checked_at ? (
                     <>
                       <CheckCircle2 className="size-4 text-leaf-500" />
-                      <span className="text-steel-600">Tekshirildi: {formatDateTime(account.last_checked_at)}</span>
+                      <span className="text-steel-600">{t('Tekshirildi: {date}', { date: formatDateTime(account.last_checked_at) })}</span>
                     </>
                   ) : (
-                    <span className="text-steel-500">Hali tekshirilmagan</span>
+                    <span className="text-steel-500">{t('Hali tekshirilmagan')}</span>
                   )}
                 </p>
                 <Button
@@ -191,7 +194,7 @@ export default function ZoomAccountsPage() {
                   loading={test.isPending && test.variables?.id === account.id}
                   onClick={() => test.mutate(account)}
                 >
-                  Ulanishni tekshirish
+                  {t('Ulanishni tekshirish')}
                 </Button>
               </div>
             </li>
@@ -202,16 +205,16 @@ export default function ZoomAccountsPage() {
       <p className="mt-6 flex items-center gap-2 text-sm text-steel-600">
         <ExternalLink className="size-4" />
         <a href="https://marketplace.zoom.us/develop/create" target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:text-ink-900 hover:underline">
-          Zoom Marketplace’da Server-to-Server OAuth ilova yaratish
+          {t('Zoom Marketplace’da Server-to-Server OAuth ilova yaratish')}
         </a>
       </p>
 
       {editing && <AccountModal account={editing} onClose={() => setEditing(null)} />}
       <ConfirmDialog
         open={!!deleting}
-        title="Zoom akkauntni oʻchirasizmi?"
-        description={deleting?.groups_count ? `Bu akkauntga ${deleting.groups_count} ta guruh biriktirilgan. Avval guruhlarni boshqa akkauntga oʻtkazing.` : 'Akkaunt maʼlumotlari butunlay oʻchiriladi.'}
-        confirmLabel="Oʻchirish"
+        title={t('Zoom akkauntni oʻchirasizmi?')}
+        description={deleting?.groups_count ? t('Bu akkauntga {count} ta guruh biriktirilgan. Avval guruhlarni boshqa akkauntga oʻtkazing.', { count: deleting.groups_count }) : t('Akkaunt maʼlumotlari butunlay oʻchiriladi.')}
+        confirmLabel={t('Oʻchirish')}
         tone="danger"
         loading={remove.isPending}
         onClose={() => setDeleting(null)}

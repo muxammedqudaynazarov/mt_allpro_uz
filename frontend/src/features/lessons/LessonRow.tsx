@@ -1,4 +1,5 @@
 import { useAuth } from '@/auth/AuthProvider'
+import { useT } from '@/i18n/I18nProvider'
 import { formatDayMonth, formatTime, isSameDay } from '@/lib/format'
 import type { Lesson } from '@/lib/types'
 import { LessonActions } from './LessonActions'
@@ -6,6 +7,7 @@ import { LessonStatusBadge } from './LessonStatusBadge'
 
 /** Darslar ro'yxatidagi bitta qator: mobil'da karta, kompyuterda keng qator. */
 export function LessonRow({ lesson, showDate = true }: { lesson: Lesson; showDate?: boolean }) {
+  const t = useT()
   const { user } = useAuth()
   const own = user?.id === lesson.teacher.id
   const date = showDate && !isSameDay(lesson.starts_at, new Date()) ? formatDayMonth(lesson.starts_at) : null
@@ -25,7 +27,7 @@ export function LessonRow({ lesson, showDate = true }: { lesson: Lesson; showDat
           <p className="truncate font-medium text-ink-900">{lesson.group.name}</p>
           <LessonStatusBadge status={lesson.status} />
         </div>
-        <p className="mt-0.5 truncate text-sm text-steel-600">{lesson.topic || 'Mavzu koʻrsatilmagan'}</p>
+        <p className="mt-0.5 truncate text-sm text-steel-600">{lesson.topic || t('Mavzu koʻrsatilmagan')}</p>
         {!own && <p className="truncate text-sm text-steel-500">{lesson.teacher.name}</p>}
       </div>
       <LessonActions lesson={lesson} compact />

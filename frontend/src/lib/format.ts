@@ -3,10 +3,29 @@
  * shuning uchun foydalanuvchi qaysi vaqt mintaqasida bo'lmasin, vaqtlar
  * Asia/Tashkent bo'yicha ko'rsatiladi.
  */
+import { getLocale } from '@/i18n/locale'
+
 export const TIME_ZONE = 'Asia/Tashkent'
 
-const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
-const WEEKDAYS = ['yakshanba', 'dushanba', 'seshanba', 'chorshanba', 'payshanba', 'juma', 'shanba']
+const NAMES = {
+  uz: {
+    months: ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'],
+    weekdays: ['yakshanba', 'dushanba', 'seshanba', 'chorshanba', 'payshanba', 'juma', 'shanba'],
+    greetings: ['Xayrli tun', 'Xayrli tong', 'Xayrli kun', 'Xayrli kech'],
+    hour: 'soat',
+    minute: 'daqiqa',
+  },
+  kaa: {
+    months: ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'],
+    weekdays: ['ekshembi', 'dúyshembi', 'siyshembi', 'sárshembi', 'piyshembi', 'juma', 'shembi'],
+    greetings: ['Xayırlı tún', 'Xayırlı tań', 'Xayırlı kún', 'Xayırlı kesh'],
+    hour: 'saat',
+    minute: 'minut',
+  },
+} as const
+
+const names = () => NAMES[getLocale()]
+const month = (index: number) => names().months[index]
 
 interface Parts {
   year: number
@@ -53,27 +72,27 @@ export function formatTime(value: string | Date): string {
 /** 16-noyabr */
 export function formatDayMonth(value: string | Date): string {
   const p = parts(value)
-  return `${p.day}-${MONTHS[p.month - 1]}`
+  return `${p.day}-${month(p.month - 1)}`
 }
 
 /** 16-noyabr, 2026 */
 export function formatDate(value: string | Date): string {
   const p = parts(value)
-  return `${p.day}-${MONTHS[p.month - 1]}, ${p.year}`
+  return `${p.day}-${month(p.month - 1)}, ${p.year}`
 }
 
 /** 16-noyabr, 14:30 (joriy yil bo'lsa yil ko'rsatilmaydi) */
 export function formatDateTime(value: string | Date): string {
   const p = parts(value)
   const now = parts(new Date())
-  const date = p.year === now.year ? `${p.day}-${MONTHS[p.month - 1]}` : `${p.day}-${MONTHS[p.month - 1]}, ${p.year}`
+  const date = p.year === now.year ? `${p.day}-${month(p.month - 1)}` : `${p.day}-${month(p.month - 1)}, ${p.year}`
   return `${date}, ${p.hour}:${p.minute}`
 }
 
 /** dushanba, 16-noyabr */
 export function formatLongToday(value: string | Date = new Date()): string {
   const p = parts(value)
-  return `${WEEKDAYS[p.weekday]}, ${p.day}-${MONTHS[p.month - 1]}`
+  return `${names().weekdays[p.weekday]}, ${p.day}-${month(p.month - 1)}`
 }
 
 export function isSameDay(a: string | Date, b: string | Date): boolean {
@@ -97,20 +116,22 @@ export function addDays(date: Date, days: number): Date {
 /** Kun vaqtiga qarab salomlashish. */
 export function greeting(date: Date = new Date()): string {
   const hour = Number(parts(date).hour)
-  if (hour < 5) return 'Xayrli tun'
-  if (hour < 12) return 'Xayrli tong'
-  if (hour < 18) return 'Xayrli kun'
-  return 'Xayrli kech'
+  const [night, morning, day, evening] = names().greetings
+  if (hour < 5) return night
+  if (hour < 12) return morning
+  if (hour < 18) return day
+  return evening
 }
 
-/** 1 soat 20 daqiqa / 45 daqiqa */
+/** 1 soat 20 daqiqa / 45 daqiqa (qoraqalpoqchada: 1 saat 20 minut) */
 export function formatDuration(minutes: number): string {
   const total = Math.max(0, Math.round(minutes))
   const hours = Math.floor(total / 60)
   const rest = total % 60
-  if (hours && rest) return `${hours} soat ${rest} daqiqa`
-  if (hours) return `${hours} soat`
-  return `${rest} daqiqa`
+  const { hour, minute } = names()
+  if (hours && rest) return `${hours} ${hour} ${rest} ${minute}`
+  if (hours) return `${hours} ${hour}`
+  return `${rest} ${minute}`
 }
 
 /** Hozirdan berilgan vaqtgacha qolgan daqiqalar (manfiy bo'lishi mumkin). */

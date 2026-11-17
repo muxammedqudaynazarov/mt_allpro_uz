@@ -1,5 +1,7 @@
 import type { LessonStatus, Role, UserStatus } from './types'
 
+// Qiymatlar o'zbekcha manba matnlar — ko'rsatishda t(...) orqali tarjima qilinadi.
+
 export const ROLE_LABELS: Record<Role, string> = {
   super_admin: 'Bosh administrator',
   admin: 'Administrator',

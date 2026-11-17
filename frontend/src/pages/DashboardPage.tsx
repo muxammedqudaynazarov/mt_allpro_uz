@@ -13,6 +13,7 @@ import { cn } from '@/components/ui/cn'
 import { useNow } from '@/hooks/useNow'
 import { LessonRow } from '@/features/lessons/LessonRow'
 import { OnAirPanel } from '@/features/lessons/OnAirPanel'
+import { useT } from '@/i18n/I18nProvider'
 
 function minutesOfDay(time: string): number {
   const [h, m] = time.split(':').map(Number)
@@ -25,12 +26,13 @@ function tashkentMinutesNow(now: number): number {
 }
 
 function TodaySchedule({ slots, lessons }: { slots: LessonSlot[]; lessons: Lesson[] }) {
+  const t = useT()
   const now = useNow()
   const current = tashkentMinutesNow(now)
   const unslotted = lessons.filter((lesson) => !lesson.slot || !slots.some((slot) => slot.id === lesson.slot?.id))
 
   if (!slots.length && !lessons.length) {
-    return <EmptyState title="Bugun darslar yoʻq" description="Yangi dars yaratsangiz, u shu yerda koʻrinadi." />
+    return <EmptyState title={t('Bugun darslar yoʻq')} description={t('Yangi dars yaratsangiz, u shu yerda koʻrinadi.')} />
   }
 
   return (
@@ -58,7 +60,7 @@ function TodaySchedule({ slots, lessons }: { slots: LessonSlot[]; lessons: Lesso
                   {slot.starts_at}–{slot.ends_at}
                 </span>
               </p>
-              {isNow && <span className="text-xs font-medium text-azure-700">hozir</span>}
+              {isNow && <span className="text-xs font-medium text-azure-700">{t('hozir')}</span>}
             </div>
             {inSlot.length ? (
               <ul className="pb-1 pl-11">
@@ -67,14 +69,14 @@ function TodaySchedule({ slots, lessons }: { slots: LessonSlot[]; lessons: Lesso
                 ))}
               </ul>
             ) : (
-              <p className="pt-1 pb-4 pl-16 text-sm text-steel-500">Dars yoʻq</p>
+              <p className="pt-1 pb-4 pl-16 text-sm text-steel-500">{t('Dars yoʻq')}</p>
             )}
           </li>
         )
       })}
       {unslotted.length > 0 && (
         <li>
-          <p className="px-5 pt-4 text-sm font-medium text-ink-900">Boshqa vaqtlar</p>
+          <p className="px-5 pt-4 text-sm font-medium text-ink-900">{t('Boshqa vaqtlar')}</p>
           <ul>
             {unslotted.map((lesson) => (
               <LessonRow key={lesson.id} lesson={lesson} showDate={false} />
@@ -87,6 +89,7 @@ function TodaySchedule({ slots, lessons }: { slots: LessonSlot[]; lessons: Lesso
 }
 
 export default function DashboardPage() {
+  const t = useT()
   const { user, isAdmin, config } = useAuth()
   const { data, isPending } = useQuery({
     queryKey: ['dashboard'],
@@ -104,7 +107,7 @@ export default function DashboardPage() {
         actions={
           <Link to="/lessons/new" className={buttonClass({ size: 'lg' })}>
             <CalendarPlus className="size-5" />
-            Dars yaratish
+            {t('Dars yaratish')}
           </Link>
         }
       />
@@ -116,9 +119,9 @@ export default function DashboardPage() {
         >
           <Hourglass className="size-5 shrink-0" />
           <span className="flex-1 text-[0.9375rem]">
-            <strong className="font-semibold">{data.stats.pending_users} ta xodim</strong> tasdiqlashingizni kutmoqda
+            {t('{count} ta xodim tasdiqlashingizni kutmoqda', { count: data.stats.pending_users })}
           </span>
-          <span className="text-sm font-medium underline underline-offset-4">Koʻrish</span>
+          <span className="text-sm font-medium underline underline-offset-4">{t('Koʻrish')}</span>
         </Link>
       )}
 
@@ -128,8 +131,8 @@ export default function DashboardPage() {
           className="mb-6 flex items-center gap-3 rounded-panel bg-white px-5 py-4 ring-1 ring-steel-200 transition-colors hover:ring-azure-300"
         >
           <Send className="size-5 shrink-0 text-azure-500" />
-          <span className="flex-1 text-[0.9375rem] text-ink-800">Dars havolalari Telegram’ga kelishi uchun hisobingizni bot bilan ulang.</span>
-          <span className="text-sm font-medium text-azure-600">Ulash</span>
+          <span className="flex-1 text-[0.9375rem] text-ink-800">{t('Dars havolalari Telegram’ga kelishi uchun hisobingizni bot bilan ulang.')}</span>
+          <span className="text-sm font-medium text-azure-600">{t('Ulash')}</span>
         </Link>
       )}
 
@@ -139,15 +142,15 @@ export default function DashboardPage() {
         <>
           <OnAirPanel lessons={data.live} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]">
-            <Panel title="Bugungi jadval" padded={false}>
+            <Panel title={t('Bugungi jadval')} padded={false}>
               <TodaySchedule slots={data.slots} lessons={data.today} />
             </Panel>
-            <Panel title="Qisqacha" padded={false} className="self-start">
+            <Panel title={t('Qisqacha')} padded={false} className="self-start">
               <dl className="divide-y divide-steel-100">
                 {[
-                  { label: 'Hozir efirda', value: data.stats.live_now },
-                  { label: 'Bugungi darslar', value: data.stats.today_total },
-                  { label: 'Shu oyda', value: data.stats.month_total },
+                  { label: t('Hozir efirda'), value: data.stats.live_now },
+                  { label: t('Bugungi darslar'), value: data.stats.today_total },
+                  { label: t('Shu oyda'), value: data.stats.month_total },
                 ].map((item) => (
                   <div key={item.label} className="flex items-baseline justify-between px-5 py-4">
                     <dt className="text-sm text-steel-600">{item.label}</dt>
@@ -156,7 +159,7 @@ export default function DashboardPage() {
                 ))}
               </dl>
               <p className="border-t border-steel-100 px-5 py-3 text-xs leading-relaxed text-steel-500">
-                {isAdmin ? 'Siz masʼul boʻlgan guruhlar boʻyicha.' : 'Siz yaratgan darslar boʻyicha.'}
+                {isAdmin ? t('Siz masʼul boʻlgan guruhlar boʻyicha.') : t('Siz yaratgan darslar boʻyicha.')}
               </p>
             </Panel>
           </div>

@@ -32,7 +32,7 @@ class CreateLesson
         $account = $group->zoomAccount;
 
         if (! $group->is_active || ! $account?->is_active) {
-            throw ValidationException::withMessages(['group_id' => 'Bu guruhga hozir dars yaratib boʻlmaydi: guruh yoki uning Zoom akkaunti nofaol.']);
+            throw ValidationException::withMessages(['group_id' => __('Bu guruhga hozir dars yaratib boʻlmaydi: guruh yoki uning Zoom akkaunti nofaol.')]);
         }
 
         // Bir Zoom host bir vaqtda faqat bitta uchrashuv o'tkaza oladi. Ikki o'qituvchi
@@ -44,8 +44,8 @@ class CreateLesson
                 if ($conflict = self::conflict($group, $startsAt, $endsAt)) {
                     throw ValidationException::withMessages([
                         'group_id' => $conflict->group_id === $group->id
-                            ? "Bu guruhda {$conflict->starts_at->format('H:i')}–{$conflict->ends_at->format('H:i')} oraligʻida boshqa dars bor."
-                            : "Guruhning Zoom hisobi ({$group->zoom_user_email}) shu vaqtda boshqa guruh darsida band.",
+                            ? __('Bu guruhda :from–:to oraligʻida boshqa dars bor.', ['from' => $conflict->starts_at->format('H:i'), 'to' => $conflict->ends_at->format('H:i')])
+                            : __('Guruhning Zoom hisobi (:email) shu vaqtda boshqa guruh darsida band.', ['email' => $group->zoom_user_email]),
                     ]);
                 }
 
@@ -74,13 +74,13 @@ class CreateLesson
                 $lesson->setRelation('group', $group);
                 $lesson->setRelation('teacher', $teacher);
 
-                Audit::log('lesson.created', "Dars yaratildi: {$group->name}, {$startsAt->format('d.m.Y H:i')}", $lesson, ['zoom_meeting_id' => $meeting['id']], $teacher);
+                Audit::log('lesson.created', 'Dars yaratildi: :group, :time', $lesson, ['zoom_meeting_id' => $meeting['id']], $teacher, ['group' => $group->name, 'time' => $startsAt->format('d.m.Y H:i')]);
                 $this->notifier->lessonCreated($lesson);
 
                 return $lesson;
             });
         } catch (LockTimeoutException) {
-            throw new ExternalServiceException('Bu guruh uchun hozir boshqa dars yaratilmoqda. Bir necha soniyadan soʻng qayta urinib koʻring.', status: 409);
+            throw new ExternalServiceException(__('Bu guruh uchun hozir boshqa dars yaratilmoqda. Bir necha soniyadan soʻng qayta urinib koʻring.'), status: 409);
         }
     }
 
@@ -100,7 +100,7 @@ class CreateLesson
         $start = $slot->startOn($now);
         $end = $slot->endOn($now);
         if ($end->lessThanOrEqualTo($now->copy()->addMinutes(5))) {
-            throw ValidationException::withMessages(['slot_id' => "“{$slot->name}” vaqti tugagan. Boshqa parani yoki “Hozir”ni tanlang."]);
+            throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa parani yoki “Hozir”ni tanlang.', ['name' => $slot->name])]);
         }
 
         return [$start->greaterThan($now) ? $start : $now, $end];

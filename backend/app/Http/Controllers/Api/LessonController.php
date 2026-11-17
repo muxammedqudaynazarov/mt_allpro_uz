@@ -88,10 +88,10 @@ class LessonController extends Controller
             'slot_id' => ['nullable', 'integer', Rule::exists('lesson_slots', 'id')->where('is_active', true)],
             'topic' => ['nullable', 'string', 'max:200'],
         ], [
-            'group_id.required' => 'Guruhni tanlang.',
-            'group_id.exists' => 'Tanlangan guruh topilmadi.',
-            'slot_id.exists' => 'Tanlangan dars vaqti topilmadi.',
-            'topic.max' => 'Mavzu 200 belgidan oshmasligi kerak.',
+            'group_id.required' => __('Guruhni tanlang.'),
+            'group_id.exists' => __('Tanlangan guruh topilmadi.'),
+            'slot_id.exists' => __('Tanlangan dars vaqti topilmadi.'),
+            'topic.max' => __('Mavzu 200 belgidan oshmasligi kerak.'),
         ]);
 
         $lesson = $action->handle(
@@ -113,7 +113,7 @@ class LessonController extends Controller
             ? ($zoom->freshStartUrl($lesson->zoomAccount, $lesson->zoom_meeting_id) ?? $lesson->start_url)
             : $lesson->start_url;
 
-        abort_unless($url, 410, 'Bu dars uchun host havolasi mavjud emas.');
+        abort_unless($url, 410, __('Bu dars uchun host havolasi mavjud emas.'));
 
         if ($lesson->status === LessonStatus::Scheduled && $lesson->starts_at->isPast()) {
             $lesson->forceFill(['status' => LessonStatus::Live])->save();
@@ -135,12 +135,12 @@ class LessonController extends Controller
         abort_unless($request->user()->isAdmin(), 403);
 
         $query = $this->filtered($request)->with(['group', 'teacher', 'slot'])->orderBy('starts_at');
-        $filename = 'darslar-'.now()->format('Y-m-d-His').'.csv';
+        $filename = __('darslar').'-'.now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF"); // Excel UTF-8 ni to'g'ri ochishi uchun BOM
-            fputcsv($out, ['Sana', 'Boshlanish', 'Tugash', 'Guruh', 'Kurs', 'Oʻqituvchi', 'Mavzu', 'Holat', 'Davomiyligi (daqiqa)'], ';');
+            fputcsv($out, array_map(fn (string $title) => __($title), ['Sana', 'Boshlanish', 'Tugash', 'Guruh', 'Kurs', 'Oʻqituvchi', 'Mavzu', 'Holat', 'Davomiyligi (daqiqa)']), ';');
             $query->chunk(500, function ($lessons) use ($out) {
                 foreach ($lessons as $lesson) {
                     fputcsv($out, [
@@ -152,10 +152,10 @@ class LessonController extends Controller
                         $lesson->teacher->name,
                         self::csvSafe($lesson->topic),
                         match ($lesson->effectiveStatus()) {
-                            LessonStatus::Scheduled => 'Rejalashtirilgan',
-                            LessonStatus::Live => 'Efirda',
-                            LessonStatus::Finished => 'Yakunlangan',
-                            LessonStatus::Cancelled => 'Bekor qilingan',
+                            LessonStatus::Scheduled => __('Rejalashtirilgan'),
+                            LessonStatus::Live => __('Efirda'),
+                            LessonStatus::Finished => __('Yakunlangan'),
+                            LessonStatus::Cancelled => __('Bekor qilingan'),
                         },
                         $lesson->status === LessonStatus::Cancelled ? 0 : $lesson->durationMinutes(),
                     ], ';');

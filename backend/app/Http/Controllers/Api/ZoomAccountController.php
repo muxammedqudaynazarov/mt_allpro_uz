@@ -25,7 +25,7 @@ class ZoomAccountController extends Controller
     public function store(Request $request): ZoomAccountResource
     {
         $account = ZoomAccount::create($this->validated($request));
-        Audit::log('zoom.created', "Zoom akkaunt qoʻshildi: {$account->name}", $account);
+        Audit::log('zoom.created', 'Zoom akkaunt qoʻshildi: :name', $account, replace: ['name' => $account->name]);
 
         return new ZoomAccountResource($account->loadCount('groups'));
     }
@@ -37,7 +37,7 @@ class ZoomAccountController extends Controller
             unset($data['client_secret']);
         }
         $zoomAccount->update($data);
-        Audit::log('zoom.updated', "Zoom akkaunt tahrirlandi: {$zoomAccount->name}", $zoomAccount, [
+        Audit::log('zoom.updated', 'Zoom akkaunt tahrirlandi: :name', $zoomAccount, replace: ['name' => $zoomAccount->name], properties: [
             'secret_changed' => array_key_exists('client_secret', $zoomAccount->getChanges()),
         ]);
 
@@ -47,10 +47,10 @@ class ZoomAccountController extends Controller
     public function destroy(ZoomAccount $zoomAccount): Response
     {
         if ($zoomAccount->groups()->withTrashed()->exists()) {
-            throw ValidationException::withMessages(['account' => 'Akkauntga guruhlar biriktirilgan. Avval ularni boshqa akkauntga oʻtkazing.']);
+            throw ValidationException::withMessages(['account' => __('Akkauntga guruhlar biriktirilgan. Avval ularni boshqa akkauntga oʻtkazing.')]);
         }
         $zoomAccount->delete();
-        Audit::log('zoom.deleted', "Zoom akkaunt oʻchirildi: {$zoomAccount->name}", $zoomAccount);
+        Audit::log('zoom.deleted', 'Zoom akkaunt oʻchirildi: :name', $zoomAccount, replace: ['name' => $zoomAccount->name]);
 
         return response()->noContent();
     }
@@ -81,8 +81,8 @@ class ZoomAccountController extends Controller
             'client_secret' => [$account ? 'nullable' : 'required', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
-            'client_id.unique' => 'Bu akkaunt allaqachon qoʻshilgan.',
-            'client_secret.required' => 'Client Secret kiritilishi shart.',
+            'client_id.unique' => __('Bu akkaunt allaqachon qoʻshilgan.'),
+            'client_secret.required' => __('Client Secret kiritilishi shart.'),
         ]);
     }
 }

@@ -165,6 +165,25 @@ Eski versiyada topilgan muammolar va ularning yechimi:
 11. **Audit.** Muhim amallar `audit_logs` jadvaliga yoziladi.
 12. **Uchinchi tomon skriptlari.** CDN'lar yo'q: shriftlar va kutubxonalar build ichida.
 
+## Tillar
+
+Asosiy til **qoraqalpoqcha** (`kaa`, lotin yozuvi, 2016-yilgi alifbo), ikkinchisi **o'zbekcha** (`uz`). Kalit sifatida o'zbekcha matnning o'zi ishlatiladi, shuning uchun o'zbekcha uchun alohida lug'at yo'q.
+
+| Qayerda | Fayl |
+|---|---|
+| Frontend matnlari | `frontend/src/i18n/kaa.ts` — `t('Dars yaratish')` → `"Sabaq jaratıw"` |
+| Backend xabarlari, Telegram, CSV | `backend/lang/kaa.json` — `__('...')` |
+| Tekshiruv (validation) xabarlari | `backend/lang/kaa/validation.php`, `backend/lang/uz/validation.php` |
+
+Til quyidagicha aniqlanadi:
+1. Frontend har so'rovda `X-Locale` sarlavhasini yuboradi.
+2. Sarlavha bo'lmasa, foydalanuvchi profilidagi til (`users.locale`) olinadi.
+3. Ikkalasi ham bo'lmasa, `.env`dagi `APP_LOCALE`.
+
+Telegram xabarlari har doim qabul qiluvchining profilidagi tilda yuboriladi. Amallar jurnali ham ko'rayotgan foydalanuvchining tilida ko'rsatiladi.
+
+Yangi matn qo'shganda uni `t('...')` yoki `__('...')` ichiga o'rang va tarjimasini `kaa.ts` yoki `kaa.json`ga yozing. Tarjimasi yo'q kalit o'zbekcha ko'rinadi, ishlab chiqish rejimida brauzer konsolida ogohlantirish chiqadi.
+
 ## Frontend dizayn tizimi
 
 Ranglar universitet "MT" logotipidan olingan (`frontend/src/index.css`, `@theme`):

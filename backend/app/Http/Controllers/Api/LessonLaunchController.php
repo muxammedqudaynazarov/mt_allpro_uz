@@ -30,7 +30,7 @@ class LessonLaunchController extends Controller
         if ($lesson->status === LessonStatus::Scheduled && $lesson->starts_at->isPast()) {
             $lesson->forceFill(['status' => LessonStatus::Live])->save();
         }
-        Audit::log('lesson.launched', "Dars Telegram orqali boshlandi: {$lesson->group?->name}", $lesson, actor: $lesson->teacher);
+        Audit::log('lesson.launched', 'Dars Telegram orqali boshlandi: :group', $lesson, actor: $lesson->teacher, replace: ['group' => $lesson->group?->name]);
 
         return redirect()->away($url);
     }

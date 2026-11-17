@@ -22,23 +22,24 @@ class Notifier
             return;
         }
 
+        $l = $teacher->preferredLocale();
         $time = $lesson->starts_at->format('H:i').'–'.$lesson->ends_at->format('H:i');
-        $day = $lesson->starts_at->isToday() ? 'bugun' : $lesson->starts_at->format('d.m.Y');
+        $day = $lesson->starts_at->isToday() ? __('bugun', [], $l) : $lesson->starts_at->format('d.m.Y');
         $lines = [
-            '<b>Dars yaratildi</b>',
+            '<b>'.__('Dars yaratildi', [], $l).'</b>',
             '',
-            '<b>Guruh:</b> '.e($lesson->group->name),
-            '<b>Vaqt:</b> '.$day.', '.$time,
-            '<b>Mavzu:</b> '.e($lesson->topic),
+            '<b>'.__('Guruh:', [], $l).'</b> '.e($lesson->group->name),
+            '<b>'.__('Vaqt:', [], $l).'</b> '.$day.', '.$time,
+            '<b>'.__('Mavzu:', [], $l).'</b> '.e($lesson->topic),
         ];
         if ($lesson->passcode) {
-            $lines[] = '<b>Kirish kodi:</b> <code>'.e($lesson->passcode).'</code>';
+            $lines[] = '<b>'.__('Kirish kodi:', [], $l).'</b> <code>'.e($lesson->passcode).'</code>';
         }
         $lines[] = '';
-        $lines[] = 'Talabalar uchun havola:';
+        $lines[] = __('Talabalar uchun havola:', [], $l);
         $lines[] = '<code>'.e((string) $lesson->join_url).'</code>';
         $lines[] = '';
-        $lines[] = '«Guruhga yuborish» tugmasi orqali havolani guruh chatiga joʻnating.';
+        $lines[] = __('«Guruhga yuborish» tugmasi orqali havolani guruh chatiga joʻnating.', [], $l);
 
         // Darsni boshlash havolasi imzolangan va dars tugashi bilan eskiradi.
         // Zoom'ning start_url (ZAK) havolasi 2 soatda eskiradi, shuning uchun
@@ -47,8 +48,8 @@ class Notifier
         $share = 'https://t.me/share/url?'.http_build_query(['url' => $lesson->join_url, 'text' => $lesson->group->name.', '.$time]);
 
         SendTelegramMessage::dispatch((string) $teacher->telegram_chat_id, implode("\n", $lines), [
-            [['text' => 'Darsni boshlash', 'url' => $launch]],
-            [['text' => 'Guruhga yuborish', 'url' => $share]],
+            [['text' => __('Darsni boshlash', [], $l), 'url' => $launch]],
+            [['text' => __('Guruhga yuborish', [], $l), 'url' => $share]],
         ]);
     }
 
@@ -64,10 +65,11 @@ class Notifier
             ->where(fn ($q) => $q->whereJsonContains('roles', Role::Admin->value)->orWhereJsonContains('roles', Role::SuperAdmin->value))
             ->get();
 
-        $text = "<b>Yangi xodim tasdiq kutmoqda</b>\n\n".e($user->name).($user->department ? "\n".e($user->department) : '');
         $url = rtrim((string) config('app.frontend_url'), '/').'/users?status=pending';
         foreach ($admins as $admin) {
-            SendTelegramMessage::dispatch((string) $admin->telegram_chat_id, $text, [[['text' => 'Koʻrib chiqish', 'url' => $url]]]);
+            $l = $admin->preferredLocale();
+            $text = '<b>'.__('Yangi xodim tasdiq kutmoqda', [], $l)."</b>\n\n".e($user->name).($user->department ? "\n".e($user->department) : '');
+            SendTelegramMessage::dispatch((string) $admin->telegram_chat_id, $text, [[['text' => __('Koʻrib chiqish', [], $l), 'url' => $url]]]);
         }
     }
 
@@ -77,10 +79,11 @@ class Notifier
             return;
         }
         $url = rtrim((string) config('app.frontend_url'), '/');
+        $l = $user->preferredLocale();
         SendTelegramMessage::dispatch(
             (string) $user->telegram_chat_id,
-            "<b>Hisobingiz faollashtirildi</b>\n\nEndi Masofaviy taʼlim tizimida dars yaratishingiz mumkin.",
-            [[['text' => 'Tizimni ochish', 'url' => $url]]],
+            '<b>'.__('Hisobingiz faollashtirildi', [], $l)."</b>\n\n".__('Endi Masofaviy taʼlim tizimida dars yaratishingiz mumkin.', [], $l),
+            [[['text' => __('Tizimni ochish', [], $l), 'url' => $url]]],
         );
     }
 }

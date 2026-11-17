@@ -12,7 +12,7 @@ class EnsureRole
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (! $request->user()?->hasRole(...$roles)) {
-            return response()->json(['message' => 'Bu amal uchun ruxsatingiz yoʻq.'], 403);
+            return response()->json(['message' => __('Bu amal uchun ruxsatingiz yoʻq.')], 403);
         }
 
         return $next($request);

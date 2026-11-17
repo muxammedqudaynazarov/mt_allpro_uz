@@ -20,7 +20,7 @@ class LessonSlotController extends Controller
     public function store(Request $request): LessonSlotResource
     {
         $slot = LessonSlot::create($this->validated($request));
-        Audit::log('slot.created', "Dars vaqti qoʻshildi: {$slot->name} ({$slot->starts_at})", $slot);
+        Audit::log('slot.created', 'Dars vaqti qoʻshildi: :name (:time)', $slot, replace: ['name' => $slot->name, 'time' => $slot->starts_at]);
 
         return new LessonSlotResource($slot);
     }
@@ -28,7 +28,7 @@ class LessonSlotController extends Controller
     public function update(Request $request, LessonSlot $lessonSlot): LessonSlotResource
     {
         $lessonSlot->update($this->validated($request));
-        Audit::log('slot.updated', "Dars vaqti tahrirlandi: {$lessonSlot->name}", $lessonSlot);
+        Audit::log('slot.updated', 'Dars vaqti tahrirlandi: :name', $lessonSlot, replace: ['name' => $lessonSlot->name]);
 
         return new LessonSlotResource($lessonSlot);
     }
@@ -36,7 +36,7 @@ class LessonSlotController extends Controller
     public function destroy(LessonSlot $lessonSlot): Response
     {
         $lessonSlot->delete();
-        Audit::log('slot.deleted', "Dars vaqti oʻchirildi: {$lessonSlot->name}", $lessonSlot);
+        Audit::log('slot.deleted', 'Dars vaqti oʻchirildi: :name', $lessonSlot, replace: ['name' => $lessonSlot->name]);
 
         return response()->noContent();
     }
@@ -51,8 +51,8 @@ class LessonSlotController extends Controller
             'sort' => ['sometimes', 'integer', 'between:0,1000'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
-            'starts_at.date_format' => 'Vaqtni SS:DD koʻrinishida kiriting, masalan 14:30.',
-            'duration_minutes.between' => 'Davomiylik 10 dan 240 daqiqagacha boʻlishi kerak.',
+            'starts_at.date_format' => __('Vaqtni SS:DD koʻrinishida kiriting, masalan 14:30.'),
+            'duration_minutes.between' => __('Davomiylik 10 dan 240 daqiqagacha boʻlishi kerak.'),
         ]);
     }
 }

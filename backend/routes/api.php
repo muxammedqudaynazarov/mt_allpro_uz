@@ -24,6 +24,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
 
     // Tasdiqlanmagan xodimlar ham foydalana oladi
     Route::get('/me', [MeController::class, 'show']);
+    Route::patch('/me', [MeController::class, 'update']);
     Route::post('/me/telegram', [MeController::class, 'telegramLink']);
     Route::delete('/me/telegram', [MeController::class, 'telegramUnlink']);
 
