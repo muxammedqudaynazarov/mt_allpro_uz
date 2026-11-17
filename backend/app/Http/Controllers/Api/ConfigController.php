@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\Hemis\HemisOAuth;
 use App\Services\Telegram\TelegramBot;
+use App\Support\LessonDays;
 use Illuminate\Http\JsonResponse;
 
 /** Login sahifasi uchun ochiq sozlamalar (maxfiy qiymatlarsiz). */
@@ -19,6 +20,7 @@ class ConfigController extends Controller
             'telegram_enabled' => $telegram->enabled(),
             'telegram_bot_username' => $telegram->username(),
             'default_duration' => (int) config('lessons.default_duration'),
+            'closed_weekdays' => LessonDays::closed(),
         ]]);
     }
 }

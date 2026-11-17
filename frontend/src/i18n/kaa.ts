@@ -274,6 +274,8 @@ export const kaa: Record<string, string> = {
   "Faollashtirish": "Aktivlestiriw",
   "Foydalanuvchi faollashtirildi": "Paydalanıwshı aktivlestirildi",
   "Bloklash": "Bloklaw",
+  "Dam olish kuni": "Dem alıs kúni",
+  "Dam olish kuni — bu kunga dars yaratib boʻlmaydi.": "Dem alıs kúni — bul kúnge sabaq jaratıp bolmaydı.",
   "Himoyalangan": "Qorǵalǵan",
   "Server sozlamasida himoyalangan administrator: rolini olib, bloklab yoki oʻchirib boʻlmaydi.": "Server sazlamasında qorǵalǵan administrator: rolin alıp taslaw, bloklaw yamasa óshiriw múmkin emes.",
   "Foydalanuvchi bloklandi": "Paydalanıwshı bloklandı",

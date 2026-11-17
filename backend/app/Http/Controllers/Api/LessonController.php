@@ -16,6 +16,7 @@ use App\Models\Semester;
 use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
 use App\Support\HostAvailability;
+use App\Support\LessonDays;
 use App\Support\Xlsx;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -76,18 +77,20 @@ class LessonController extends Controller
         $hosts = HostAvailability::options($from, $to, $selected)->map(fn (array $option) => HostAvailability::present($option))->values();
 
         $isToday = $day->isSameDay($now);
+        $closed = LessonDays::isClosed($day);
         $slots = LessonSlot::where('is_active', true)->orderBy('sort')->orderBy('starts_at')->get()->map(fn (LessonSlot $item) => [
             'id' => $item->id,
             'name' => $item->label(),
             'starts_at' => $item->starts_at,
             'ends_at' => $item->endsAtLabel(),
             'duration_minutes' => $item->duration_minutes,
-            'available' => ! $isToday || $item->endOn($now)->greaterThan($now->copy()->addMinutes(5)),
+            'available' => ! $closed && (! $isToday || $item->endOn($now)->greaterThan($now->copy()->addMinutes(5))),
         ])->values();
 
         return response()->json(['data' => [
             'now' => $now->toIso8601String(),
             'date' => $day->toDateString(),
+            'closed' => $closed,
             'from' => $from->toIso8601String(),
             'to' => $to->toIso8601String(),
             'default_duration' => (int) config('lessons.default_duration'),

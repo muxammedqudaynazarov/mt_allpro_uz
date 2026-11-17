@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage } from '@/lib/api'
-import { addDays, dayDate, formatDayMonth, formatTime, formatWeekday, isoDate, weekStart } from '@/lib/format'
+import { addDays, dayDate, formatDayMonth, formatTime, formatWeekday, isoDate, isoWeekday, weekStart } from '@/lib/format'
 import type { CalendarData, Group, Lesson, PlannedLesson } from '@/lib/types'
 import { StaffName } from '@/components/ui/StaffName'
 import { OnAirDot } from '@/components/ui/Badge'
@@ -105,7 +105,9 @@ function AddLink({ date, slot }: { date: string; slot: number }) {
 
 export default function CalendarPage() {
   const t = useT()
-  const { canViewAll, can } = useAuth()
+  const { canViewAll, can, config } = useAuth()
+  // Dam olish kunlari (yakshanba): dars qo'shib bo'lmaydi.
+  const isClosed = (day: string) => (config?.closed_weekdays ?? [7]).includes(isoWeekday(day))
   const [params, setParams] = useSearchParams()
   const [groupId, setGroupId] = useState('')
   const [planned, setPlanned] = useState<PlannedLesson | null>(null)
@@ -241,6 +243,7 @@ export default function CalendarPage() {
                           <span className={cn('capitalize', isToday ? 'text-steel-200' : 'text-steel-600')}>{formatWeekday(date)}</span>
                           <span className="font-semibold tabular-nums">{formatDayMonth(date).split('-')[0]}</span>
                         </span>
+                        {isClosed(day) && <span className="mt-0.5 block px-2.5 text-xs text-steel-500">{t('Dam olish kuni')}</span>}
                       </th>
                     )
                   })}
@@ -264,7 +267,7 @@ export default function CalendarPage() {
                     {days.map((day) => {
                       const content = cell(day, row.key)
                       const slotEnd = row.slot ? new Date(`${day}T${row.slot.ends_at}:00+05:00`).getTime() : 0
-                      const addable = canCreate && row.slot && content.every((item) => item.kind === 'lesson' && item.lesson.status === 'cancelled') && slotEnd > now
+                      const addable = canCreate && !isClosed(day) && row.slot && content.every((item) => item.kind === 'lesson' && item.lesson.status === 'cancelled') && slotEnd > now
                       return (
                         <td key={day} className={cn('group px-1.5 py-1.5 align-top', day === today && 'bg-mist/50')}>
                           <div className="flex min-h-14 flex-col gap-1.5">
@@ -294,7 +297,7 @@ export default function CalendarPage() {
                   {content.length ? (
                     <div className="space-y-2">{content.map((item) => render(item, true))}</div>
                   ) : (
-                    <p className="text-sm text-steel-500">{t('Bu kunda dars yoʻq')}</p>
+                    <p className="text-sm text-steel-500">{isClosed(day) ? t('Dam olish kuni') : t('Bu kunda dars yoʻq')}</p>
                   )}
                 </section>
               )

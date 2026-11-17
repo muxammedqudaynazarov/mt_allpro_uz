@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\LessonDays;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -83,6 +84,7 @@ class LessonSeries extends Model
     {
         return $this->is_active
             && $day->isoWeekday() === $this->weekday
+            && ! LessonDays::isClosed($day)
             && $day->greaterThanOrEqualTo($this->starts_on->copy()->startOfDay())
             && ($this->ends_on === null || $day->lessThanOrEqualTo($this->ends_on->copy()->endOfDay()));
     }
@@ -94,6 +96,10 @@ class LessonSeries extends Model
      */
     public function datesBetween(Carbon $from, Carbon $to): array
     {
+        // Eski (dam olish kuniga qo'shilgan) jadval endi o'tkazilmaydi.
+        if (LessonDays::isClosedWeekday((int) $this->weekday)) {
+            return [];
+        }
         $day = $from->copy()->startOfDay();
         $offset = ($this->weekday - $day->isoWeekday() + 7) % 7;
         $day->addDays($offset);

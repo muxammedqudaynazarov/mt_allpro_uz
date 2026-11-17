@@ -5,7 +5,7 @@ import { AlertTriangle, Check, Copy, Play, Send, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
-import { addDays, formatDayMonth, formatDuration, formatTime, formatWeekday, isoDate } from '@/lib/format'
+import { addDays, formatDayMonth, formatDuration, formatTime, formatWeekday, isoDate, isoWeekday } from '@/lib/format'
 import type { Lesson, LessonOptionHost, LessonOptions } from '@/lib/types'
 import { Button, buttonClass } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -105,13 +105,21 @@ function CreatedModal({ lesson, onClose }: { lesson: Lesson | null; onClose: () 
 export default function CreateLessonPage() {
   const t = useT()
   const navigate = useNavigate()
-  const { can } = useAuth()
+  const { can, config } = useAuth()
   const [params] = useSearchParams()
   const today = isoDate()
   const canPlan = can('calendar.manage')
-  const days = useMemo(() => Array.from({ length: canPlan ? PLAN_DAYS : 1 }, (_, index) => isoDate(addDays(new Date(), index))), [canPlan])
+  const closedWeekdays = useMemo(() => config?.closed_weekdays ?? [7], [config])
+  // Dam olish kunlari (yakshanba) tanlovda ko'rinmaydi.
+  const days = useMemo(
+    () =>
+      Array.from({ length: canPlan ? PLAN_DAYS + 7 : 1 }, (_, index) => isoDate(addDays(new Date(), index)))
+        .filter((day) => !closedWeekdays.includes(isoWeekday(day)))
+        .slice(0, canPlan ? PLAN_DAYS : 1),
+    [canPlan, closedWeekdays],
+  )
   const initialDate = params.get('date')
-  const [date, setDate] = useState<string>(initialDate && days.includes(initialDate) ? initialDate : today)
+  const [date, setDate] = useState<string>(initialDate && days.includes(initialDate) ? initialDate : (days[0] ?? today))
   const [slot, setSlot] = useState<SlotChoice>(params.get('slot') ? Number(params.get('slot')) : null)
   const [course, setCourse] = useState<string>('')
   const [groupId, setGroupId] = useState<number | null>(null)
@@ -255,6 +263,7 @@ export default function CreateLessonPage() {
                 </div>
               )}
               {errors.date && <p className="mb-2 text-sm text-onair-600">{errors.date}</p>}
+              {options.data.closed && <p className="mb-2 text-sm font-medium text-amber-700">{t('Dam olish kuni — bu kunga dars yaratib boʻlmaydi.')}</p>}
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Dars vaqti')}>
                 {options.data.slots.map((item) => (
                   <SlotPill key={item.id} active={slot === item.id} disabled={!item.available} onClick={() => setSlot(item.id)}>

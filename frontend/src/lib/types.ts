@@ -34,6 +34,8 @@ export interface AppConfig {
   telegram_enabled: boolean
   telegram_bot_username: string | null
   default_duration: number
+  /** Dam olish kunlari (ISO: 1 — dushanba ... 7 — yakshanba): dars yaratilmaydi. */
+  closed_weekdays: number[]
 }
 
 export interface GroupRef {
@@ -138,6 +140,8 @@ export interface LessonOptions {
   now: string
   /** Tanlangan kun (YYYY-MM-DD). */
   date: string
+  /** Tanlangan kun dam olish kuni — juftliklar tanlanmaydi. */
+  closed: boolean
   from: string
   to: string
   default_duration: number

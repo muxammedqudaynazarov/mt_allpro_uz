@@ -37,7 +37,7 @@ Har bir dars uchun Telegram'ga **"Darsni boshlash"** va **"Guruhga yuborish"** t
 ### Dars yaratish
 
 1. **"Dars yaratish"** tugmasini bosing.
-2. **Qachon?** — kunni (bugun yoki keyingi kunlar) va juftlikni tanlang. Dars faqat jadvaldagi juftlikka yaratiladi; tugagan juftliklar tanlanmaydi.
+2. **Qachon?** — kunni (bugun yoki keyingi kunlar) va juftlikni tanlang. Dars faqat jadvaldagi juftlikka yaratiladi; tugagan juftliklar tanlanmaydi. Yakshanba — dam olish kuni: bu kunga dars ham, haftalik dars ham qo'shib bo'lmaydi.
 3. **Qaysi guruh?** — kursni, keyin guruhni tanlang. Shu vaqtda boshqa darsi bor guruhlar **"Band"** deb ko'rsatiladi.
 4. **Zoom host** — dars o'tkaziladigan Zoom hisobi. **Avtomatik** qoldirilsa, birinchi bo'sh host olinadi. Band hostlar tanlanmaydi: bir host bir vaqtda faqat bitta dars o'tkaza oladi.
 5. **Mavzu** — ixtiyoriy.

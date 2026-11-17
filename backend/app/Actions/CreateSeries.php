@@ -8,6 +8,7 @@ use App\Models\LessonSlot;
 use App\Models\User;
 use App\Models\ZoomHost;
 use App\Support\Audit;
+use App\Support\LessonDays;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -16,6 +17,9 @@ class CreateSeries
 {
     public function handle(User $teacher, Group $group, LessonSlot $slot, int $weekday, ?ZoomHost $host, ?string $topic, Carbon $startsOn, ?Carbon $endsOn, User $actor): LessonSeries
     {
+        if (LessonDays::isClosedWeekday($weekday)) {
+            throw ValidationException::withMessages(['weekday' => LessonDays::closedMessage($weekday)]);
+        }
         if (! $group->is_active) {
             throw ValidationException::withMessages(['group_id' => __('Bu guruh nofaol — unga dars yaratib boʻlmaydi.')]);
         }

@@ -13,6 +13,7 @@ use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
 use App\Support\Audit;
 use App\Support\HostAvailability;
+use App\Support\LessonDays;
 use App\Support\Notifier;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
@@ -146,6 +147,10 @@ class CreateLesson
     public static function window(?LessonSlot $slot, ?Carbon $now = null, ?Carbon $date = null): array
     {
         $now = ($now ?? now())->copy()->startOfMinute();
+        $day = $date ?? $now;
+        if (LessonDays::isClosed($day)) {
+            throw ValidationException::withMessages(['date' => LessonDays::closedMessage($day->isoWeekday())]);
+        }
         if ($date && ! $date->isSameDay($now)) {
             if ($date->lessThan($now->copy()->startOfDay())) {
                 throw ValidationException::withMessages(['date' => __('Oʻtgan kunga dars yaratib boʻlmaydi.')]);

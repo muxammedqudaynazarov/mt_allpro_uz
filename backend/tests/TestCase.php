@@ -18,6 +18,11 @@ abstract class TestCase extends BaseTestCase
         // Testlarda tashqi xizmatlarga haqiqiy so'rov ketmasligi kafolatlanadi.
         Http::preventStrayRequests();
         $this->withHeaders(['Accept' => 'application/json', 'Referer' => 'http://localhost/']);
+        // Yakshanba — dam olish kuni (darslar yaratilmaydi): "bugun" bilan ishlaydigan testlar
+        // CI yakshanba kuni ishga tushganda ham bir xil natija berishi uchun dushanbaga suriladi.
+        if (now()->isSunday()) {
+            $this->travel(1)->days();
+        }
     }
 
     /**

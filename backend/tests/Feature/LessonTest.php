@@ -180,7 +180,8 @@ class LessonTest extends TestCase
         $this->fakeZoom();
         $group = Group::factory()->create();
         $slot = LessonSlot::factory()->create(['starts_at' => '13:00', 'duration_minutes' => 80]);
-        $tomorrow = now()->addDay()->format('Y-m-d');
+        // Ertangi kun yakshanba (dam olish) bo'lsa — dushanba.
+        $tomorrow = now()->addDays(now()->addDay()->isSunday() ? 2 : 1)->format('Y-m-d');
 
         $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => $group->id, 'date' => $tomorrow])
             ->assertStatus(422)->assertJsonValidationErrors('slot_id');

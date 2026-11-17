@@ -73,7 +73,8 @@ function useSeriesActions() {
 /** Haftalik dars qo'shish. Zoom uchrashuvi har hafta dars kuni, boshlanishidan 1 soat oldin yaratiladi. */
 export function SeriesModal({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: { weekday?: number; slot?: number } }) {
   const t = useT()
-  const { user } = useAuth()
+  const { user, config } = useAuth()
+  const weekdays = WEEKDAYS.filter((day) => !(config?.closed_weekdays ?? [7]).includes(day))
   const queryClient = useQueryClient()
   const [form, setForm] = useState({
     group_id: '',
@@ -146,7 +147,7 @@ export function SeriesModal({ open, onClose, initial }: { open: boolean; onClose
         <fieldset className="sm:col-span-2">
           <legend className="mb-1.5 text-sm font-medium text-ink-800">{t('Hafta kuni')}</legend>
           <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('Hafta kuni')}>
-            {WEEKDAYS.map((day) => (
+            {weekdays.map((day) => (
               <button
                 key={day}
                 type="button"

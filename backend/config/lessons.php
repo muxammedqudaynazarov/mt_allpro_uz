@@ -6,6 +6,10 @@ return [
     // "Hozir" rejimida yaratilgan darsning davomiyligi (daqiqa). Bir para — 80 daqiqa.
     'default_duration' => (int) env('LESSON_DEFAULT_DURATION', 80),
 
+    // Dam olish kunlari (ISO: 1 — dushanba ... 7 — yakshanba): bu kunlarga dars yaratilmaydi,
+    // haftalik dars qo'shilmaydi, mavjud haftalik jadvallar ham shu kunlari o'tkazib yuboriladi.
+    'closed_weekdays' => [7],
+
     // Bir guruh yoki host uchun parallel dars yaratishda qulfni kutish, soniya.
     'lock_wait' => 10,
 ];

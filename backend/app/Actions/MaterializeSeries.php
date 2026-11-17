@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Exceptions\ExternalServiceException;
 use App\Models\Lesson;
 use App\Models\LessonSeries;
+use App\Support\LessonDays;
 use App\Support\Notifier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -29,6 +30,9 @@ class MaterializeSeries
         $now ??= now();
         $today = $now->copy()->startOfDay();
         $created = $failed = 0;
+        if (LessonDays::isClosed($today)) {
+            return ['created' => 0, 'failed' => 0];
+        }
 
         $series = LessonSeries::query()
             ->active()
