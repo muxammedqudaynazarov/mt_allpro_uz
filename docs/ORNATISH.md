@@ -205,6 +205,20 @@ sudo -u www-data php artisan app:create-admin --login=admin --name="Familiya Ism
 
 Buyruq parolni so'raydi: kamida 12 belgi, harf va raqam bo'lishi shart. `--hemis-id` ko'rsatilsa, shu xodim HEMIS orqali kirganda ham aynan shu hisobga tushadi. Kirish sahifasida HEMIS tugmasi ostidagi **"Login orqali kirish"** tugmasini bosing.
 
+### Himoyalangan administrator
+
+Tizim egasining HEMIS ID sini `.env` ga yozing (bir nechta bo'lsa — vergul bilan):
+
+```dotenv
+HEMIS_ADMIN_IDS=1574
+```
+
+Keyin `sudo -u www-data php artisan optimize`. Shu HEMIS ID egasi:
+- har safar kirganda (HEMIS yoki zaxira login orqali) Administrator roli, faol holati va — o'chirilgan bo'lsa — hisobi tiklanadi;
+- saytda boshqa administratorlar uning Administrator rolini olib tashlay, bloklay, o'chira yoki HEMIS ID sini o'zgartira olmaydi (Foydalanuvchilar ro'yxatida qulf belgisi bilan ko'rsatiladi).
+
+Himoyani faqat serverdagi `.env` orqali olib tashlash mumkin. `php artisan app:check` himoyalangan administrator holatini ko'rsatadi.
+
 Tizimda uchta rol bor: **Administrator** (hammasi), **O'quv bo'limi** (barcha darslar, monitoring, hisobotlar; dars yaratmaydi, Zoom va sozlamalarni o'zgartirmaydi), **O'qituvchi**. Rollar **Foydalanuvchilar → ⋯ → Rol va sozlamalar** da beriladi.
 
 ## 10. HEMIS OAuth ulash

@@ -103,6 +103,38 @@ class User extends Authenticatable
         return $this->status === UserStatus::Active;
     }
 
+    /** .env HEMIS_ADMIN_IDS ro'yxatidagi HEMIS ID — himoyalangan administrator. */
+    public static function isProtectedHemisId(?string $hemisId): bool
+    {
+        return filled($hemisId) && in_array(trim((string) $hemisId), (array) config('services.hemis.admin_ids'), true);
+    }
+
+    public function isProtectedAdmin(): bool
+    {
+        return self::isProtectedHemisId($this->hemis_id);
+    }
+
+    /**
+     * Himoyalangan administratorga kirishni qaytaradi: o'chirilgan bo'lsa tiklaydi, faol qiladi va
+     * Administrator rolini qo'shadi (boshqa rollari saqlanadi). O'zgarish bo'lsa — true.
+     */
+    public function grantProtectedAdmin(): bool
+    {
+        $changed = false;
+        if ($this->trashed()) {
+            $this->deleted_at = null;
+            $changed = true;
+        }
+        if (! $this->isSuperAdmin()) {
+            $this->roles = array_values(array_unique([...($this->roles ?? []), Role::SuperAdmin->value]));
+        }
+        if ($this->status !== UserStatus::Active) {
+            $this->status = UserStatus::Active;
+        }
+
+        return $this->isDirty(['roles', 'status']) || $changed;
+    }
+
     /** @return list<string> */
     public function permissions(): array
     {

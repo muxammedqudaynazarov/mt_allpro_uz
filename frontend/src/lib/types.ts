@@ -277,6 +277,8 @@ export interface UserListItem {
   status: UserStatus
   roles: Role[]
   has_password: boolean
+  /** .env HEMIS_ADMIN_IDS: Administrator rolini olib, bloklab yoki o'chirib bo'lmaydi. */
+  protected: boolean
   telegram_linked: boolean
   lessons_count: number
   last_login_at: string | null

@@ -197,6 +197,22 @@ class CheckSetup extends Command
 
         $count = User::withRole(Role::SuperAdmin)->where('status', UserStatus::Active)->count();
         $this->check($count > 0, "Faol administrator: {$count}", 'Administrator yoʻq. Buyruq: php artisan app:create-admin');
+
+        // .env HEMIS_ADMIN_IDS: har kirishda Administrator roli tiklanadi.
+        foreach ((array) config('services.hemis.admin_ids') as $hemisId) {
+            $user = User::withTrashed()->where('hemis_id', $hemisId)->first();
+            if (! $user) {
+                $this->line("  Himoyalangan administrator {$hemisId}: hali kirmagan — birinchi kirishda Administrator boʻladi");
+
+                continue;
+            }
+            $this->check(
+                $user->isSuperAdmin() && $user->isActive() && ! $user->trashed(),
+                "Himoyalangan administrator {$hemisId}: {$user->displayName()}",
+                "Himoyalangan administrator {$hemisId} ({$user->displayName()}) hozir faol Administrator emas — keyingi kirishda tiklanadi.",
+                warning: true,
+            );
+        }
     }
 
     private function zoom(): void

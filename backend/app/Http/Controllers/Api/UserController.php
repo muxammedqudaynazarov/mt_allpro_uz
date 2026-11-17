@@ -16,6 +16,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -78,6 +79,18 @@ class UserController extends Controller
             'can_manage_calendar' => ['sometimes', 'boolean'],
         ], ['roles.min' => __('Kamida bitta rol tanlang.'), 'hemis_id.unique' => __('Bu HEMIS ID boshqa foydalanuvchiga biriktirilgan.')]);
 
+        if ($user->isProtectedAdmin()) {
+            $blocked = array_filter([
+                'status' => isset($data['status']) && $data['status'] !== UserStatus::Active->value,
+                // Administrator rolini olib tashlab bo'lmaydi (qo'shish mumkin).
+                'roles' => isset($data['roles']) && $user->isSuperAdmin() && ! in_array(Role::SuperAdmin->value, $data['roles'], true),
+                'hemis_id' => array_key_exists('hemis_id', $data) && (string) $data['hemis_id'] !== (string) $user->hemis_id,
+            ]);
+            if ($blocked) {
+                throw ValidationException::withMessages(array_map(fn () => self::protectedMessage(), $blocked));
+            }
+        }
+
         if (array_key_exists('status', $data)) {
             Gate::authorize('updateStatus', $user);
             $user->status = UserStatus::from($data['status']);
@@ -121,10 +134,18 @@ class UserController extends Controller
     public function destroy(Request $request, User $user): Response
     {
         Gate::authorize('delete', $user);
+        if ($user->isProtectedAdmin()) {
+            throw ValidationException::withMessages(['user' => self::protectedMessage()]);
+        }
         $user->forceFill(['status' => UserStatus::Blocked, 'telegram_chat_id' => null])->save();
         $user->delete();
         Audit::log('user.deleted', 'Foydalanuvchi oʻchirildi: :name', $user, replace: ['name' => $user->displayName()]);
 
         return response()->noContent();
+    }
+
+    private static function protectedMessage(): string
+    {
+        return __('Bu administrator server sozlamasida himoyalangan: uning Administrator rolini olib, bloklab, oʻchirib yoki HEMIS ID sini oʻzgartirib boʻlmaydi.');
     }
 }

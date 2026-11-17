@@ -69,14 +69,17 @@ class HemisController extends Controller
 
         $user = $this->findUser($profile);
         $isNew = false;
+        // .env HEMIS_ADMIN_IDS: rolini olib tashlashgan, bloklashgan yoki o'chirishgan bo'lsa ham — tiklanadi.
+        $protected = User::isProtectedHemisId($profile->id);
 
         if (! $user) {
-            if (! $this->hemis->autoRegister()) {
+            if (! $this->hemis->autoRegister() && ! $protected) {
                 return $this->toLogin('registration_closed');
             }
             $user = new User(['roles' => [Role::Teacher->value], 'status' => UserStatus::Pending]);
             $isNew = true;
         }
+        $restored = $protected && $user->grantProtectedAdmin() && ! $isNew;
 
         if ($user->status === UserStatus::Blocked) {
             Audit::log('auth.blocked', 'Bloklangan foydalanuvchi kirishga urindi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
@@ -101,7 +104,10 @@ class HemisController extends Controller
         $request->session()->regenerate();
 
         Audit::log($isNew ? 'auth.registered' : 'auth.login', $isNew ? 'HEMIS orqali roʻyxatdan oʻtdi: :name' : 'HEMIS orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
-        if ($isNew) {
+        if ($restored) {
+            Audit::log('user.protected_restored', 'Himoyalangan administrator huquqlari tiklandi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
+        }
+        if ($isNew && ! $user->isActive()) {
             $this->notifier->userPending($user);
         }
 

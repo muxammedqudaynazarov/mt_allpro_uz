@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, CheckCircle2, Search, Send, ShieldCheck, Trash2, UserRoundCheck, UsersRound } from 'lucide-react'
+import { Ban, CheckCircle2, LockKeyhole, Search, Send, ShieldCheck, Trash2, UserRoundCheck, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { upperName, upperNameInput } from '@/lib/name'
 import { useAuth } from '@/auth/AuthProvider'
@@ -108,7 +108,13 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
           <div className="mt-3 space-y-2">
             {(['teacher', 'education', 'super_admin'] as Role[]).map((role) => (
               <label key={role} className="flex cursor-pointer items-start gap-3 rounded-field p-3 ring-1 ring-steel-200 ring-inset has-checked:bg-azure-50 has-checked:ring-azure-300">
-                <input type="checkbox" className="mt-0.5 size-4 accent-azure-500" checked={roles.includes(role)} onChange={() => toggle(role)} />
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-azure-500"
+                  checked={roles.includes(role)}
+                  disabled={user.protected && role === 'super_admin' && user.roles.includes('super_admin')}
+                  onChange={() => toggle(role)}
+                />
                 <span>
                   <span className="block text-sm font-medium">{t(ROLE_LABELS[role])}</span>
                   <span className="block text-sm text-steel-600">{t(ROLE_HINTS[role])}</span>
@@ -145,8 +151,9 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
           wrapperClassName="mt-6"
           inputMode="numeric"
           value={hemisId}
+          disabled={user.protected}
           onChange={(event) => setHemisId(event.target.value)}
-          hint={t('Eski tizimdan koʻchirilgan foydalanuvchini uning HEMIS hisobiga bogʻlash uchun.')}
+          hint={user.protected ? t('Server sozlamasida himoyalangan administrator: rolini olib, bloklab yoki oʻchirib boʻlmaydi.') : t('Eski tizimdan koʻchirilgan foydalanuvchini uning HEMIS hisobiga bogʻlash uchun.')}
         />
       )}
     </Modal>
@@ -270,6 +277,11 @@ export default function UsersPage() {
                               <p className="flex items-center gap-1.5 font-medium text-ink-900">
                                 <StaffName name={user.name} className="truncate" />
                                 {user.telegram_linked && <Send className="size-3.5 shrink-0 text-azure-500" aria-label={t('Telegram ulangan')} />}
+                                {user.protected && (
+                                  <span title={t('Server sozlamasida himoyalangan administrator: rolini olib, bloklab yoki oʻchirib boʻlmaydi.')} className="shrink-0">
+                                    <LockKeyhole className="size-3.5 text-amber-600" aria-label={t('Himoyalangan')} />
+                                  </span>
+                                )}
                               </p>
                               <p className="truncate text-steel-600">
                                 {user.hemis_id ? `HEMIS ${user.hemis_id}` : '—'}
@@ -307,7 +319,7 @@ export default function UsersPage() {
                                   {
                                     label: t('Bloklash'),
                                     icon: <Ban className="size-4" />,
-                                    hidden: self || user.status === 'blocked',
+                                    hidden: self || user.protected || user.status === 'blocked',
                                     onClick: () => setStatus(user, 'blocked', t('Foydalanuvchi bloklandi')),
                                   },
                                   {
@@ -319,7 +331,7 @@ export default function UsersPage() {
                                     label: t('Oʻchirish'),
                                     icon: <Trash2 className="size-4" />,
                                     danger: true,
-                                    hidden: self,
+                                    hidden: self || user.protected,
                                     onClick: () => setDeleting(user),
                                   },
                                 ]}

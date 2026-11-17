@@ -41,10 +41,15 @@ class SessionController extends Controller
             ]);
         }
 
-        $user = User::where('login', Str::lower($data['login']))->first();
+        $user = User::withTrashed()->where('login', Str::lower($data['login']))->first();
         $valid = $user && $user->password && Hash::check($data['password'], $user->password);
+        // Himoyalangan administrator (HEMIS_ADMIN_IDS): parol to'g'ri bo'lsa, huquqlari tiklanadi.
+        if ($valid && $user->isProtectedAdmin() && $user->grantProtectedAdmin()) {
+            $user->save();
+            Audit::log('user.protected_restored', 'Himoyalangan administrator huquqlari tiklandi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
+        }
 
-        if (! $valid || ! $user->canViewAll() || $user->status !== UserStatus::Active) {
+        if (! $valid || $user->trashed() || ! $user->canViewAll() || $user->status !== UserStatus::Active) {
             RateLimiter::hit($key, 60);
             // Bir xil xabar: login mavjudligini oshkor qilmaymiz.
             throw ValidationException::withMessages(['login' => __('Login yoki parol notoʻgʻri.')]);

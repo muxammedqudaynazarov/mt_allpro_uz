@@ -26,6 +26,9 @@ return [
         'student_endpoint' => env('HEMIS_STUDENT_ENDPOINT', 'v1/data/student-list'),
         'student_search_param' => env('HEMIS_STUDENT_SEARCH_PARAM', 'search'),
         'user_fields' => env('HEMIS_USER_FIELDS', 'id,type,name,firstname,surname,patronymic,picture,login,university_id'),
+        // Himoyalangan administratorlar (HEMIS ID, vergul bilan): har kirishda Administrator roli va faol holati
+        // tiklanadi; saytda ularning rolini olib, bloklab, o'chirib yoki HEMIS ID sini o'zgartirib bo'lmaydi.
+        'admin_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('HEMIS_ADMIN_IDS', ''))), 'strlen')),
     ],
 
     'zoom' => [
