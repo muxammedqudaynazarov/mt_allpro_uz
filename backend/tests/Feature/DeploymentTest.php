@@ -173,6 +173,12 @@ class DeploymentTest extends TestCase
      * .env faqat config/ fayllarida o'qilishi kerak: `php artisan optimize` dan keyin boshqa joydagi
      * env() null qaytaradi (TRUSTED_PROXIES shu sababli jimgina 127.0.0.1 ga qaytgan edi).
      */
+    /** Toza klonda `php artisan optimize` (view:cache) resources/views papkasini talab qiladi. */
+    public function test_views_directory_is_tracked_in_git(): void
+    {
+        $this->assertFileExists(resource_path('views/.gitkeep'));
+    }
+
     public function test_env_is_read_only_in_config_files(): void
     {
         $offenders = [];

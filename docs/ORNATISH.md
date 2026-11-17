@@ -415,10 +415,10 @@ Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitl
 
 ```bash
 cd /mnt/projects/sites/regofis.uz/mt.regofis.uz
-sudo -u www-data APP_DIR=/mnt/projects/sites/regofis.uz/mt.regofis.uz ./deploy/deploy.sh
+sudo ./deploy/deploy.sh
 ```
 
-Skript kodni yangilaydi, frontendni `APP_URL` dagi yo'l uchun qayta yig'adi, `composer install`, migratsiyalar, keshlarni yangilaydi va navbat ishchisini qayta ishga tushiradi.
+Skript kodni yangilaydi, frontendni qayta yig'adi, `composer install`, migratsiyalar, keshlarni yangilaydi va navbat ishchisini qayta ishga tushiradi. git, npm va composer **kod papkasi egasi** nomidan ishlaydi, `php artisan` — `www-data` nomidan. Shuning uchun `sudo -u www-data ./deploy/deploy.sh` qilmang: git "dubious ownership" deb to'xtaydi. Yangilash davomida sayt texnik ishlar rejimida bo'ladi va xato chiqsa ham oxirida ochiladi.
 
 ## 18. Zaxira nusxa
 
