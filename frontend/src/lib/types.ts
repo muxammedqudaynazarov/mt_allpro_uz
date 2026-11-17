@@ -369,3 +369,67 @@ export interface GroupStudents {
   lessons_held: number
   students: GroupStudentRow[]
 }
+
+export interface Semester {
+  id: number
+  name: string
+  starts_on: string
+  ends_on: string
+  current?: boolean
+}
+
+export type AssessmentLevel = 'past' | 'sust' | 'qoniqarli' | 'ortacha' | 'yaxshi' | 'alo'
+
+export interface AssessmentCriteria {
+  /** time — umumiy qatnashgan vaqt foizi, lessons — qatnashgan darslar foizi. */
+  basis: 'time' | 'lessons'
+  /** Talaba darsda kamida shuncha foiz bo'lsa — qatnashgan hisoblanadi. */
+  presence_percent: number
+  thresholds: Record<Exclude<AssessmentLevel, 'past'>, number>
+}
+
+export interface SemesterTotals {
+  held: number
+  missed: number
+  pending: number
+  zoom_minutes: number
+  avg_lesson_minutes: number | null
+  students: number
+  avg_students_per_lesson: number | null
+  avg_attendance_percent: number | null
+}
+
+export interface SemesterStudentRow {
+  id: number
+  name: string
+  attended: number
+  joined: number
+  minutes: number
+  percent_time: number | null
+  percent_lessons: number | null
+  avg_late_minutes: number | null
+  level: AssessmentLevel | null
+  level_label: string | null
+  per_lesson: number[]
+}
+
+export interface SemesterGroupReport {
+  semester: Semester
+  group: GroupRef
+  criteria: AssessmentCriteria
+  totals: SemesterTotals
+  levels: Record<AssessmentLevel, number>
+  lessons: { id: number; starts_at: string; teacher: string; minutes: number; present: number }[]
+  students: SemesterStudentRow[]
+}
+
+export interface SemesterOverview {
+  semester: Semester | null
+  criteria?: AssessmentCriteria
+  groups?: { group: GroupRef; totals: SemesterTotals; levels: Record<AssessmentLevel, number> }[]
+}
+
+export interface SystemSettings {
+  assessment: AssessmentCriteria
+  assessment_defaults: AssessmentCriteria
+}

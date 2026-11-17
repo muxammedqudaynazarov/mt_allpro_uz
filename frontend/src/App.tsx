@@ -19,6 +19,7 @@ const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const ZoomAccountsPage = lazy(() => import('@/pages/ZoomAccountsPage'))
 const SlotsPage = lazy(() => import('@/pages/SlotsPage'))
 const AuditPage = lazy(() => import('@/pages/AuditPage'))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -63,6 +64,7 @@ export default function App() {
                 <Route path="zoom-accounts" element={<ZoomAccountsPage />} />
                 <Route path="slots" element={<SlotsPage />} />
                 <Route path="audit" element={<AuditPage />} />
+                <Route path="settings" element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Route>

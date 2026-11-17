@@ -12,6 +12,7 @@ import {
   PlusCircle,
   RadioTower,
   ScrollText,
+  SlidersHorizontal,
   UserRound,
   Users,
   UsersRound,
@@ -78,6 +79,7 @@ function useNav(): NavSection[] {
       items: [
         { to: '/zoom-accounts', label: t('Zoom akkauntlar'), icon: <Video />, roles: ['super_admin'] },
         { to: '/slots', label: t('Dars vaqtlari'), icon: <Clock3 />, roles: ['super_admin'] },
+        { to: '/settings', label: t('Umumiy sozlamalar'), icon: <SlidersHorizontal />, roles: ['super_admin'] },
         { to: '/audit', label: t('Amallar tarixi'), icon: <ScrollText />, roles: ['super_admin'] },
       ],
     },

@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\LessonSlotController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\MonitorController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\SemesterController;
+use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\UserController;
@@ -77,6 +79,9 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::patch('/students/{student}', [StudentController::class, 'update']);
 
             Route::get('/reports/summary', [ReportController::class, 'summary']);
+            Route::get('/reports/semester', [ReportController::class, 'semester']);
+            Route::get('/reports/semester/export', [ReportController::class, 'semesterExport']);
+            Route::get('/semesters', [SemesterController::class, 'index']);
             Route::get('/monitor', [MonitorController::class, 'index']);
         });
 
@@ -97,6 +102,12 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::delete('/lesson-slots/{lessonSlot}', [LessonSlotController::class, 'destroy']);
 
             Route::get('/audit-logs', AuditLogController::class);
+
+            Route::post('/semesters', [SemesterController::class, 'store']);
+            Route::put('/semesters/{semester}', [SemesterController::class, 'update']);
+            Route::delete('/semesters/{semester}', [SemesterController::class, 'destroy']);
+            Route::get('/settings', [SettingsController::class, 'show']);
+            Route::put('/settings', [SettingsController::class, 'update']);
         });
     });
 });

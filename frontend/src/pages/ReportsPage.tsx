@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3, Download } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -8,8 +9,10 @@ import { buttonClass } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Input } from '@/components/ui/Field'
 import { PageHeader, Panel } from '@/components/ui/Page'
+import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { delayToneClass, LATE_START_MINUTES, startDelay } from '@/features/lessons/ZoomTracking'
+import { SemesterReportSection } from '@/features/reports/SemesterReport'
 import { useT } from '@/i18n/I18nProvider'
 
 function monthStart(): string {
@@ -25,7 +28,38 @@ function Bar({ value, max }: { value: number; max: number }) {
   )
 }
 
+type Tab = 'period' | 'semester'
+
 export default function ReportsPage() {
+  const t = useT()
+  const [params, setParams] = useSearchParams()
+  const tab: Tab = params.get('tab') === 'semester' ? 'semester' : 'period'
+  return (
+    <>
+      <PageHeader
+        title={t('Hisobotlar')}
+        description={
+          tab === 'semester'
+            ? t('Semestr yakuni: guruhlar va har bir talabaning jami qatnashuvi, foizlar va oʻzlashtirish taxmini.')
+            : t('Darslar soni va davomiyligi, ular Zoom’da haqiqatda qachon boshlangani va nechta talaba qatnashgani.')
+        }
+      />
+      <Segmented<Tab>
+        className="mb-6"
+        label={t('Hisobot turi')}
+        value={tab}
+        onChange={(value) => setParams(value === 'semester' ? { tab: 'semester' } : {}, { replace: true })}
+        options={[
+          { value: 'period', label: t('Davr boʻyicha') },
+          { value: 'semester', label: t('Semestr yakuni') },
+        ]}
+      />
+      {tab === 'semester' ? <SemesterReportSection /> : <PeriodReport />}
+    </>
+  )
+}
+
+function PeriodReport() {
   const t = useT()
   const [from, setFrom] = useState(monthStart)
   const [to, setTo] = useState(() => isoDate())
@@ -47,17 +81,6 @@ export default function ReportsPage() {
 
   return (
     <>
-      <PageHeader
-        title={t('Hisobotlar')}
-        description={t('Darslar soni va davomiyligi, ular Zoom’da haqiqatda qachon boshlangani va nechta talaba qatnashgani.')}
-        actions={
-          <a href={`/api/lessons/export?from=${from}&to=${to}`} className={buttonClass({ variant: 'secondary' })}>
-            <Download className="size-4" />
-            {t('Batafsil roʻyxat')} (.xlsx)
-          </a>
-        }
-      />
-
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end">
         <Input type="date" label={t('Sanadan')} wrapperClassName="sm:w-44" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
         <Input type="date" label={t('Sanagacha')} wrapperClassName="sm:w-44" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
@@ -76,6 +99,10 @@ export default function ReportsPage() {
             </button>
           ))}
         </div>
+        <a href={`/api/lessons/export?from=${from}&to=${to}`} className={buttonClass({ variant: 'secondary', className: 'sm:ml-auto' })}>
+          <Download className="size-4" />
+          {t('Batafsil roʻyxat')} (.xlsx)
+        </a>
       </div>
 
       {report.isPending ? (
