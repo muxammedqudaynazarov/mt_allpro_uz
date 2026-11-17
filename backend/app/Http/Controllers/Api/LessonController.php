@@ -34,7 +34,7 @@ class LessonController extends Controller
         return LessonResource::collection($lessons);
     }
 
-    /** Dars yaratish formasi uchun: faol guruhlar (band/bo'sh) va bugungi paralar. */
+    /** Dars yaratish formasi uchun: faol guruhlar (band/bo'sh) va bugungi juftliklar. */
     public function options(Request $request): JsonResponse
     {
         $slotId = $request->query('slot_id');
@@ -64,7 +64,7 @@ class LessonController extends Controller
 
         $slots = LessonSlot::where('is_active', true)->orderBy('sort')->orderBy('starts_at')->get()->map(fn (LessonSlot $item) => [
             'id' => $item->id,
-            'name' => $item->name,
+            'name' => $item->label(),
             'starts_at' => $item->starts_at,
             'ends_at' => $item->endsAtLabel(),
             'duration_minutes' => $item->duration_minutes,

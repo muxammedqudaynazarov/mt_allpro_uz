@@ -84,7 +84,7 @@ class ImportLegacy extends Command
                 continue;
             }
             $slot = LessonSlot::firstOrCreate(['starts_at' => $start], [
-                'name' => ($index + 1).'-para',
+                'name' => LessonSlot::defaultName($index + 1),
                 'duration_minutes' => 80,
                 'sort' => $index + 1,
                 'is_active' => (string) ($row->status ?? '1') === '1',
@@ -132,10 +132,10 @@ class ImportLegacy extends Command
             }
         }
 
-        $this->line('Xodimlar: '.count($this->users).($skipped ? " (shundan {$skipped} tasi avval mavjud edi)" : ''));
+        $this->line('Foydalanuvchilar: '.count($this->users).($skipped ? " (shundan {$skipped} tasi avval mavjud edi)" : ''));
         $withoutHemis = $rows->filter(fn ($row) => empty($row->hemis_id))->count();
         if ($withoutHemis) {
-            $this->warn("{$withoutHemis} ta xodimda HEMIS ID yoʻq — ular HEMIS orqali kirganda yangi hisob ochiladi. “Xodimlar” sahifasida HEMIS ID ni kiriting.");
+            $this->warn("{$withoutHemis} ta xodimda HEMIS ID yoʻq — ular HEMIS orqali kirganda yangi hisob ochiladi. “Foydalanuvchilar” sahifasida HEMIS ID ni kiriting.");
         }
     }
 

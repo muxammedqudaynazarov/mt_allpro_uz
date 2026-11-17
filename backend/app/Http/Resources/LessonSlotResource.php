@@ -14,6 +14,7 @@ class LessonSlotResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'label' => $this->label(),
             'starts_at' => $this->starts_at,
             'ends_at' => $this->endsAtLabel(),
             'duration_minutes' => $this->duration_minutes,

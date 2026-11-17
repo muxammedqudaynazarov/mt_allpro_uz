@@ -74,7 +74,7 @@ class UserController extends Controller
             'roles.*' => [Rule::in(Role::values())],
             'managed_by_id' => ['sometimes', 'nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
             'hemis_id' => ['sometimes', 'nullable', 'string', 'max:64', Rule::unique('users', 'hemis_id')->ignore($user->id)],
-        ], ['roles.min' => __('Kamida bitta rol tanlang.'), 'hemis_id.unique' => __('Bu HEMIS ID boshqa xodimga biriktirilgan.')]);
+        ], ['roles.min' => __('Kamida bitta rol tanlang.'), 'hemis_id.unique' => __('Bu HEMIS ID boshqa foydalanuvchiga biriktirilgan.')]);
 
         if (array_key_exists('status', $data)) {
             Gate::authorize('updateStatus', $user);
@@ -107,7 +107,7 @@ class UserController extends Controller
         $user->save();
 
         if ($changes) {
-            Audit::log('user.updated', 'Xodim maʼlumotlari oʻzgartirildi: :name (:fields)', $user, replace: ['name' => $user->name, 'fields' => implode(', ', $changes)], properties: [
+            Audit::log('user.updated', 'Foydalanuvchi maʼlumotlari oʻzgartirildi: :name (:fields)', $user, replace: ['name' => $user->name, 'fields' => implode(', ', $changes)], properties: [
                 'status' => $user->status->value,
                 'roles' => $user->roles,
             ]);
@@ -124,7 +124,7 @@ class UserController extends Controller
         Gate::authorize('delete', $user);
         $user->forceFill(['status' => UserStatus::Blocked, 'telegram_chat_id' => null])->save();
         $user->delete();
-        Audit::log('user.deleted', 'Xodim oʻchirildi: :name', $user, replace: ['name' => $user->name]);
+        Audit::log('user.deleted', 'Foydalanuvchi oʻchirildi: :name', $user, replace: ['name' => $user->name]);
 
         return response()->noContent();
     }

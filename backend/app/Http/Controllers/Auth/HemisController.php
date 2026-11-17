@@ -79,7 +79,7 @@ class HemisController extends Controller
         }
 
         if ($user->status === UserStatus::Blocked) {
-            Audit::log('auth.blocked', 'Bloklangan xodim kirishga urindi: :name', $user, actor: $user, replace: ['name' => $user->name]);
+            Audit::log('auth.blocked', 'Bloklangan foydalanuvchi kirishga urindi: :name', $user, actor: $user, replace: ['name' => $user->name]);
 
             return $this->toLogin('blocked');
         }

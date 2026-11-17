@@ -18,7 +18,8 @@ export interface Me {
   department: string | null
   hemis_id: string | null
   status: UserStatus
-  locale: 'kaa' | 'uz'
+  /** Profilda tanlangan til; null — tanlanmagan (asosiy til ishlatiladi). */
+  locale: 'kaa' | 'uz' | null
   roles: Role[]
   permissions: string[]
   has_password: boolean
@@ -72,7 +73,10 @@ export interface Paginated<T> {
 
 export interface LessonSlot {
   id: number
+  /** Bazadagi nom (tahrirlash uchun). */
   name: string
+  /** Joriy tilda ko'rsatiladigan nom. */
+  label: string
   starts_at: string
   ends_at: string
   duration_minutes: number

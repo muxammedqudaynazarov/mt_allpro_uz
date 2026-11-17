@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useI18n } from '@/i18n/I18nProvider'
-import { isLocale, storedLocale } from '@/i18n/locale'
+import { DEFAULT_LOCALE, guestLocale, isLocale, rememberUserLocale, takeGuestLocale } from '@/i18n/locale'
 import { api, isStatus } from '@/lib/api'
 import type { AppConfig, Me, Role } from '@/lib/types'
 
@@ -46,13 +46,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const user = meQuery.data ?? null
   const { locale, setLocale } = useI18n()
+  const localeRef = useRef(locale)
+  localeRef.current = locale
 
-  // Yangi qurilmada kirganda profildagi tanlangan til qo'llanadi.
+  // Til: mehmonga — asosiy til (yoki shu oynada tanlagani), kirgan foydalanuvchiga — profilidagi til.
+  const authKey = meQuery.isPending ? null : user ? `${user.id}:${user.locale ?? ''}` : 'guest'
   useEffect(() => {
-    if (user && isLocale(user.locale) && user.locale !== locale && !storedLocale()) {
-      setLocale(user.locale, { remember: false })
+    if (authKey === null) return
+    let target = guestLocale() ?? DEFAULT_LOCALE
+
+    if (user) {
+      const chosen = takeGuestLocale()
+      if (chosen && chosen !== user.locale) {
+        // Kirishdan oldin tanlangan til profilga yoziladi (Telegram xabarlari ham shu tilda bo'ladi).
+        queryClient.setQueryData(ME_KEY, (current: Me | null | undefined) => (current ? { ...current, locale: chosen } : current))
+        api.patch('/api/me', { locale: chosen }).catch(() => undefined)
+      }
+      target = chosen ?? (isLocale(user.locale) ? user.locale : DEFAULT_LOCALE)
+      rememberUserLocale(target)
+    } else {
+      rememberUserLocale(null)
     }
-  }, [user, locale, setLocale])
+
+    if (target !== localeRef.current) setLocale(target)
+    // Faqat kirish holati yoki profil tili o'zgarganda ishlaydi.
+  }, [authKey])
 
   const hasRole = useCallback((...roles: Role[]) => !!user && roles.some((role) => user.roles.includes(role)), [user])
   const can = useCallback((permission: string) => !!user && user.permissions.includes(permission), [user])

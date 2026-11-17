@@ -62,7 +62,7 @@ function useNav(): NavSection[] {
     {
       title: t('Boshqaruv'),
       items: [
-        { to: '/users', label: t('Xodimlar'), icon: <Users />, roles: ['admin', 'super_admin'], badge: pending.data },
+        { to: '/users', label: t('Foydalanuvchilar'), icon: <Users />, roles: ['admin', 'super_admin'], badge: pending.data },
         { to: '/groups', label: t('Guruhlar'), icon: <UsersRound />, roles: ['admin', 'super_admin'] },
         { to: '/reports', label: t('Hisobotlar'), icon: <BarChart3 />, roles: ['admin', 'super_admin'] },
       ],

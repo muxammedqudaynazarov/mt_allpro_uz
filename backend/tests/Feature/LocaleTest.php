@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Jobs\SendTelegramMessage;
+use App\Models\AuditLog;
 use App\Models\Group;
+use App\Models\LessonSlot;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -73,9 +76,58 @@ class LocaleTest extends TestCase
         $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['status' => 'active'])->assertOk();
 
         $this->actingAsUser($super)->getJson('/api/audit-logs', ['X-Locale' => 'kaa'])
-            ->assertJsonPath('data.0.description', 'Xızmetker maǵlıwmatları ózgertildi: Test Xodim (status)')
+            ->assertJsonPath('data.0.description', 'Paydalanıwshı maǵlıwmatları ózgertildi: Test Xodim (status)')
             ->assertJsonMissingPath('data.0.properties._t');
         $this->actingAsUser($super)->getJson('/api/audit-logs', ['X-Locale' => 'uz'])
-            ->assertJsonPath('data.0.description', 'Xodim maʼlumotlari oʻzgartirildi: Test Xodim (status)');
+            ->assertJsonPath('data.0.description', 'Foydalanuvchi maʼlumotlari oʻzgartirildi: Test Xodim (status)');
+    }
+
+    public function test_old_audit_entries_use_new_wording(): void
+    {
+        $super = User::factory()->superAdmin()->create();
+        AuditLog::create([
+            'action' => 'user.deleted',
+            'description' => 'Xodim oʻchirildi: Ali',
+            'properties' => ['_t' => ['key' => 'Xodim oʻchirildi: :name', 'replace' => ['name' => 'Ali']]],
+        ]);
+
+        $this->actingAsUser($super)->getJson('/api/audit-logs', ['X-Locale' => 'uz'])->assertJsonPath('data.0.description', 'Foydalanuvchi oʻchirildi: Ali');
+        $this->actingAsUser($super)->getJson('/api/audit-logs', ['X-Locale' => 'kaa'])->assertJsonPath('data.0.description', 'Paydalanıwshı óshirildi: Ali');
+    }
+
+    public function test_user_without_chosen_locale_gets_null(): void
+    {
+        config(['app.locale' => 'uz']);
+
+        $this->actingAsUser(User::factory()->create(['locale' => null]))->getJson('/api/me')->assertJsonPath('data.locale', null);
+    }
+
+    public function test_default_slot_names_follow_viewer_language(): void
+    {
+        $teacher = User::factory()->create();
+        Group::factory()->create();
+        LessonSlot::factory()->create(['name' => '2-juplıq', 'starts_at' => '23:00', 'sort' => 1]);
+        LessonSlot::factory()->create(['name' => '3-para', 'starts_at' => '23:10', 'sort' => 2]);
+        LessonSlot::factory()->create(['name' => 'Kechki', 'starts_at' => '23:20', 'sort' => 3]);
+
+        $this->actingAsUser($teacher)->getJson('/api/lessons/options', ['X-Locale' => 'uz'])
+            ->assertJsonPath('data.slots.0.name', '2-juftlik')
+            ->assertJsonPath('data.slots.1.name', '3-juftlik')
+            ->assertJsonPath('data.slots.2.name', 'Kechki');
+        $this->actingAsUser($teacher)->getJson('/api/lessons/options', ['X-Locale' => 'kaa'])
+            ->assertJsonPath('data.slots.0.name', '2-juplıq')
+            ->assertJsonPath('data.slots.1.name', '3-juplıq');
+    }
+
+    public function test_migration_renames_old_default_slot_names(): void
+    {
+        DB::table('lesson_slots')->insert([
+            ['name' => '1-para', 'starts_at' => '13:00', 'duration_minutes' => 80, 'sort' => 1, 'is_active' => true],
+            ['name' => 'Kechki para', 'starts_at' => '19:00', 'duration_minutes' => 80, 'sort' => 2, 'is_active' => true],
+        ]);
+
+        (require database_path('migrations/2026_11_17_000200_rename_default_lesson_slots.php'))->up();
+
+        $this->assertSame(['1-juplıq', 'Kechki para'], DB::table('lesson_slots')->orderBy('sort')->pluck('name')->all());
     }
 }

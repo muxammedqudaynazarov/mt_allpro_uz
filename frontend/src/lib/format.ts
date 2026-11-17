@@ -18,7 +18,7 @@ const NAMES = {
   kaa: {
     months: ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'],
     weekdays: ['ekshembi', 'dúyshembi', 'siyshembi', 'sárshembi', 'piyshembi', 'juma', 'shembi'],
-    greetings: ['Xayırlı tún', 'Xayırlı tań', 'Xayırlı kún', 'Xayırlı kesh'],
+    greetings: 'Assalawma áleykum',
     hour: 'saat',
     minute: 'minut',
   },
@@ -113,10 +113,12 @@ export function addDays(date: Date, days: number): Date {
   return copy
 }
 
-/** Kun vaqtiga qarab salomlashish. */
+/** Salomlashish: o'zbekchada kun vaqtiga qarab, qoraqalpoqchada doim "Assalawma áleykum". */
 export function greeting(date: Date = new Date()): string {
+  const greetings = names().greetings
+  if (typeof greetings === 'string') return greetings
   const hour = Number(parts(date).hour)
-  const [night, morning, day, evening] = names().greetings
+  const [night, morning, day, evening] = greetings
   if (hour < 5) return night
   if (hour < 12) return morning
   if (hour < 18) return day

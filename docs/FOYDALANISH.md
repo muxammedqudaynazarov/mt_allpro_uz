@@ -30,7 +30,7 @@ Endi har bir yaratilgan dars uchun Telegram'ga **"Darsni boshlash"** va **"Guruh
 ### Dars yaratish
 
 1. **"Dars yaratish"** tugmasini bosing.
-2. **Qachon?** — **"Hozir"** (darhol, 80 daqiqa) yoki bugungi paralardan birini tanlang. Tugagan paralar tanlanmaydi. Boshlangan para tanlansa, dars hozirdan para oxirigacha davom etadi.
+2. **Qachon?** — **"Hozir"** (darhol, 80 daqiqa) yoki bugungi juftliklardan birini tanlang. Tugagan juftliklar tanlanmaydi. Boshlangan juftlik tanlansa, dars hozirdan juftlik oxirigacha davom etadi.
 3. **Qaysi guruh?** — kursni, keyin guruhni tanlang. Shu vaqtda boshqa darsi bor guruhlar **"Band"** deb ko'rsatiladi va tanlanmaydi.
 4. **Mavzu** — ixtiyoriy.
 5. **"Darsni yaratish"** tugmasini bosing.
@@ -59,16 +59,16 @@ Bosh sahifadagi **"Efirda"** paneli hozir davom etayotgan darslarni ko'rsatadi: 
 
 ### Yangi xodimlarni tasdiqlash
 
-Yangi xodim HEMIS orqali kirganda bosh sahifada sariq xabar chiqadi, menyudagi **"Xodimlar"** yonida esa son ko'rinadi. Telegram ulangan bo'lsa, botdan ham xabar keladi.
+Yangi xodim HEMIS orqali kirganda bosh sahifada sariq xabar chiqadi, menyudagi **"Foydalanuvchilar"** yonida esa son ko'rinadi. Telegram ulangan bo'lsa, botdan ham xabar keladi.
 
-1. **Xodimlar → Tasdiq kutmoqda**.
+1. **Foydalanuvchilar → Tasdiq kutmoqda**.
 2. Xodimni aniqlang (ism, HEMIS ID, bo'lim) va **"Tasdiqlash"**ni bosing.
 
 Siz tasdiqlagan xodim avtomatik sizga biriktiriladi. Keyinchalik uni faqat siz (yoki bosh administrator) bloklay olasiz.
 
 ### Bloklash
 
-**Xodimlar** jadvalida qator oxiridagi **⋯** tugmasi → **Bloklash**. Bloklangan xodimning ochiq sessiyasi darhol tugaydi va u qayta kira olmaydi. **Faollashtirish** bilan qaytariladi.
+**Foydalanuvchilar** jadvalida qator oxiridagi **⋯** tugmasi → **Bloklash**. Bloklangan xodimning ochiq sessiyasi darhol tugaydi va u qayta kira olmaydi. **Faollashtirish** bilan qaytariladi.
 
 ### Guruhlar
 
@@ -85,9 +85,9 @@ Siz tasdiqlagan xodim avtomatik sizga biriktiriladi. Keyinchalik uni faqat siz (
 ### Birinchi sozlash tartibi
 
 1. **Zoom akkauntlar**: Server-to-Server OAuth ma'lumotlarini kiriting va "Ulanishni tekshirish"ni bosing ([O'rnatish, 11-bo'lim](ORNATISH.md#11-zoom-ulash)).
-2. **Dars vaqtlari**: paralarni tekshiring yoki o'zgartiring (standart: 13:00, 14:30, 16:00, 17:30, 19:00; 80 daqiqa).
+2. **Dars vaqtlari**: juftliklarni tekshiring yoki o'zgartiring (standart: 13:00, 14:30, 16:00, 17:30, 19:00; 80 daqiqa).
 3. **Guruhlar → Guruh qo'shish**: nomi, kursi, Zoom akkaunt, host email va masʼul administrator.
-4. **Xodimlar**: administratorlarga rol bering (⋯ → **Rol va sozlamalar**).
+4. **Foydalanuvchilar**: administratorlarga rol bering (⋯ → **Rol va sozlamalar**).
 
 ### Rollar va masʼul administrator
 
@@ -97,9 +97,9 @@ Siz tasdiqlagan xodim avtomatik sizga biriktiriladi. Keyinchalik uni faqat siz (
 - **HEMIS ID**: eski tizimdan ko'chirilgan xodimni uning HEMIS hisobiga bog'lash uchun.
 - **Masʼul administrator**: xodim qaysi administratorga tegishli.
 
-### Xodimni o'chirish
+### Foydalanuvchini o'chirish
 
-**⋯ → O'chirish**. Xodim tizimga kira olmaydi, lekin uning darslari tarixi hisobotlarda saqlanadi.
+**⋯ → O'chirish**. Foydalanuvchi tizimga kira olmaydi, lekin uning darslari tarixi hisobotlarda saqlanadi.
 
 ### Amallar tarixi
 
@@ -107,7 +107,7 @@ Siz tasdiqlagan xodim avtomatik sizga biriktiriladi. Keyinchalik uni faqat siz (
 
 ### HEMIS ishlamay qolsa
 
-Kirish sahifasining pastida **"Administrator login va paroli bilan kirish"** havolasi bor. Zaxira login serverda `php artisan app:create-admin` buyrug'i bilan yaratiladi ([O'rnatish, 9-bo'lim](ORNATISH.md#9-bosh-administrator)). O'qituvchilar uchun zaxira login yo'q.
+Kirish sahifasida HEMIS tugmasi ostida **"Login orqali kirish"** tugmasi bor. Zaxira login serverda `php artisan app:create-admin` buyrug'i bilan yaratiladi ([O'rnatish, 9-bo'lim](ORNATISH.md#9-bosh-administrator)). O'qituvchilar uchun zaxira login yo'q.
 
 ---
 

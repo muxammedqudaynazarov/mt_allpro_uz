@@ -33,7 +33,8 @@ export function tGlobal(key: string, vars?: Vars): string {
 
 interface I18nContextValue {
   locale: Locale
-  setLocale: (locale: Locale, options?: { remember?: boolean }) => void
+  /** `guest: true` — mehmon tanlovi, shu brauzer oynasida eslab qolinadi. */
+  setLocale: (locale: Locale, options?: { guest?: boolean }) => void
   t: TFunction
 }
 
@@ -43,13 +44,13 @@ export function I18nProvider({ children, onChange }: { children: ReactNode; onCh
   const [locale, setLocaleState] = useState<Locale>(getLocale)
 
   useEffect(() => {
-    applyLocale(locale, false)
+    applyLocale(locale)
     document.title = translate(locale, 'Masofaviy taʼlim tizimi')
   }, [locale])
 
   const setLocale = useCallback(
-    (next: Locale, options?: { remember?: boolean }) => {
-      applyLocale(next, options?.remember ?? true)
+    (next: Locale, options?: { guest?: boolean }) => {
+      applyLocale(next, options?.guest ?? false)
       setLocaleState(next)
       onChange?.(next)
     },

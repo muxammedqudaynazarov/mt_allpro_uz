@@ -22,7 +22,8 @@ class MeResource extends JsonResource
             'department' => $this->department,
             'hemis_id' => $this->hemis_id,
             'status' => $this->status->value,
-            'locale' => $this->preferredLocale(),
+            // Faqat foydalanuvchi o'zi tanlagan til; tanlamagan bo'lsa null — interfeys asosiy tilda ochiladi.
+            'locale' => in_array($this->locale, (array) config('app.supported_locales'), true) ? $this->locale : null,
             'roles' => array_values($this->roles ?? []),
             'permissions' => $this->permissions(),
             'has_password' => $this->password !== null,

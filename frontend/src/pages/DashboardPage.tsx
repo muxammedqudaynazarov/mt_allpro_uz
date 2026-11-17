@@ -55,7 +55,7 @@ function TodaySchedule({ slots, lessons }: { slots: LessonSlot[]; lessons: Lesso
                 {index + 1}
               </span>
               <p className={cn('text-sm font-medium', passed && !isNow ? 'text-steel-500' : 'text-ink-900')}>
-                {slot.name}
+                {slot.label}
                 <span className="ml-2 font-normal text-steel-500 tabular-nums">
                   {slot.starts_at}–{slot.ends_at}
                 </span>
@@ -119,7 +119,7 @@ export default function DashboardPage() {
         >
           <Hourglass className="size-5 shrink-0" />
           <span className="flex-1 text-[0.9375rem]">
-            {t('{count} ta xodim tasdiqlashingizni kutmoqda', { count: data.stats.pending_users })}
+            {t('{count} ta foydalanuvchi tasdiqlashingizni kutmoqda', { count: data.stats.pending_users })}
           </span>
           <span className="text-sm font-medium underline underline-offset-4">{t('Koʻrish')}</span>
         </Link>

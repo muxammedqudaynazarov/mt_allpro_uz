@@ -68,7 +68,7 @@ class Notifier
         $url = rtrim((string) config('app.frontend_url'), '/').'/users?status=pending';
         foreach ($admins as $admin) {
             $l = $admin->preferredLocale();
-            $text = '<b>'.__('Yangi xodim tasdiq kutmoqda', [], $l)."</b>\n\n".e($user->name).($user->department ? "\n".e($user->department) : '');
+            $text = '<b>'.__('Yangi foydalanuvchi tasdiq kutmoqda', [], $l)."</b>\n\n".e($user->name).($user->department ? "\n".e($user->department) : '');
             SendTelegramMessage::dispatch((string) $admin->telegram_chat_id, $text, [[['text' => __('Koʻrib chiqish', [], $l), 'url' => $url]]]);
         }
     }

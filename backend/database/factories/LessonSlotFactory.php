@@ -12,6 +12,6 @@ class LessonSlotFactory extends Factory
 
     public function definition(): array
     {
-        return ['name' => '1-para', 'starts_at' => '14:30', 'duration_minutes' => 80, 'sort' => 1, 'is_active' => true];
+        return ['name' => '1-juplıq', 'starts_at' => '14:30', 'duration_minutes' => 80, 'sort' => 1, 'is_active' => true];
     }
 }

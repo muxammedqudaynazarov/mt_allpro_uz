@@ -54,7 +54,7 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
     <Modal
       open
       onClose={onClose}
-      title={t('Xodim sozlamalari')}
+      title={t('Foydalanuvchi sozlamalari')}
       description={user.name}
       footer={
         <>
@@ -91,7 +91,7 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
                 <span className="block text-sm font-medium">{t(ROLE_LABELS[role])}</span>
                 <span className="block text-sm text-steel-600">
                   {role === 'teacher' && t('Dars yaratadi va oʻz darslarini boshqaradi.')}
-                  {role === 'admin' && t('Oʻziga biriktirilgan guruh va xodimlarni boshqaradi.')}
+                  {role === 'admin' && t('Oʻziga biriktirilgan guruh va foydalanuvchilarni boshqaradi.')}
                   {role === 'super_admin' && t('Tizimning barcha sozlamalariga toʻliq kirish.')}
                 </span>
               </span>
@@ -105,7 +105,7 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
         inputMode="numeric"
         value={hemisId}
         onChange={(event) => setHemisId(event.target.value)}
-        hint={t('Eski tizimdan koʻchirilgan xodimni uning HEMIS hisobiga bogʻlash uchun.')}
+        hint={t('Eski tizimdan koʻchirilgan foydalanuvchini uning HEMIS hisobiga bogʻlash uchun.')}
       />
       <Select label={t('Masʼul administrator')} wrapperClassName="mt-5" value={managedBy} onChange={(event) => setManagedBy(event.target.value)}>
         <option value="">{t('Biriktirilmagan')}</option>
@@ -155,7 +155,7 @@ export default function UsersPage() {
   const remove = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/users/${id}`),
     onSuccess: () => {
-      toast.success(t('Xodim oʻchirildi'))
+      toast.success(t('Foydalanuvchi oʻchirildi'))
       setDeleting(null)
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
@@ -167,7 +167,7 @@ export default function UsersPage() {
 
   return (
     <>
-      <PageHeader title={t('Xodimlar')} description={t('HEMIS orqali kirgan xodimlar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring.')} />
+      <PageHeader title={t('Foydalanuvchilar')} description={t('HEMIS orqali kirgan foydalanuvchilar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring.')} />
 
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Segmented<Tab>
@@ -206,8 +206,8 @@ export default function UsersPage() {
         ) : !users.data?.data.length ? (
           <EmptyState
             icon={<UsersRound className="size-5" />}
-            title={tab === 'pending' ? t('Tasdiq kutayotgan xodimlar yoʻq') : t('Xodimlar topilmadi')}
-            description={tab === 'pending' ? t('Yangi xodim HEMIS orqali kirganda u shu yerda paydo boʻladi.') : t('Qidiruv soʻzini oʻzgartirib koʻring.')}
+            title={tab === 'pending' ? t('Tasdiq kutayotgan foydalanuvchilar yoʻq') : t('Foydalanuvchilar topilmadi')}
+            description={tab === 'pending' ? t('Yangi foydalanuvchi HEMIS orqali kirganda u shu yerda paydo boʻladi.') : t('Qidiruv soʻzini oʻzgartirib koʻring.')}
           />
         ) : (
           <>
@@ -215,7 +215,7 @@ export default function UsersPage() {
               <table className="w-full min-w-[52rem] text-left text-sm">
                 <thead className="border-b border-steel-100 text-steel-600">
                   <tr>
-                    <th className="w-[38%] px-5 py-3 font-medium">{t('Xodim')}</th>
+                    <th className="w-[38%] px-5 py-3 font-medium">{t('Foydalanuvchi')}</th>
                     <th className="px-3 py-3 font-medium">{t('Rol')}</th>
                     <th className="px-3 py-3 font-medium">{t('Holat')}</th>
                     <th className="px-3 py-3 font-medium">{t('Oxirgi kirish')}</th>
@@ -258,7 +258,7 @@ export default function UsersPage() {
                         <td className="px-3 py-3 text-right tabular-nums">{user.lessons_count}</td>
                         <td className="px-5 py-2 text-right">
                           {user.status === 'pending' ? (
-                            <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', t('Xodim tasdiqlandi'))}>
+                            <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', t('Foydalanuvchi tasdiqlandi'))}>
                               {t('Tasdiqlash')}
                             </Button>
                           ) : (
@@ -269,13 +269,13 @@ export default function UsersPage() {
                                     label: t('Faollashtirish'),
                                     icon: <UserRoundCheck className="size-4" />,
                                     hidden: user.status === 'active',
-                                    onClick: () => setStatus(user, 'active', t('Xodim faollashtirildi')),
+                                    onClick: () => setStatus(user, 'active', t('Foydalanuvchi faollashtirildi')),
                                   },
                                   {
                                     label: t('Bloklash'),
                                     icon: <Ban className="size-4" />,
                                     hidden: user.status === 'blocked',
-                                    onClick: () => setStatus(user, 'blocked', t('Xodim bloklandi')),
+                                    onClick: () => setStatus(user, 'blocked', t('Foydalanuvchi bloklandi')),
                                   },
                                   {
                                     label: t('Rol va sozlamalar'),
@@ -310,7 +310,7 @@ export default function UsersPage() {
 
       <ConfirmDialog
         open={!!deleting}
-        title={t('Xodimni oʻchirasizmi?')}
+        title={t('Foydalanuvchini oʻchirasizmi?')}
         description={t('{name} tizimdan oʻchiriladi va kira olmaydi. Uning darslari tarixi hisobotlarda saqlanib qoladi.', { name: deleting?.name ?? '' })}
         confirmLabel={t('Oʻchirish')}
         tone="danger"

@@ -107,7 +107,7 @@ Eng muhim qiymatlar:
 
 > `APP_KEY` Zoom kalitlarini shifrlaydi. Uni **yo'qotmang va o'zgartirmang**, aks holda saqlangan Zoom kalitlarini qayta kiritishga to'g'ri keladi. `.env` faylining zaxira nusxasini xavfsiz joyda saqlang.
 
-Bazani yaratish va standart paralarni (13:00, 14:30, 16:00, 17:30, 19:00) qo'shish:
+Bazani yaratish va standart juftliklarni (13:00, 14:30, 16:00, 17:30, 19:00) qo'shish:
 
 ```bash
 php artisan migrate --seed --force
@@ -169,7 +169,7 @@ sudo -u www-data php artisan app:create-admin --login=admin --name="Familiya Ism
 
 Buyruq parolni so'raydi: kamida 12 belgi, harf va raqam bo'lishi shart. `--hemis-id` ko'rsatilsa, shu xodim HEMIS orqali kirganda ham aynan shu hisobga tushadi.
 
-Kirish sahifasida pastdagi "Administrator login va paroli bilan kirish" havolasini bosing.
+Kirish sahifasida HEMIS tugmasi ostidagi **"Login orqali kirish"** tugmasini bosing.
 
 ## 10. HEMIS OAuth ulash
 
@@ -190,7 +190,7 @@ Kirish sahifasida pastdagi "Administrator login va paroli bilan kirish" havolasi
 
 3. `php artisan optimize` buyrug'ini qayta ishlating.
 
-Xodim birinchi marta kirganda hisobi **"Tasdiq kutmoqda"** holatida yaratiladi. Administrator "Xodimlar" sahifasida uni tasdiqlaydi. `HEMIS_AUTO_REGISTER=false` qilinsa, faqat oldindan qo'shilgan (masalan, eski bazadan ko'chirilgan) xodimlar kira oladi.
+Xodim birinchi marta kirganda hisobi **"Tasdiq kutmoqda"** holatida yaratiladi. Administrator "Foydalanuvchilar" sahifasida uni tasdiqlaydi. `HEMIS_AUTO_REGISTER=false` qilinsa, faqat oldindan qo'shilgan (masalan, eski bazadan ko'chirilgan) xodimlar kira oladi.
 
 > `HEMIS_BASE_URL` — universitet HEMIS **xodimlar** tizimining manzili (talabalar uchun `student.*` emas). Kirishda xatolik bo'lsa, `storage/logs/laravel-*.log` faylini tekshiring.
 
@@ -237,7 +237,7 @@ Xodimlar Telegram'ni **Profil → Telegram'ni ulash** tugmasi orqali o'zlari ula
 
 ## 13. Eski bazadan ko'chirish
 
-Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitlari, paralar va darslar tarixi ko'chiriladi. Parollar va eski Zoom tokenlari ko'chirilmaydi.
+Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitlari, juftliklar va darslar tarixi ko'chiriladi. Parollar va eski Zoom tokenlari ko'chirilmaydi.
 
 1. Eski bazaning nusxasini oling va serverga alohida baza sifatida yuklang:
 
@@ -258,7 +258,7 @@ Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitl
 
 4. Natijani tekshiring:
    - **Zoom akkauntlar** sahifasida har bir akkauntga nom bering va **Client Secret'ni Zoom Marketplace'da yangilab**, yangi qiymatni kiriting.
-   - **Xodimlar** sahifasida HEMIS ID'si bo'lmagan o'qituvchilarga "Rol va sozlamalar" orqali HEMIS ID kiriting. Shunda ular HEMIS orqali kirganda eski hisobiga tushadi.
+   - **Foydalanuvchilar** sahifasida HEMIS ID'si bo'lmagan o'qituvchilarga "Rol va sozlamalar" orqali HEMIS ID kiriting. Shunda ular HEMIS orqali kirganda eski hisobiga tushadi.
    - Kerakli administratorlarga rol bering.
 
 ## 14. Yangilanishlarni chiqarish

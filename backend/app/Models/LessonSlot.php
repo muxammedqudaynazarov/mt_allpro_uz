@@ -23,7 +23,27 @@ class LessonSlot extends Model
         ];
     }
 
-    /** Berilgan kun uchun paraning boshlanish vaqti. */
+    /**
+     * Ko'rsatish uchun nom. Standart nomlar ("1-juplıq", eski "1-para") joriy tilga
+     * moslab chiqariladi: qoraqalpoqchada "1-juplıq", o'zbekchada "1-juftlik".
+     * Administrator o'zi bergan boshqa nomlar o'zgarishsiz qoladi.
+     */
+    public function label(): string
+    {
+        if (preg_match('/^\s*(\d+)\s*-\s*(para|juftlik|juplıq)\s*$/iu', (string) $this->name, $match)) {
+            return __(':number-juftlik', ['number' => $match[1]]);
+        }
+
+        return (string) $this->name;
+    }
+
+    /** Standart nom: bazada asosiy til (qoraqalpoqcha) shaklida saqlanadi. */
+    public static function defaultName(int $number): string
+    {
+        return $number.'-juplıq';
+    }
+
+    /** Berilgan kun uchun juftlikning boshlanish vaqti. */
     public function startOn(?Carbon $day = null): Carbon
     {
         [$hour, $minute] = array_map('intval', explode(':', $this->starts_at));

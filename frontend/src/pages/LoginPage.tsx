@@ -23,7 +23,7 @@ const CALLBACK_ERRORS: Record<string, string> = {
 
 const STEPS = [
   { title: 'HEMIS orqali kiring', text: 'Alohida login va parol kerak emas.' },
-  { title: 'Guruh va parani tanlang', text: 'Zoom darsi bir zumda yaratiladi.' },
+  { title: 'Guruh va juftlikni tanlang', text: 'Zoom darsi bir zumda yaratiladi.' },
   { title: 'Havolani guruhga yuboring', text: 'Havola Telegram’ga ham keladi.' },
 ]
 
@@ -57,7 +57,7 @@ function AdminLoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <Input label={t('Login')} name="login" autoComplete="username" value={login} onChange={(e) => setLogin(e.target.value)} error={errors.login} required />
+      <Input label={t('Login')} name="login" autoComplete="username" autoFocus value={login} onChange={(e) => setLogin(e.target.value)} error={errors.login} required />
       <Input
         label={t('Parol')}
         name="password"
@@ -163,16 +163,15 @@ export default function LoginPage() {
             )}
           </div>
 
-          <div className="mt-10 border-t border-steel-200 pt-6">
+          <div className="mt-3">
             {adminMode ? (
-              <>
-                <p className="mb-4 text-sm font-medium text-ink-800">{t('Administrator sifatida kirish')}</p>
+              <div className="mt-7 border-t border-steel-200 pt-6">
                 <AdminLoginForm />
-              </>
+              </div>
             ) : (
-              <button type="button" onClick={() => setAdminMode(true)} className="text-sm text-steel-600 underline-offset-4 hover:text-ink-900 hover:underline">
-                {t('Administrator login va paroli bilan kirish')}
-              </button>
+              <Button size="lg" variant="secondary" className="w-full" icon={<KeyRound className="size-5" />} onClick={() => setAdminMode(true)}>
+                {t('Login orqali kirish')}
+              </Button>
             )}
           </div>
         </div>

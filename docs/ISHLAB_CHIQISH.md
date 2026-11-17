@@ -54,7 +54,7 @@ Testlar SQLite xotirasida ishlaydi. Tashqi xizmatlarga so'rov ketmaydi: `Http::p
 
 - `HemisLoginTest`: OAuth state tekshiruvi, yangi xodim "kutish" holatida yaratilishi, bloklangan, o'chirilgan, talaba va boshqa OTM xodimlari rad etilishi, eski xodimni HEMIS login orqali topish
 - `SessionAndStatusTest`: zaxira login faqat adminlar uchun, rate limit, bloklangan sessiya tugatilishi, xavfsizlik sarlavhalari
-- `LessonTest`: dars yaratish (para, "hozir", boshlangan para), guruh va host bandligi, Zoom xatolari, host havolasi faqat egasiga, imzolangan Telegram havolasi, CSV eksport (formula injection himoyasi)
+- `LessonTest`: dars yaratish (juftlik, "hozir", boshlangan juftlik), guruh va host bandligi, Zoom xatolari, host havolasi faqat egasiga, imzolangan Telegram havolasi, CSV eksport (formula injection himoyasi)
 - `AdministrationTest`: rollar bo'yicha ruxsatlar, Zoom secret shifrlanishi, soft-delete, hisobotlar, amallar jurnali
 - `TelegramTest`: webhook maxfiy kaliti, bir martalik ulash havolasi
 
@@ -104,10 +104,10 @@ frontend/src/
 
 | Jadval | Tavsif |
 |---|---|
-| `users` | Xodimlar. `roles` (JSON: teacher/admin/super_admin), `status` (pending/active/blocked), HEMIS maydonlari, `telegram_chat_id`, `managed_by_id` (masʼul admin). Soft-delete |
+| `users` | Foydalanuvchilar. `roles` (JSON: teacher/admin/super_admin), `status` (pending/active/blocked), HEMIS maydonlari, `telegram_chat_id`, `managed_by_id` (masʼul admin). Soft-delete |
 | `zoom_accounts` | Server-to-Server OAuth kalitlari. `client_secret` shifrlangan |
 | `groups` | Guruh → Zoom akkaunt + host email, masʼul admin, faollik. Soft-delete |
-| `lesson_slots` | Paralar: boshlanish vaqti, davomiylik |
+| `lesson_slots` | Juftliklar: boshlanish vaqti, davomiylik. Standart nomlar (`1-juplıq`) ekranda tilga moslab ko'rsatiladi (`label`) |
 | `lessons` | Darslar: o'qituvchi, guruh, Zoom meeting ID, havolalar (`start_url` shifrlangan), holat, vaqt |
 | `audit_logs` | Amallar jurnali (2 yildan keyin avtomatik tozalanadi) |
 
@@ -128,12 +128,12 @@ Barcha `/api/*` marshrutlari JSON qaytaradi. Autentifikatsiya: Sanctum SPA (cook
 | POST/DELETE | `/api/me/telegram` | kirgan | Telegram ulash havolasi / uzish |
 | GET | `/api/dashboard` | faol | Efirdagi va bugungi darslar, statistika |
 | GET | `/api/lessons` | faol | Darslar (filtr: status, group_id, mine, from, to) |
-| GET | `/api/lessons/options` | faol | Dars yaratish uchun guruhlar (band/bo'sh) va paralar |
+| GET | `/api/lessons/options` | faol | Dars yaratish uchun guruhlar (band/bo'sh) va juftliklar |
 | POST | `/api/lessons` | faol | Dars yaratish `{group_id, slot_id?, topic?}` |
 | POST | `/api/lessons/{id}/start` | egasi | Yangi host havolasi |
 | POST | `/api/lessons/{id}/end` | egasi, guruh admini | Yakunlash / bekor qilish |
 | GET | `/api/lessons/export` | admin | CSV |
-| GET | `/api/users`, `/api/users/counts` | admin | Xodimlar |
+| GET | `/api/users`, `/api/users/counts` | admin | Foydalanuvchilar |
 | PATCH | `/api/users/{id}` | admin* | `status`; bosh admin uchun `roles`, `managed_by_id`, `hemis_id` |
 | DELETE | `/api/users/{id}` | bosh admin | Soft-delete |
 | GET | `/api/groups` | admin | Guruhlar (admin: faqat o'zinikilar) |
@@ -141,7 +141,7 @@ Barcha `/api/*` marshrutlari JSON qaytaradi. Autentifikatsiya: Sanctum SPA (cook
 | POST/PUT/DELETE | `/api/groups` | bosh admin | CRUD |
 | GET | `/api/reports/summary` | admin | Hisobot |
 | * | `/api/zoom-accounts`, `/{id}/test`, `/{id}/users` | bosh admin | Zoom akkauntlar |
-| * | `/api/lesson-slots` | bosh admin | Paralar |
+| * | `/api/lesson-slots` | bosh admin | Juftliklar |
 | GET | `/api/audit-logs` | bosh admin | Amallar tarixi |
 | POST | `/api/telegram/webhook` | Telegram | `X-Telegram-Bot-Api-Secret-Token` bilan |
 | GET | `/l/{id}/start?signature=…` | imzolangan | Telegram'dagi "Darsni boshlash" |
@@ -175,12 +175,19 @@ Asosiy til **qoraqalpoqcha** (`kaa`, lotin yozuvi, 2016-yilgi alifbo), ikkinchis
 | Backend xabarlari, Telegram, CSV | `backend/lang/kaa.json` — `__('...')` |
 | Tekshiruv (validation) xabarlari | `backend/lang/kaa/validation.php`, `backend/lang/uz/validation.php` |
 
-Til quyidagicha aniqlanadi:
+Interfeys tili (`frontend/src/i18n/locale.ts`, `AuthProvider`):
+1. Tizimga kirmagan foydalanuvchi — doim qoraqalpoqcha. Kirish sahifasida UZ tanlansa, u faqat shu brauzer oynasida (`sessionStorage`) saqlanadi va kirgandan keyin profilga yoziladi.
+2. Kirgan foydalanuvchi — profilidagi til (`users.locale`). Tanlamagan bo'lsa (`null`) — qoraqalpoqcha.
+3. Tizimdan chiqqanda yana qoraqalpoqcha.
+
+Backend tili:
 1. Frontend har so'rovda `X-Locale` sarlavhasini yuboradi.
 2. Sarlavha bo'lmasa, foydalanuvchi profilidagi til (`users.locale`) olinadi.
-3. Ikkalasi ham bo'lmasa, `.env`dagi `APP_LOCALE`.
+3. Ikkalasi ham bo'lmasa, `.env`dagi `APP_LOCALE` (`kaa` bo'lishi kerak).
 
 Telegram xabarlari har doim qabul qiluvchining profilidagi tilda yuboriladi. Amallar jurnali ham ko'rayotgan foydalanuvchining tilida ko'rsatiladi.
+
+Atama o'zgartirilsa (masalan, "Xodim" → "Foydalanuvchi"), eski kalitni `kaa.json`da qoldiring va `backend/lang/uz.json`ga eski → yangi o'zbekcha matnni yozing: avval yozilgan amallar jurnali yozuvlari ham yangi atama bilan ko'rinadi.
 
 Yangi matn qo'shganda uni `t('...')` yoki `__('...')` ichiga o'rang va tarjimasini `kaa.ts` yoki `kaa.json`ga yozing. Tarjimasi yo'q kalit o'zbekcha ko'rinadi, ishlab chiqish rejimida brauzer konsolida ogohlantirish chiqadi.
 

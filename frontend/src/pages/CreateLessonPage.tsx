@@ -171,7 +171,7 @@ export default function CreateLessonPage() {
       ) : (
         <form onSubmit={submit} className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="rounded-panel bg-white p-6 ring-1 ring-steel-200/70 sm:p-8">
-            <Step index={1} title={t('Qachon?')} hint={t('Bugungi paralardan birini yoki darhol boshlashni tanlang.')}>
+            <Step index={1} title={t('Qachon?')} hint={t('Bugungi juftliklardan birini yoki darhol boshlashni tanlang.')}>
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Dars vaqti')}>
                 <SlotPill active={slot === 'now'} onClick={() => setSlot('now')}>
                   <Zap className="size-4" />

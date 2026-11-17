@@ -31,7 +31,7 @@ class LessonResource extends JsonResource
                 'course' => $this->group->course,
             ],
             'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->name],
-            'slot' => $this->slot ? ['id' => $this->slot->id, 'name' => $this->slot->name, 'starts_at' => $this->slot->starts_at] : null,
+            'slot' => $this->slot ? ['id' => $this->slot->id, 'name' => $this->slot->label(), 'starts_at' => $this->slot->starts_at] : null,
             'can' => [
                 'start' => (bool) $user?->can('start', $this->resource),
                 'end' => (bool) $user?->can('end', $this->resource),

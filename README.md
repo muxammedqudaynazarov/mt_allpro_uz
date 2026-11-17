@@ -2,7 +2,7 @@
 
 Berdaq nomidagi Qoraqalpoq davlat universitetining sirtqi va masofaviy guruhlari uchun Zoom darslarini boshqarish tizimi.
 
-O'qituvchi HEMIS hisobi bilan kiradi, guruh va parani tanlaydi. Tizim shu guruhga biriktirilgan Zoom hisobida uchrashuv yaratadi. "Darsni boshlash" va "Guruhga yuborish" tugmalari o'qituvchiga saytda va Telegram'da beriladi. Administratorlar xodimlarni tasdiqlaydi, guruhlarni boshqaradi va hisobotlarni ko'radi.
+O'qituvchi HEMIS hisobi bilan kiradi, guruh va juftlikni tanlaydi. Tizim shu guruhga biriktirilgan Zoom hisobida uchrashuv yaratadi. "Darsni boshlash" va "Guruhga yuborish" tugmalari o'qituvchiga saytda va Telegram'da beriladi. Administratorlar foydalanuvchilarni tasdiqlaydi, guruhlarni boshqaradi va hisobotlarni ko'radi.
 
 ## Tarkib
 
@@ -31,7 +31,7 @@ O'qituvchi HEMIS hisobi bilan kiradi, guruh va parani tanlaydi. Tizim shu guruhg
                                    └─ MySQL
 ```
 
-Interfeys **qoraqalpoq tilida** (lotin yozuvi), o'zbek tiliga bitta tugma bilan o'tiladi. Tanlangan til profilda saqlanadi, Telegram xabarlari ham shu tilda keladi.
+Interfeys **qoraqalpoq tilida** (lotin yozuvi), o'zbek tiliga bitta tugma bilan o'tiladi. Kirish sahifasi har doim qoraqalpoqcha ochiladi; kirgan foydalanuvchining tanlovi profilda saqlanadi, Telegram xabarlari ham shu tilda keladi.
 
 Frontend va backend bitta domenda ishlaydi, shuning uchun autentifikatsiya xavfsiz cookie-sessiya (Laravel Sanctum) orqali bo'ladi. Tokenlar brauzerning `localStorage` xotirasida saqlanmaydi va CORS sozlash kerak emas.
 
@@ -51,7 +51,7 @@ Tizim Laravel 10 dan Laravel 13 ga boshidan qayta yozildi. Eski versiyadagi xato
 | Admin o'chirilsa, uning barcha o'qituvchilari, guruhlari va darslar tarixi o'chib ketardi (cascade) | Soft-delete qilinadi, tarix va hisobotlar saqlanadi |
 | Parol o'zgartirish 500 xato berardi, o'chirish tugmasi URL'ida `}` bor edi | Ular endi yo'q: tizim HEMIS kirishiga o'tdi |
 | Bir guruh/Zoom hisobida bir vaqtda ikkita dars yaratish mumkin edi | Guruh va Zoom host bandligi qulf ostida tekshiriladi |
-| Tanlangan para ishlatilmasdi, dars hech qachon "tugadi" holatiga o'tmasdi | Dars para vaqtiga rejalashtiriladi, holat avtomatik yangilanadi |
+| Tanlangan juftlik ishlatilmasdi, dars hech qachon "tugadi" holatiga o'tmasdi | Dars juftlik vaqtiga rejalashtiriladi, holat avtomatik yangilanadi |
 | Telegram ID ni `@getmyid_bot` orqali qo'lda kiritish kerak edi | Xodim bitta tugma (yoki QR kod) bilan Telegram'ni ulaydi |
 | Test yo'q edi | Avtomatik testlar: ruxsatlar, HEMIS, Zoom, Telegram |
 

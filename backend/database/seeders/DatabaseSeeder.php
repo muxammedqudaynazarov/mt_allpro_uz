@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Ishga tushirishda faqat standart dars vaqtlari (paralar) qo'shiladi.
+     * Ishga tushirishda faqat standart dars vaqtlari (juftliklar) qo'shiladi.
      * Administrator: php artisan app:create-admin
      * Sinov ma'lumotlari: php artisan db:seed --class=DemoSeeder (faqat local)
      */
@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
         $slots = ['13:00', '14:30', '16:00', '17:30', '19:00'];
         foreach ($slots as $index => $start) {
             LessonSlot::firstOrCreate(['starts_at' => $start], [
-                'name' => ($index + 1).'-para',
+                'name' => LessonSlot::defaultName($index + 1),
                 'duration_minutes' => 80,
                 'sort' => $index + 1,
                 'is_active' => true,

@@ -71,7 +71,7 @@ function SlotModal({ slot, onClose }: { slot: LessonSlot | 'new'; onClose: () =>
       }
     >
       <form id="slot-form" onSubmit={submit} className="grid grid-cols-2 gap-4">
-        <Input wrapperClassName="col-span-2" label={t('Nomi')} placeholder={t('1-para')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} required />
+        <Input wrapperClassName="col-span-2" label={t('Nomi')} placeholder={t('1-juftlik')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} required />
         <Input label={t('Boshlanishi')} type="time" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} error={errors.starts_at} required />
         <Input label={t('Davomiyligi, daqiqa')} type="number" min={10} max={240} value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} error={errors.duration_minutes} required />
         <Input label={t('Tartib raqami')} type="number" min={0} value={form.sort} onChange={(e) => setForm({ ...form, sort: e.target.value })} error={errors.sort} />
@@ -109,7 +109,7 @@ export default function SlotsPage() {
     <>
       <PageHeader
         title={t('Dars vaqtlari')}
-        description={t('Oʻqituvchilar dars yaratishda shu paralardan birini tanlaydi. Davomiylik Zoom uchrashuvining uzunligini belgilaydi.')}
+        description={t('Oʻqituvchilar dars yaratishda shu juftliklardan birini tanlaydi. Davomiylik Zoom uchrashuvining uzunligini belgilaydi.')}
         actions={
           <Button icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
             {t('Vaqt qoʻshish')}
@@ -120,14 +120,14 @@ export default function SlotsPage() {
         {slots.isPending ? (
           <SectionLoader />
         ) : !slots.data?.length ? (
-          <EmptyState icon={<Clock3 className="size-5" />} title={t('Dars vaqtlari kiritilmagan')} description={t('Kamida bitta para qoʻshing. Ularsiz faqat “Hozir” rejimida dars yaratish mumkin.')} />
+          <EmptyState icon={<Clock3 className="size-5" />} title={t('Dars vaqtlari kiritilmagan')} description={t('Kamida bitta juftlik qoʻshing. Ularsiz faqat “Hozir” rejimida dars yaratish mumkin.')} />
         ) : (
           <ol className="divide-y divide-steel-100">
             {slots.data.map((slot, index) => (
               <li key={slot.id} className="flex items-center gap-4 px-5 py-4">
                 <span className="flex size-8 items-center justify-center rounded-full bg-ink-50 font-display text-xs font-semibold text-ink-700">{index + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{slot.name}</p>
+                  <p className="font-medium">{slot.label}</p>
                   <p className="text-sm text-steel-600 tabular-nums">
                     {slot.starts_at}–{slot.ends_at}, {formatDuration(slot.duration_minutes)}
                   </p>

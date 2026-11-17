@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Yangi dars yaratish:
- *  1) vaqt oralig'ini aniqlash (para yoki "hozir"),
+ *  1) vaqt oralig'ini aniqlash (juftlik yoki "hozir"),
  *  2) guruh va Zoom host bandligini qulf (lock) ostida tekshirish,
  *  3) Zoom'da uchrashuv yaratish, 4) bazaga yozish, 5) Telegram xabari.
  */
@@ -85,8 +85,8 @@ class CreateLesson
     }
 
     /**
-     * Dars vaqt oralig'i. Para allaqachon boshlangan bo'lsa, dars hozirdan
-     * boshlanib, para oxirigacha davom etadi.
+     * Dars vaqt oralig'i. Juftlik allaqachon boshlangan bo'lsa, dars hozirdan
+     * boshlanib, juftlik oxirigacha davom etadi.
      *
      * @return array{0: Carbon, 1: Carbon}
      */
@@ -100,7 +100,7 @@ class CreateLesson
         $start = $slot->startOn($now);
         $end = $slot->endOn($now);
         if ($end->lessThanOrEqualTo($now->copy()->addMinutes(5))) {
-            throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa parani yoki “Hozir”ni tanlang.', ['name' => $slot->name])]);
+            throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa juftlikni yoki “Hozir”ni tanlang.', ['name' => $slot->label()])]);
         }
 
         return [$start->greaterThan($now) ? $start : $now, $end];

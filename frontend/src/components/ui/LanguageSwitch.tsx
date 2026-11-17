@@ -1,21 +1,31 @@
-import { useAuth } from '@/auth/AuthProvider'
+import { useQueryClient } from '@tanstack/react-query'
+import { ME_KEY, useAuth } from '@/auth/AuthProvider'
 import { useI18n } from '@/i18n/I18nProvider'
-import { LOCALES, type Locale } from '@/i18n/locale'
+import { LOCALES, rememberUserLocale, type Locale } from '@/i18n/locale'
 import { api } from '@/lib/api'
+import type { Me } from '@/lib/types'
 import { cn } from './cn'
 
-/** Til tanlash: QQ (qoraqalpoqcha) / UZ (o'zbekcha). Tanlov qurilmada va profilda saqlanadi. */
+/**
+ * Til tanlash: QQ (qoraqalpoqcha) / UZ (o'zbekcha).
+ * Kirgan foydalanuvchi tanlovi profilga yoziladi; mehmon tanlovi faqat shu brauzer oynasida amal qiladi.
+ */
 export function LanguageSwitch({ tone = 'light', className }: { tone?: 'light' | 'dark'; className?: string }) {
   const { locale, setLocale, t } = useI18n()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   function change(next: Locale) {
     if (next === locale) return
-    setLocale(next)
-    if (user) {
-      // Telegram xabarlari ham shu tilda kelishi uchun profilga yozamiz.
-      api.patch('/api/me', { locale: next }).catch(() => undefined)
+    if (!user) {
+      setLocale(next, { guest: true })
+      return
     }
+    // Telegram xabarlari ham shu tilda kelishi uchun profilga yozamiz.
+    queryClient.setQueryData(ME_KEY, (current: Me | null | undefined) => (current ? { ...current, locale: next } : current))
+    rememberUserLocale(next)
+    setLocale(next)
+    api.patch('/api/me', { locale: next }).catch(() => undefined)
   }
 
   return (
