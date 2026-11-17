@@ -62,7 +62,7 @@ class Notifier
         $admins = User::query()
             ->where('status', UserStatus::Active->value)
             ->whereNotNull('telegram_chat_id')
-            ->where(fn ($q) => $q->whereJsonContains('roles', Role::Admin->value)->orWhereJsonContains('roles', Role::SuperAdmin->value))
+            ->whereJsonContains('roles', Role::SuperAdmin->value)
             ->get();
 
         $url = rtrim((string) config('app.frontend_url'), '/').'/users?status=pending';

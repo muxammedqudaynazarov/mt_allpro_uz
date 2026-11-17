@@ -38,9 +38,10 @@ class UserFactory extends Factory
         return $this->state(['status' => UserStatus::Blocked]);
     }
 
-    public function admin(): static
+    /** O'quv bo'limi xodimi. */
+    public function education(): static
     {
-        return $this->state(['roles' => [Role::Admin->value, Role::Teacher->value]]);
+        return $this->state(['roles' => [Role::Education->value]]);
     }
 
     public function superAdmin(): static

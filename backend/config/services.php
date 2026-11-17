@@ -17,7 +17,8 @@ return [
         'allowed_types' => env('HEMIS_ALLOWED_TYPES', 'employee'),
         // true: yangi xodim "tasdiq kutmoqda" holatida yaratiladi; false: faqat oldindan qo'shilganlar kira oladi.
         'auto_register' => env('HEMIS_AUTO_REGISTER', true),
-        'user_fields' => env('HEMIS_USER_FIELDS', 'id,uuid,type,name,firstname,surname,patronymic,login,picture,email,phone,university_id'),
+        // Faqat tizimga kerakli maydonlar: telefon, email, rasm, pasport va JSHSHIR so'ralmaydi.
+        'user_fields' => env('HEMIS_USER_FIELDS', 'id,uuid,type,name,firstname,surname,patronymic,login,university_id'),
     ],
 
     'zoom' => [

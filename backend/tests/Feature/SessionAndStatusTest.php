@@ -68,11 +68,11 @@ class SessionAndStatusTest extends TestCase
 
     public function test_me_exposes_roles_and_permissions_without_secrets(): void
     {
-        $user = User::factory()->admin()->create(['telegram_chat_id' => '12345']);
+        $user = User::factory()->education()->create(['telegram_chat_id' => '12345']);
 
         $this->actingAsUser($user)->getJson('/api/me')
             ->assertOk()
-            ->assertJsonPath('data.roles', ['admin', 'teacher'])
+            ->assertJsonPath('data.roles', ['education'])
             ->assertJsonPath('data.telegram.linked', true)
             ->assertJsonMissingPath('data.telegram_chat_id')
             ->assertJsonMissingPath('data.password');

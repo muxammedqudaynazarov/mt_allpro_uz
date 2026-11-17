@@ -15,12 +15,13 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Input, Select } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { Pagination } from '@/components/ui/Pagination'
 import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { Switch } from '@/components/ui/Switch'
 import { useT } from '@/i18n/I18nProvider'
 
 type Tab = 'pending' | 'active' | 'blocked' | 'all'
@@ -28,11 +29,21 @@ type Counts = Record<Tab, number>
 
 const statusTone: Record<UserStatus, 'amber' | 'leaf' | 'onair'> = { pending: 'amber', active: 'leaf', blocked: 'onair' }
 
+interface UserPatch {
+  id: number
+  status?: UserStatus
+  roles?: Role[]
+  hemis_id?: string | null
+  last_name?: string
+  first_name?: string
+  middle_name?: string | null
+  can_manage_calendar?: boolean
+}
+
 function useUpdateUser() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, ...payload }: { id: number; status?: UserStatus; roles?: Role[]; managed_by_id?: number | null; hemis_id?: string | null }) =>
-      (await api.patch(`/api/users/${id}`, payload)).data,
+    mutationFn: async ({ id, ...payload }: UserPatch) => (await api.patch(`/api/users/${id}`, payload)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
@@ -41,14 +52,35 @@ function useUpdateUser() {
   })
 }
 
-function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admins: UserListItem[]; onClose: () => void }) {
+const ROLE_HINTS: Record<Role, string> = {
+  teacher: 'Dars yaratadi va oʻz darslarini boshqaradi.',
+  education: 'Barcha darslarni kuzatadi, hisobot va davomatni oladi. Dars yaratmaydi.',
+  super_admin: 'Tizimning barcha sozlamalariga toʻliq kirish.',
+}
+
+function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: boolean; onClose: () => void }) {
   const t = useT()
-  const [roles, setRoles] = useState<Role[]>(user?.roles ?? [])
-  const [managedBy, setManagedBy] = useState<string>(user?.managed_by ? String(user.managed_by.id) : '')
-  const [hemisId, setHemisId] = useState<string>(user?.hemis_id ?? '')
+  const [roles, setRoles] = useState<Role[]>(user.roles)
+  const [hemisId, setHemisId] = useState<string>(user.hemis_id ?? '')
+  const [lastName, setLastName] = useState(user.last_name ?? '')
+  const [firstName, setFirstName] = useState(user.first_name ?? '')
+  const [middleName, setMiddleName] = useState(user.middle_name ?? '')
+  const [calendar, setCalendar] = useState(user.can_manage_calendar)
   const update = useUpdateUser()
-  if (!user) return null
   const toggle = (role: Role) => setRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]))
+  const nameChanged = lastName.trim() !== (user.last_name ?? '') || firstName.trim() !== (user.first_name ?? '') || middleName.trim() !== (user.middle_name ?? '')
+
+  function save() {
+    const payload: UserPatch = { id: user.id, can_manage_calendar: calendar }
+    if (!self) Object.assign(payload, { roles, hemis_id: hemisId.trim() || null })
+    if (nameChanged) Object.assign(payload, { last_name: lastName.trim(), first_name: firstName.trim(), middle_name: middleName.trim() || null })
+    update.mutate(payload, {
+      onSuccess: () => {
+        toast.success(t('Saqlandi'))
+        onClose()
+      },
+    })
+  }
 
   return (
     <Modal
@@ -56,67 +88,65 @@ function RolesModal({ user, admins, onClose }: { user: UserListItem | null; admi
       onClose={onClose}
       title={t('Foydalanuvchi sozlamalari')}
       description={user.name}
+      size="lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             {t('Bekor qilish')}
           </Button>
-          <Button
-            loading={update.isPending}
-            disabled={!roles.length}
-            onClick={() =>
-              update.mutate(
-                { id: user.id, roles, managed_by_id: managedBy ? Number(managedBy) : null, hemis_id: hemisId.trim() || null },
-                {
-                  onSuccess: () => {
-                    toast.success(t('Saqlandi'))
-                    onClose()
-                  },
-                },
-              )
-            }
-          >
+          <Button loading={update.isPending} disabled={!roles.length || (nameChanged && (lastName.trim().length < 2 || firstName.trim().length < 2))} onClick={save}>
             {t('Saqlash')}
           </Button>
         </>
       }
     >
-      <fieldset>
-        <legend className="text-sm font-medium text-ink-800">{t('Rollar')}</legend>
-        <div className="mt-3 space-y-2">
-          {(['teacher', 'admin', 'super_admin'] as Role[]).map((role) => (
-            <label key={role} className="flex cursor-pointer items-start gap-3 rounded-field p-3 ring-1 ring-steel-200 ring-inset has-checked:bg-azure-50 has-checked:ring-azure-300">
-              <input type="checkbox" className="mt-0.5 size-4 accent-azure-500" checked={roles.includes(role)} onChange={() => toggle(role)} />
-              <span>
-                <span className="block text-sm font-medium">{t(ROLE_LABELS[role])}</span>
-                <span className="block text-sm text-steel-600">
-                  {role === 'teacher' && t('Dars yaratadi va oʻz darslarini boshqaradi.')}
-                  {role === 'admin' && t('Oʻziga biriktirilgan guruh va foydalanuvchilarni boshqaradi.')}
-                  {role === 'super_admin' && t('Tizimning barcha sozlamalariga toʻliq kirish.')}
+      {!self && (
+        <fieldset>
+          <legend className="text-sm font-medium text-ink-800">{t('Rollar')}</legend>
+          <div className="mt-3 space-y-2">
+            {(['teacher', 'education', 'super_admin'] as Role[]).map((role) => (
+              <label key={role} className="flex cursor-pointer items-start gap-3 rounded-field p-3 ring-1 ring-steel-200 ring-inset has-checked:bg-azure-50 has-checked:ring-azure-300">
+                <input type="checkbox" className="mt-0.5 size-4 accent-azure-500" checked={roles.includes(role)} onChange={() => toggle(role)} />
+                <span>
+                  <span className="block text-sm font-medium">{t(ROLE_LABELS[role])}</span>
+                  <span className="block text-sm text-steel-600">{t(ROLE_HINTS[role])}</span>
                 </span>
-              </span>
-            </label>
-          ))}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
+      <fieldset className={self ? '' : 'mt-6'}>
+        <legend className="text-sm font-medium text-ink-800">{t('Ism-sharif')}</legend>
+        <p className="mt-1 text-sm text-steel-600">{t('Vaqtincha tuzatish: foydalanuvchi keyingi safar HEMIS orqali kirganda ism HEMIS’dagi bilan yangilanadi.')}</p>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Input label={t('Familiya')} value={lastName} maxLength={80} onChange={(event) => setLastName(event.target.value)} />
+          <Input label={t('Ism')} value={firstName} maxLength={80} onChange={(event) => setFirstName(event.target.value)} />
+          <Input label={t('Otasining ismi')} value={middleName} maxLength={80} onChange={(event) => setMiddleName(event.target.value)} />
         </div>
       </fieldset>
-      <Input
-        label={t('HEMIS ID')}
-        wrapperClassName="mt-5"
-        inputMode="numeric"
-        value={hemisId}
-        onChange={(event) => setHemisId(event.target.value)}
-        hint={t('Eski tizimdan koʻchirilgan foydalanuvchini uning HEMIS hisobiga bogʻlash uchun.')}
-      />
-      <Select label={t('Masʼul administrator')} wrapperClassName="mt-5" value={managedBy} onChange={(event) => setManagedBy(event.target.value)}>
-        <option value="">{t('Biriktirilmagan')}</option>
-        {admins
-          .filter((admin) => admin.id !== user.id)
-          .map((admin) => (
-            <option key={admin.id} value={admin.id}>
-              {admin.name}
-            </option>
-          ))}
-      </Select>
+
+      {roles.includes('teacher') && (
+        <div className="mt-6 flex items-start justify-between gap-4 rounded-field p-3 ring-1 ring-steel-200 ring-inset">
+          <span>
+            <span className="block text-sm font-medium text-ink-800">{t('Kalendarni boshqarish')}</span>
+            <span className="block text-sm text-steel-600">{t('Har haftalik darslarni rejalashtirish va bekor qilish.')}</span>
+          </span>
+          <Switch checked={calendar} onChange={setCalendar} label={t('Kalendarni boshqarish')} />
+        </div>
+      )}
+
+      {!self && (
+        <Input
+          label={t('HEMIS ID')}
+          wrapperClassName="mt-6"
+          inputMode="numeric"
+          value={hemisId}
+          onChange={(event) => setHemisId(event.target.value)}
+          hint={t('Eski tizimdan koʻchirilgan foydalanuvchini uning HEMIS hisobiga bogʻlash uchun.')}
+        />
+      )}
     </Modal>
   )
 }
@@ -146,12 +176,6 @@ export default function UsersPage() {
     placeholderData: keepPreviousData,
   })
 
-  const admins = useQuery({
-    queryKey: ['users', 'admins'],
-    queryFn: async () => (await api.get<Paginated<UserListItem>>('/api/users', { params: { role: 'admin', per_page: 100 } })).data.data,
-    enabled: isSuperAdmin,
-  })
-
   const remove = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/users/${id}`),
     onSuccess: () => {
@@ -167,7 +191,14 @@ export default function UsersPage() {
 
   return (
     <>
-      <PageHeader title={t('Foydalanuvchilar')} description={t('HEMIS orqali kirgan foydalanuvchilar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring.')} />
+      <PageHeader
+        title={t('Foydalanuvchilar')}
+        description={
+          isSuperAdmin
+            ? t('HEMIS orqali kirgan foydalanuvchilar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring.')
+            : t('Tizim foydalanuvchilari. Ularni Administrator boshqaradi.')
+        }
+      />
 
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Segmented<Tab>
@@ -189,7 +220,7 @@ export default function UsersPage() {
         />
         <Input
           aria-label={t('Qidirish')}
-          placeholder={t('Ism, telefon yoki HEMIS ID')}
+          placeholder={t('Ism yoki HEMIS ID')}
           leading={<Search className="size-4" />}
           wrapperClassName="lg:w-80"
           value={search}
@@ -239,7 +270,7 @@ export default function UsersPage() {
                                 {user.telegram_linked && <Send className="size-3.5 shrink-0 text-azure-500" aria-label={t('Telegram ulangan')} />}
                               </p>
                               <p className="truncate text-steel-600">
-                                {[user.hemis_id && `HEMIS ${user.hemis_id}`, user.phone, user.department].filter(Boolean).join(', ') || '—'}
+                                {[user.hemis_id && `HEMIS ${user.hemis_id}`, user.department].filter(Boolean).join(', ') || '—'}
                               </p>
                             </div>
                           </div>
@@ -257,37 +288,36 @@ export default function UsersPage() {
                         <td className="px-3 py-3 whitespace-nowrap text-steel-700">{user.last_login_at ? formatDateTime(user.last_login_at) : '—'}</td>
                         <td className="px-3 py-3 text-right tabular-nums">{user.lessons_count}</td>
                         <td className="px-5 py-2 text-right">
-                          {user.status === 'pending' ? (
+                          {!isSuperAdmin ? null : user.status === 'pending' ? (
                             <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', t('Foydalanuvchi tasdiqlandi'))}>
                               {t('Tasdiqlash')}
                             </Button>
                           ) : (
-                            !self && (
+                            (
                               <ActionMenu
                                 items={[
                                   {
                                     label: t('Faollashtirish'),
                                     icon: <UserRoundCheck className="size-4" />,
-                                    hidden: user.status === 'active',
+                                    hidden: self || user.status === 'active',
                                     onClick: () => setStatus(user, 'active', t('Foydalanuvchi faollashtirildi')),
                                   },
                                   {
                                     label: t('Bloklash'),
                                     icon: <Ban className="size-4" />,
-                                    hidden: user.status === 'blocked',
+                                    hidden: self || user.status === 'blocked',
                                     onClick: () => setStatus(user, 'blocked', t('Foydalanuvchi bloklandi')),
                                   },
                                   {
                                     label: t('Rol va sozlamalar'),
                                     icon: <ShieldCheck className="size-4" />,
-                                    hidden: !isSuperAdmin,
                                     onClick: () => setEditing(user),
                                   },
                                   {
                                     label: t('Oʻchirish'),
                                     icon: <Trash2 className="size-4" />,
                                     danger: true,
-                                    hidden: !isSuperAdmin,
+                                    hidden: self,
                                     onClick: () => setDeleting(user),
                                   },
                                 ]}
@@ -306,7 +336,7 @@ export default function UsersPage() {
         )}
       </Panel>
 
-      {editing && <RolesModal key={editing.id} user={editing} admins={admins.data ?? []} onClose={() => setEditing(null)} />}
+      {editing && <UserSettingsModal key={editing.id} user={editing} self={editing.id === me?.id} onClose={() => setEditing(null)} />}
 
       <ConfirmDialog
         open={!!deleting}

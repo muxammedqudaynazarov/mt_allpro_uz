@@ -86,6 +86,12 @@ class HemisOAuth
         return $user;
     }
 
+    /** @return list<string> HEMIS'dan so'raladigan maydonlar */
+    public function fields(): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', (string) ($this->config['user_fields'] ?? '')))));
+    }
+
     public function universityId(): ?string
     {
         $value = $this->config['university_id'] ?? null;

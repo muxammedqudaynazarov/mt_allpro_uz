@@ -134,7 +134,7 @@ class LessonController extends Controller
     /** Hisobot: filtrlangan darslar CSV (Excel'da ochiladi). */
     public function export(Request $request): StreamedResponse
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canViewAll(), 403);
 
         $query = $this->filtered($request)->with(['group', 'teacher', 'slot'])->withParticipantsCount()->orderBy('starts_at');
         $header = array_map(fn (string $title) => __($title), [

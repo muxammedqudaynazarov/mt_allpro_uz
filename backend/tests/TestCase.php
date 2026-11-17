@@ -23,6 +23,9 @@ abstract class TestCase extends BaseTestCase
     protected function actingAsUser(User $user): static
     {
         $this->app['auth']->forgetGuards();
+        // Har bir foydalanuvchining o'z sessiyasi: aks holda AuthenticateSession avvalgi
+        // foydalanuvchining parol xeshini ko'rib, sessiyani yopadi.
+        $this->flushSession();
 
         return $this->actingAs($user, 'web');
     }

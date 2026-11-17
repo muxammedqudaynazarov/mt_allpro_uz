@@ -44,10 +44,12 @@ export default function App() {
             >
               <Route index element={<DashboardPage />} />
               <Route path="lessons" element={<LessonsPage />} />
-              <Route path="lessons/new" element={<CreateLessonPage />} />
+              <Route element={<RequireRole roles={['teacher', 'super_admin']} />}>
+                <Route path="lessons/new" element={<CreateLessonPage />} />
+              </Route>
               <Route path="lessons/:id" element={<LessonDetailPage />} />
               <Route path="profile" element={<ProfilePage />} />
-              <Route element={<RequireRole roles={['admin', 'super_admin']} />}>
+              <Route element={<RequireRole roles={['education', 'super_admin']} />}>
                 <Route path="users" element={<UsersPage />} />
                 <Route path="groups" element={<GroupsPage />} />
                 <Route path="groups/:id/students" element={<GroupStudentsPage />} />

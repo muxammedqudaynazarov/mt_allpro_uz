@@ -7,7 +7,6 @@ use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -30,7 +29,7 @@ class User extends Authenticatable
         'name', 'first_name', 'last_name', 'middle_name',
         'hemis_id', 'hemis_uuid', 'hemis_login', 'department', 'picture_url',
         'email', 'phone', 'login', 'password',
-        'roles', 'status', 'locale', 'managed_by_id',
+        'roles', 'status', 'locale', 'can_manage_calendar',
         'telegram_chat_id', 'telegram_username', 'last_login_at',
     ];
 
@@ -48,27 +47,13 @@ class User extends Authenticatable
             'status' => UserStatus::class,
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'can_manage_calendar' => 'boolean',
         ];
-    }
-
-    public function managedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'managed_by_id')->withTrashed();
-    }
-
-    public function managedUsers(): HasMany
-    {
-        return $this->hasMany(User::class, 'managed_by_id');
     }
 
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class);
-    }
-
-    public function adminGroups(): HasMany
-    {
-        return $this->hasMany(Group::class, 'admin_id');
     }
 
     public function hasRole(Role|string ...$roles): bool
@@ -88,9 +73,21 @@ class User extends Authenticatable
         return $this->hasRole(Role::SuperAdmin);
     }
 
-    public function isAdmin(): bool
+    public function isEducation(): bool
     {
-        return $this->hasRole(Role::Admin, Role::SuperAdmin);
+        return $this->hasRole(Role::Education);
+    }
+
+    /** Barcha guruh va darslarni ko'radi: Administrator va O'quv bo'limi. */
+    public function canViewAll(): bool
+    {
+        return $this->hasRole(Role::SuperAdmin, Role::Education);
+    }
+
+    /** Kalendar (har haftalik darslar) — o'qituvchiga administrator ruxsat bergan bo'lsa. */
+    public function canManageCalendar(): bool
+    {
+        return $this->isSuperAdmin() || ($this->hasRole(Role::Teacher) && $this->can_manage_calendar !== false);
     }
 
     /** Telegram xabarlari va server matnlari uchun foydalanuvchi tili. */
@@ -113,6 +110,9 @@ class User extends Authenticatable
         foreach ($this->roles ?? [] as $role) {
             $permissions = [...$permissions, ...(Role::tryFrom($role)?->permissions() ?? [])];
         }
+        if ($this->canManageCalendar()) {
+            $permissions[] = 'calendar.manage';
+        }
 
         return array_values(array_unique($permissions));
     }
@@ -131,16 +131,16 @@ class User extends Authenticatable
         return $this->first_name ?: (Str::of($this->name)->explode(' ')->get(1) ?? $this->name);
     }
 
-    /** Administrator ko'ra oladigan foydalanuvchilar. */
+    /** Foydalanuvchilar ro'yxati: Administrator va O'quv bo'limi hammani ko'radi. */
     public function scopeVisibleTo(Builder $query, User $viewer): Builder
     {
-        if ($viewer->isSuperAdmin()) {
-            return $query;
-        }
+        return $viewer->canViewAll() ? $query : $query->whereKey($viewer->id);
+    }
 
-        return $query->where(fn (Builder $q) => $q
-            ->where('managed_by_id', $viewer->id)
-            ->orWhere('status', UserStatus::Pending->value));
+    /** "Familiya Ism Otasining ismi" — qismlardan to'liq ism. */
+    public static function fullName(?string $last, ?string $first, ?string $middle): string
+    {
+        return trim(implode(' ', array_filter([$last, $first, $middle], fn (?string $part) => $part !== null && trim($part) !== '')));
     }
 
     public function scopeWithRole(Builder $query, Role|string $role): Builder

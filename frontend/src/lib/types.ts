@@ -1,4 +1,4 @@
-export type Role = 'super_admin' | 'admin' | 'teacher'
+export type Role = 'super_admin' | 'education' | 'teacher'
 export type UserStatus = 'pending' | 'active' | 'blocked'
 export type LessonStatus = 'scheduled' | 'live' | 'finished' | 'cancelled'
 
@@ -11,6 +11,8 @@ export interface Me {
   id: number
   name: string
   first_name: string
+  last_name: string | null
+  middle_name: string | null
   short_name: string
   email: string | null
   phone: string | null
@@ -24,7 +26,6 @@ export interface Me {
   permissions: string[]
   has_password: boolean
   telegram: { linked: boolean; username: string | null }
-  managed_by: UserRef | null
   last_login_at: string | null
   created_at: string
 }
@@ -130,7 +131,6 @@ export interface Group {
   is_active: boolean
   zoom_user_email: string
   zoom_account: { id: number; name: string } | null
-  admin: UserRef | null
   lessons_count: number
   live: boolean
 }
@@ -157,6 +157,11 @@ export interface ZoomUser {
 export interface UserListItem {
   id: number
   name: string
+  first_name: string | null
+  last_name: string | null
+  middle_name: string | null
+  /** O'qituvchi kalendar va har haftalik darslarni boshqara oladimi (Administrator belgilaydi). */
+  can_manage_calendar: boolean
   picture_url: string | null
   hemis_id: string | null
   phone: string | null
@@ -165,7 +170,6 @@ export interface UserListItem {
   roles: Role[]
   has_password: boolean
   telegram_linked: boolean
-  managed_by: UserRef | null
   lessons_count: number
   last_login_at: string | null
   created_at: string

@@ -9,18 +9,18 @@ class GroupPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->canViewAll();
     }
 
     public function toggle(User $user, Group $group): bool
     {
-        return $user->isSuperAdmin() || ($user->isAdmin() && $group->admin_id === $user->id);
+        return $user->isSuperAdmin();
     }
 
     /** Guruh talabalari (davomat) — ko'rish, birlashtirish, nomini o'zgartirish. */
     public function manageStudents(User $user, Group $group): bool
     {
-        return $this->toggle($user, $group);
+        return $user->canViewAll();
     }
 
     public function create(User $user): bool

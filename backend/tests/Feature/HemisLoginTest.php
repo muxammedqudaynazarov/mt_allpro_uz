@@ -78,7 +78,7 @@ class HemisLoginTest extends TestCase
 
         $user->refresh();
         $this->assertSame('Jumabaev Rustem Kenesbaevich', $user->name);
-        $this->assertSame('998900000000', $user->phone, 'Qo‘lda kiritilgan telefon saqlanib qolishi kerak');
+        $this->assertNull($user->phone, 'HEMIS’dan telefon so‘ralmaydi, eskisi ham saqlanmaydi');
         $this->assertNotNull($user->last_login_at);
         $this->assertAuthenticatedAs($user);
     }

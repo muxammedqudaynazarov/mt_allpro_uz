@@ -19,7 +19,6 @@ class GroupResource extends JsonResource
             'is_active' => $this->is_active,
             'zoom_user_email' => $this->zoom_user_email,
             'zoom_account' => $this->zoomAccount ? ['id' => $this->zoomAccount->id, 'name' => $this->zoomAccount->name] : null,
-            'admin' => $this->admin ? ['id' => $this->admin->id, 'name' => $this->admin->name] : null,
             'lessons_count' => (int) ($this->lessons_count ?? 0),
             'live' => (bool) ($this->live_lessons_count ?? false),
         ];

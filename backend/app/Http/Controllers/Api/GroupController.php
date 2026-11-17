@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\GroupResource;
 use App\Models\Group;
 use App\Models\Lesson;
-use App\Models\User;
 use App\Support\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -23,7 +22,7 @@ class GroupController extends Controller
 
         $groups = Group::query()
             ->visibleTo($request->user())
-            ->with(['zoomAccount', 'admin'])
+            ->with(['zoomAccount'])
             ->withCount(['lessons', 'lessons as live_lessons_count' => fn ($q) => $q->live()])
             ->orderBy('course')
             ->orderBy('name')
@@ -38,7 +37,7 @@ class GroupController extends Controller
         $group = Group::create($this->validated($request));
         Audit::log('group.created', 'Guruh qoʻshildi: :name', $group, replace: ['name' => $group->name]);
 
-        return new GroupResource($group->load(['zoomAccount', 'admin']));
+        return new GroupResource($group->load(['zoomAccount']));
     }
 
     public function update(Request $request, Group $group): GroupResource
@@ -47,7 +46,7 @@ class GroupController extends Controller
         $group->update($this->validated($request, $group));
         Audit::log('group.updated', 'Guruh tahrirlandi: :name', $group, ['changes' => array_keys($group->getChanges())], replace: ['name' => $group->name]);
 
-        return new GroupResource($group->load(['zoomAccount', 'admin'])->loadCount('lessons'));
+        return new GroupResource($group->load(['zoomAccount'])->loadCount('lessons'));
     }
 
     public function toggle(Group $group): GroupResource
@@ -56,7 +55,7 @@ class GroupController extends Controller
         $group->update(['is_active' => ! $group->is_active]);
         Audit::log('group.toggled', $group->is_active ? 'Guruh faollashtirildi: :name' : 'Guruh oʻchirib qoʻyildi: :name', $group, replace: ['name' => $group->name]);
 
-        return new GroupResource($group->load(['zoomAccount', 'admin'])->loadCount('lessons'));
+        return new GroupResource($group->load(['zoomAccount'])->loadCount('lessons'));
     }
 
     public function destroy(Group $group): Response
@@ -80,7 +79,6 @@ class GroupController extends Controller
             'course' => ['required', 'integer', 'between:1,6'],
             'zoom_account_id' => ['required', 'integer', Rule::exists('zoom_accounts', 'id')],
             'zoom_user_email' => ['required', 'email', 'max:255'],
-            'admin_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'name.required' => __('Guruh nomini kiriting.'),
@@ -90,9 +88,6 @@ class GroupController extends Controller
             'zoom_user_email.email' => __('Email notoʻgʻri.'),
         ]);
 
-        if (! empty($data['admin_id']) && ! User::find($data['admin_id'])?->isAdmin()) {
-            throw ValidationException::withMessages(['admin_id' => __('Masʼul sifatida faqat administratorni tanlash mumkin.')]);
-        }
         $data['zoom_user_email'] = mb_strtolower(trim($data['zoom_user_email']));
 
         return $data;

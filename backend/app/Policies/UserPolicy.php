@@ -2,37 +2,34 @@
 
 namespace App\Policies;
 
-use App\Enums\UserStatus;
 use App\Models\User;
 
+/**
+ * Foydalanuvchilarni faqat Administrator boshqaradi. O'quv bo'limi ro'yxatni
+ * ko'ra oladi, lekin o'zgartira olmaydi. Hech kim o'zining rolini yoki holatini
+ * o'zgartira olmaydi.
+ */
 class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->canViewAll();
     }
 
-    /**
-     * Administrator faqat o'ziga biriktirilgan yoki tasdiq kutayotgan oddiy
-     * xodimlarning holatini o'zgartira oladi. Hech kim o'zini o'zgartira olmaydi.
-     */
     public function updateStatus(User $actor, User $target): bool
     {
-        if ($actor->is($target)) {
-            return false;
-        }
-        if ($actor->isSuperAdmin()) {
-            return true;
-        }
-
-        return $actor->isAdmin()
-            && ! $target->isAdmin()
-            && ($target->managed_by_id === $actor->id || $target->status === UserStatus::Pending);
+        return $actor->isSuperAdmin() && ! $actor->is($target);
     }
 
     public function updateRoles(User $actor, User $target): bool
     {
         return $actor->isSuperAdmin() && ! $actor->is($target);
+    }
+
+    /** Ismni vaqtincha to'g'rilash (HEMIS orqali kirganda yana yangilanadi) va kalendar ruxsati. */
+    public function updateProfile(User $actor, User $target): bool
+    {
+        return $actor->isSuperAdmin();
     }
 
     public function delete(User $actor, User $target): bool

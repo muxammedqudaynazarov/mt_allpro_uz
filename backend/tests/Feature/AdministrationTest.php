@@ -9,6 +9,7 @@ use App\Models\Lesson;
 use App\Models\User;
 use App\Models\ZoomAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -29,57 +30,86 @@ class AdministrationTest extends TestCase
         $this->assertTrue($group->refresh()->is_active);
     }
 
-    public function test_admin_cannot_manage_zoom_or_slots(): void
+    public function test_education_office_sees_everything_but_cannot_manage(): void
     {
-        $admin = User::factory()->admin()->create();
+        $education = User::factory()->education()->create();
+        $teacher = User::factory()->create();
+        $group = Group::factory()->create();
+        $foreignGroup = Group::factory()->create();
+        Lesson::factory()->create(['user_id' => $teacher->id, 'group_id' => $group->id]);
+        Lesson::factory()->finished()->create(['group_id' => $foreignGroup->id]);
 
-        $this->actingAsUser($admin)->getJson('/api/zoom-accounts')->assertForbidden();
-        $this->actingAsUser($admin)->postJson('/api/lesson-slots', ['name' => 'X', 'starts_at' => '10:00', 'duration_minutes' => 80])->assertForbidden();
-        $this->actingAsUser($admin)->getJson('/api/audit-logs')->assertForbidden();
+        // Ko'rish: barcha guruhlar, darslar, foydalanuvchilar, hisobotlar.
+        $this->actingAsUser($education)->getJson('/api/groups')->assertOk()->assertJsonCount(2, 'data');
+        $this->actingAsUser($education)->getJson('/api/lessons')->assertOk()->assertJsonCount(2, 'data');
+        $this->actingAsUser($education)->getJson('/api/users')->assertOk();
+        $this->actingAsUser($education)->getJson('/api/reports/summary?from=2026-01-01&to=2026-12-31')->assertOk();
+
+        // Boshqarish: Zoom, juftliklar, guruh, foydalanuvchi, dars yaratish — yo'q.
+        $this->actingAsUser($education)->getJson('/api/zoom-accounts')->assertForbidden();
+        $this->actingAsUser($education)->postJson('/api/lesson-slots', ['name' => 'X', 'starts_at' => '10:00', 'duration_minutes' => 80])->assertForbidden();
+        $this->actingAsUser($education)->getJson('/api/audit-logs')->assertForbidden();
+        $this->actingAsUser($education)->postJson("/api/groups/{$group->id}/toggle")->assertForbidden();
+        $this->actingAsUser($education)->putJson("/api/groups/{$group->id}", ['name' => 'X'])->assertForbidden();
+        $this->actingAsUser($education)->patchJson("/api/users/{$teacher->id}", ['status' => 'blocked'])->assertForbidden();
+        $this->actingAsUser($education)->patchJson("/api/users/{$teacher->id}", ['last_name' => 'Boshqa'])->assertForbidden();
+        $this->actingAsUser($education)->postJson('/api/lessons', ['group_id' => $group->id])->assertForbidden();
+        $this->assertNotContains('lessons.create', $education->permissions());
     }
 
-    public function test_admin_sees_and_toggles_only_own_groups(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $own = Group::factory()->create(['admin_id' => $admin->id]);
-        $foreign = Group::factory()->create();
-
-        $this->actingAsUser($admin)->getJson('/api/groups')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $own->id);
-        $this->actingAsUser($admin)->postJson("/api/groups/{$own->id}/toggle")->assertOk()->assertJsonPath('data.is_active', false);
-        $this->actingAsUser($admin)->postJson("/api/groups/{$foreign->id}/toggle")->assertForbidden();
-        $this->actingAsUser($admin)->putJson("/api/groups/{$own->id}", ['name' => 'X'])->assertForbidden();
-    }
-
-    public function test_admin_approves_pending_teacher_and_becomes_responsible(): void
+    public function test_only_administrator_approves_and_blocks_users(): void
     {
         Queue::fake();
-        $admin = User::factory()->admin()->create();
+        $super = User::factory()->superAdmin()->create();
         $pending = User::factory()->pending()->create(['telegram_chat_id' => '777']);
 
-        $this->actingAsUser($admin)->getJson('/api/users?status=pending')->assertOk()->assertJsonCount(1, 'data');
-        $this->actingAsUser($admin)->patchJson("/api/users/{$pending->id}", ['status' => 'active'])->assertOk();
-
-        $pending->refresh();
-        $this->assertSame(UserStatus::Active, $pending->status);
-        $this->assertSame($admin->id, $pending->managed_by_id);
+        $this->actingAsUser($super)->getJson('/api/users?status=pending')->assertOk()->assertJsonCount(1, 'data');
+        $this->actingAsUser($super)->patchJson("/api/users/{$pending->id}", ['status' => 'active'])->assertOk();
+        $this->assertSame(UserStatus::Active, $pending->refresh()->status);
         Queue::assertPushed(SendTelegramMessage::class, fn ($job) => $job->chatId === '777');
+
+        $this->actingAsUser($super)->patchJson("/api/users/{$pending->id}", ['status' => 'blocked'])->assertOk();
+        $this->assertSame(UserStatus::Blocked, $pending->refresh()->status);
+        $this->actingAsUser($super)->patchJson("/api/users/{$super->id}", ['status' => 'blocked'])->assertForbidden();
     }
 
-    public function test_admin_cannot_touch_other_admins_or_unrelated_teachers_or_roles(): void
+    public function test_administrator_corrects_name_temporarily_until_next_hemis_login(): void
     {
-        $admin = User::factory()->admin()->create();
-        $otherAdmin = User::factory()->admin()->create();
-        $foreignTeacher = User::factory()->create();
-        $ownTeacher = User::factory()->create(['managed_by_id' => $admin->id]);
+        $super = User::factory()->superAdmin()->create();
+        $teacher = User::factory()->create(['name' => 'Qudaynazarov Muxammed', 'last_name' => 'Qudaynazarov', 'first_name' => 'Muxammed']);
 
-        $this->actingAsUser($admin)->patchJson("/api/users/{$otherAdmin->id}", ['status' => 'blocked'])->assertForbidden();
-        $this->actingAsUser($admin)->patchJson("/api/users/{$foreignTeacher->id}", ['status' => 'blocked'])->assertForbidden();
-        $this->actingAsUser($admin)->patchJson("/api/users/{$ownTeacher->id}", ['roles' => ['super_admin']])->assertForbidden();
-        $this->actingAsUser($admin)->patchJson("/api/users/{$admin->id}", ['status' => 'blocked'])->assertForbidden();
-        $this->actingAsUser($admin)->deleteJson("/api/users/{$ownTeacher->id}")->assertForbidden();
+        $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['last_name' => 'Qudaynazarov', 'first_name' => 'Muhammad', 'middle_name' => 'Aliyevich'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Qudaynazarov Muhammad Aliyevich');
+    }
 
-        $this->actingAsUser($admin)->patchJson("/api/users/{$ownTeacher->id}", ['status' => 'blocked'])->assertOk();
-        $this->assertSame(UserStatus::Blocked, $ownTeacher->refresh()->status);
+    public function test_administrator_controls_teacher_calendar_permission(): void
+    {
+        $super = User::factory()->superAdmin()->create();
+        $teacher = User::factory()->create();
+        $this->assertContains('calendar.manage', $teacher->permissions(), 'standart: ruxsat bor');
+
+        $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['can_manage_calendar' => false])
+            ->assertOk()
+            ->assertJsonPath('data.can_manage_calendar', false);
+        $this->assertNotContains('calendar.manage', $teacher->refresh()->permissions());
+    }
+
+    public function test_administrator_changes_own_name_and_password(): void
+    {
+        $super = User::factory()->superAdmin()->withPassword('admin')->create();
+        $teacher = User::factory()->create();
+
+        $this->actingAsUser($super)->patchJson('/api/me', ['last_name' => 'Aliyev', 'first_name' => 'Vali'])->assertOk()->assertJsonPath('data.name', 'Aliyev Vali');
+        $this->actingAsUser($teacher)->patchJson('/api/me', ['last_name' => 'Boshqa'])->assertForbidden();
+
+        $this->actingAsUser($super)->putJson('/api/me/password', ['current_password' => 'wrong', 'password' => 'new-password-2026', 'password_confirmation' => 'new-password-2026'])
+            ->assertStatus(422)->assertJsonValidationErrors('current_password');
+        $this->actingAsUser($super)->putJson('/api/me/password', ['current_password' => 'secret-password-123', 'password' => 'short', 'password_confirmation' => 'short'])
+            ->assertStatus(422)->assertJsonValidationErrors('password');
+        $this->actingAsUser($super)->putJson('/api/me/password', ['current_password' => 'secret-password-123', 'password' => 'new-password-2026', 'password_confirmation' => 'new-password-2026'])
+            ->assertNoContent();
+        $this->assertTrue(Hash::check('new-password-2026', $super->refresh()->password));
     }
 
     public function test_super_admin_changes_roles_but_not_own(): void
@@ -87,10 +117,10 @@ class AdministrationTest extends TestCase
         $super = User::factory()->superAdmin()->create();
         $teacher = User::factory()->create();
 
-        $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['roles' => ['admin', 'teacher']])
-            ->assertOk()->assertJsonPath('data.roles', ['admin', 'teacher']);
+        $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['roles' => ['education', 'teacher']])
+            ->assertOk()->assertJsonPath('data.roles', ['education', 'teacher']);
         $this->actingAsUser($super)->patchJson("/api/users/{$super->id}", ['roles' => ['teacher']])->assertForbidden();
-        $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['roles' => ['hacker']])->assertStatus(422);
+        $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['roles' => ['admin']])->assertStatus(422);
     }
 
     public function test_deleting_user_keeps_lesson_history(): void
@@ -136,19 +166,15 @@ class AdministrationTest extends TestCase
         $this->actingAsUser($super)->deleteJson("/api/zoom-accounts/{$group->zoom_account_id}")->assertStatus(422);
     }
 
-    public function test_super_admin_creates_group_with_admin_only(): void
+    public function test_super_admin_creates_group(): void
     {
         $super = User::factory()->superAdmin()->create();
         $account = ZoomAccount::factory()->create();
-        $teacher = User::factory()->create();
-        $admin = User::factory()->admin()->create();
         $payload = ['name' => '1-A1 Tarix', 'course' => 1, 'zoom_account_id' => $account->id, 'zoom_user_email' => 'Zoom_9@KarSU.uz'];
 
-        $this->actingAsUser($super)->postJson('/api/groups', $payload + ['admin_id' => $teacher->id])->assertStatus(422)->assertJsonValidationErrors('admin_id');
-        $this->actingAsUser($super)->postJson('/api/groups', $payload + ['admin_id' => $admin->id])
+        $this->actingAsUser($super)->postJson('/api/groups', $payload)
             ->assertCreated()
-            ->assertJsonPath('data.zoom_user_email', 'zoom_9@karsu.uz')
-            ->assertJsonPath('data.admin.id', $admin->id);
+            ->assertJsonPath('data.zoom_user_email', 'zoom_9@karsu.uz');
     }
 
     public function test_reports_summarise_lessons(): void

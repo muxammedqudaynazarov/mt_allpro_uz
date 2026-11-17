@@ -19,7 +19,7 @@ type StatusFilter = 'all' | 'live' | 'scheduled' | 'finished'
 
 export default function LessonsPage() {
   const t = useT()
-  const { isAdmin } = useAuth()
+  const { canViewAll, can } = useAuth()
   const [params, setParams] = useSearchParams()
   const [page, setPage] = useState(1)
   const status = (params.get('status') as StatusFilter) || 'all'
@@ -49,7 +49,7 @@ export default function LessonsPage() {
   const groups = useQuery({
     queryKey: ['groups', 'all'],
     queryFn: async () => (await api.get<{ data: Group[] }>('/api/groups')).data.data,
-    enabled: isAdmin,
+    enabled: canViewAll,
   })
 
   const exportUrl = `/api/lessons/export?${new URLSearchParams(cleanParams({ ...filters }) as Record<string, string>).toString()}`
@@ -58,19 +58,21 @@ export default function LessonsPage() {
     <>
       <PageHeader
         title={t('Darslar')}
-        description={isAdmin ? t('Siz yaratgan va masʼul guruhlaringizdagi barcha darslar.') : t('Siz yaratgan darslar tarixi.')}
+        description={canViewAll ? t('Barcha guruhlardagi darslar.') : t('Siz yaratgan darslar tarixi.')}
         actions={
           <>
-            {isAdmin && (
+            {canViewAll && (
               <a href={exportUrl} className={buttonClass({ variant: 'secondary' })}>
                 <Download className="size-4" />
                 Excel (CSV)
               </a>
             )}
-            <Link to="/lessons/new" className={buttonClass()}>
-              <CalendarPlus className="size-4" />
-              {t('Dars yaratish')}
-            </Link>
+            {can('lessons.create') && (
+              <Link to="/lessons/new" className={buttonClass()}>
+                <CalendarPlus className="size-4" />
+                {t('Dars yaratish')}
+              </Link>
+            )}
           </>
         }
       />
@@ -88,7 +90,7 @@ export default function LessonsPage() {
           ]}
         />
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_10.5rem_10.5rem]">
-          {isAdmin && (
+          {canViewAll && (
             <Select aria-label={t('Guruh')} wrapperClassName="col-span-2 lg:col-span-1" value={filters.group_id} onChange={(event) => update('group_id', event.target.value)}>
               <option value="">{t('Barcha guruhlar')}</option>
               {groups.data?.map((group) => (
@@ -98,7 +100,7 @@ export default function LessonsPage() {
               ))}
             </Select>
           )}
-          {isAdmin && (
+          {canViewAll && (
             <Select aria-label={t('Kimniki')} wrapperClassName="col-span-2 lg:col-span-1" value={filters.mine} onChange={(event) => update('mine', event.target.value)}>
               <option value="">{t('Hamma oʻqituvchilar')}</option>
               <option value="1">{t('Faqat meniki')}</option>

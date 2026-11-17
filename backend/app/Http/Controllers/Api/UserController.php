@@ -16,7 +16,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -31,7 +30,7 @@ class UserController extends Controller
             'per_page' => ['nullable', 'integer', 'between:5,100'],
         ]);
 
-        $query = User::query()->visibleTo($request->user())->with('managedBy')->withCount('lessons');
+        $query = User::query()->visibleTo($request->user())->withCount('lessons');
 
         if (! empty($data['status'])) {
             $query->where('status', $data['status']);
@@ -67,38 +66,38 @@ class UserController extends Controller
 
     public function update(Request $request, User $user, Notifier $notifier): UserResource
     {
-        $actor = $request->user();
         $data = $request->validate([
             'status' => ['sometimes', Rule::enum(UserStatus::class)],
             'roles' => ['sometimes', 'array', 'min:1'],
             'roles.*' => [Rule::in(Role::values())],
-            'managed_by_id' => ['sometimes', 'nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
             'hemis_id' => ['sometimes', 'nullable', 'string', 'max:64', Rule::unique('users', 'hemis_id')->ignore($user->id)],
+            // Ism-sharif vaqtincha to'g'rilanadi: foydalanuvchi HEMIS orqali kirganda yana HEMIS'dagi qiymat olinadi.
+            'last_name' => ['sometimes', 'string', 'min:2', 'max:80'],
+            'first_name' => ['sometimes', 'string', 'min:2', 'max:80'],
+            'middle_name' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'can_manage_calendar' => ['sometimes', 'boolean'],
         ], ['roles.min' => __('Kamida bitta rol tanlang.'), 'hemis_id.unique' => __('Bu HEMIS ID boshqa foydalanuvchiga biriktirilgan.')]);
 
         if (array_key_exists('status', $data)) {
             Gate::authorize('updateStatus', $user);
-            $previous = $user->status;
             $user->status = UserStatus::from($data['status']);
-            // Administrator tasdiqlagan xodim unga biriktiriladi.
-            if ($previous === UserStatus::Pending && $user->status === UserStatus::Active && ! $user->managed_by_id && ! $actor->isSuperAdmin()) {
-                $user->managed_by_id = $actor->id;
-            }
         }
 
-        if (array_key_exists('roles', $data) || array_key_exists('managed_by_id', $data) || array_key_exists('hemis_id', $data)) {
+        if (array_key_exists('roles', $data) || array_key_exists('hemis_id', $data)) {
             Gate::authorize('updateRoles', $user);
             if (isset($data['roles'])) {
                 $user->roles = array_values(array_unique($data['roles']));
             }
-            if (array_key_exists('managed_by_id', $data)) {
-                if ($data['managed_by_id'] && ($data['managed_by_id'] === $user->id || ! User::find($data['managed_by_id'])?->isAdmin())) {
-                    throw ValidationException::withMessages(['managed_by_id' => __('Masʼul sifatida boshqa administratorni tanlang.')]);
-                }
-                $user->managed_by_id = $data['managed_by_id'];
-            }
             if (array_key_exists('hemis_id', $data)) {
                 $user->hemis_id = $data['hemis_id'] ?: null;
+            }
+        }
+
+        if (array_intersect(['last_name', 'first_name', 'middle_name', 'can_manage_calendar'], array_keys($data))) {
+            Gate::authorize('updateProfile', $user);
+            $user->fill(array_intersect_key($data, array_flip(['last_name', 'first_name', 'middle_name', 'can_manage_calendar'])));
+            if (array_intersect(['last_name', 'first_name', 'middle_name'], array_keys($data))) {
+                $user->name = User::fullName($user->last_name, $user->first_name, $user->middle_name);
             }
         }
 
@@ -116,7 +115,7 @@ class UserController extends Controller
             $notifier->userActivated($user);
         }
 
-        return new UserResource($user->load('managedBy')->loadCount('lessons'));
+        return new UserResource($user->loadCount('lessons'));
     }
 
     public function destroy(Request $request, User $user): Response

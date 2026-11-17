@@ -34,7 +34,7 @@ class DashboardController extends Controller
                     ->where('status', '!=', 'cancelled')
                     ->whereBetween('starts_at', [now()->startOfMonth(), now()->endOfMonth()])
                     ->count(),
-                'pending_users' => $user->isAdmin()
+                'pending_users' => $user->isSuperAdmin()
                     ? User::query()->visibleTo($user)->where('status', UserStatus::Pending->value)->count()
                     : null,
             ],

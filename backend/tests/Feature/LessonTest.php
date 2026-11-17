@@ -186,14 +186,13 @@ class LessonTest extends TestCase
             ->assertJsonPath('data.0.id', $own->id);
     }
 
-    public function test_admin_sees_lessons_of_own_groups(): void
+    public function test_education_office_sees_all_lessons(): void
     {
-        $admin = User::factory()->admin()->create();
-        $mine = Group::factory()->create(['admin_id' => $admin->id]);
-        Lesson::factory()->for($mine)->create();
+        $education = User::factory()->education()->create();
+        Lesson::factory()->create();
         Lesson::factory()->create();
 
-        $this->actingAsUser($admin)->getJson('/api/lessons')->assertOk()->assertJsonCount(1, 'data');
+        $this->actingAsUser($education)->getJson('/api/lessons')->assertOk()->assertJsonCount(2, 'data');
     }
 
     public function test_only_owner_gets_fresh_start_url(): void
@@ -208,14 +207,14 @@ class LessonTest extends TestCase
             ->assertJsonPath('data.url', 'https://us06web.zoom.us/s/81234567890?zak=fresh');
     }
 
-    public function test_other_teacher_cannot_end_lesson_but_group_admin_can(): void
+    public function test_other_teacher_and_education_cannot_end_lesson_but_administrator_can(): void
     {
         $this->fakeZoom();
-        $admin = User::factory()->admin()->create();
-        $group = Group::factory()->create(['admin_id' => $admin->id]);
-        $lesson = Lesson::factory()->for($group)->create();
+        $admin = User::factory()->superAdmin()->create();
+        $lesson = Lesson::factory()->create();
 
         $this->actingAsUser(User::factory()->create())->postJson("/api/lessons/{$lesson->id}/end")->assertForbidden();
+        $this->actingAsUser(User::factory()->education()->create())->postJson("/api/lessons/{$lesson->id}/end")->assertForbidden();
 
         $this->actingAsUser($admin)->postJson("/api/lessons/{$lesson->id}/end")
             ->assertOk()

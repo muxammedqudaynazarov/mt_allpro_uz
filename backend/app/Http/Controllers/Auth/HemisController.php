@@ -93,9 +93,10 @@ class HemisController extends Controller
                 'hemis_id' => $profile->id,
                 'hemis_uuid' => $profile->uuid ?? $user->hemis_uuid,
                 'hemis_login' => $profile->login ?? $user->hemis_login,
-                'picture_url' => $profile->picture ?? $user->picture_url,
-                'email' => $profile->email ?? $user->email,
-                'phone' => $user->phone ?: $profile->phone,
+                // So'ralmagan maydonlar keladigan bo'lsa ham saqlanmaydi; eskilari tozalanadi.
+                'picture_url' => in_array('picture', $this->hemis->fields(), true) ? $profile->picture : null,
+                'email' => in_array('email', $this->hemis->fields(), true) ? $profile->email : null,
+                'phone' => in_array('phone', $this->hemis->fields(), true) ? $profile->phone : null,
                 'department' => $profile->department ?? $user->department,
                 'last_login_at' => now(),
             ])->save();

@@ -281,8 +281,7 @@ class AttendanceTest extends TestCase
     public function test_admin_merges_students_and_merge_is_remembered(): void
     {
         $this->fakeZoomReports();
-        $admin = User::factory()->admin()->create();
-        $this->group->update(['admin_id' => $admin->id]);
+        $admin = User::factory()->education()->create();
         $lesson = $this->lesson(['zoom_state' => Lesson::ZOOM_ENDED, 'status' => LessonStatus::Finished]);
         app(SyncLessonAttendance::class)->handle($lesson);
         $ali = Student::where('name', 'Ali Valiyev')->firstOrFail();
@@ -308,8 +307,8 @@ class AttendanceTest extends TestCase
         app(SyncLessonAttendance::class)->handle($lesson);
         $this->assertSame(1, Student::count());
 
-        // Boshqa guruhning administratori bu guruh talabalarini ko'ra olmaydi.
-        $this->actingAsUser(User::factory()->admin()->create())->getJson("/api/groups/{$this->group->id}/students")->assertForbidden();
+        // O'qituvchi guruh talabalarini boshqara olmaydi.
+        $this->actingAsUser(User::factory()->create())->getJson("/api/groups/{$this->group->id}/students")->assertForbidden();
     }
 
     public function test_ignored_student_is_not_counted(): void

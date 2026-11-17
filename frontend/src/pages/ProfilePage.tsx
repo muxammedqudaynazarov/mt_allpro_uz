@@ -1,19 +1,115 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { QRCodeSVG } from 'qrcode.react'
-import { ArrowLeft, Send, Unlink } from 'lucide-react'
+import { ArrowLeft, KeyRound, Pencil, Send, Unlink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthProvider'
-import { api, errorMessage } from '@/lib/api'
+import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import { ROLE_LABELS, USER_STATUS_LABELS } from '@/lib/labels'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button, buttonClass } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { useT } from '@/i18n/I18nProvider'
+
+/** Administrator o'z ism-sharifini o'zgartiradi (u HEMIS'siz, login/parol bilan kirishi mumkin). */
+function NameModal({ onClose }: { onClose: () => void }) {
+  const t = useT()
+  const { user, refresh } = useAuth()
+  const [form, setForm] = useState({ last_name: user?.last_name ?? '', first_name: user?.first_name ?? '', middle_name: user?.middle_name ?? '' })
+  const save = useMutation({
+    mutationFn: () => api.patch('/api/me', { ...form, middle_name: form.middle_name.trim() || null }),
+    onSuccess: async () => {
+      await refresh()
+      toast.success(t('Saqlandi'))
+      onClose()
+    },
+  })
+  const errors = fieldErrors(save.error)
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    save.mutate()
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={t('Ism-sharif')}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            {t('Bekor qilish')}
+          </Button>
+          <Button type="submit" form="name-form" loading={save.isPending}>
+            {t('Saqlash')}
+          </Button>
+        </>
+      }
+    >
+      <form id="name-form" onSubmit={submit} className="grid gap-4">
+        <Input label={t('Familiya')} value={form.last_name} maxLength={80} required onChange={(e) => setForm({ ...form, last_name: e.target.value })} error={errors.last_name} />
+        <Input label={t('Ism')} value={form.first_name} maxLength={80} required onChange={(e) => setForm({ ...form, first_name: e.target.value })} error={errors.first_name} />
+        <Input label={t('Otasining ismi')} value={form.middle_name} maxLength={80} onChange={(e) => setForm({ ...form, middle_name: e.target.value })} error={errors.middle_name} />
+      </form>
+    </Modal>
+  )
+}
+
+function PasswordModal({ onClose }: { onClose: () => void }) {
+  const t = useT()
+  const [form, setForm] = useState({ current_password: '', password: '', password_confirmation: '' })
+  const save = useMutation({
+    mutationFn: () => api.put('/api/me/password', form),
+    onSuccess: () => {
+      toast.success(t('Parol almashtirildi'))
+      onClose()
+    },
+  })
+  const errors = fieldErrors(save.error)
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    save.mutate()
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={t('Parolni almashtirish')}
+      description={t('Kamida 12 belgi: harflar va raqamlar.')}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            {t('Bekor qilish')}
+          </Button>
+          <Button type="submit" form="password-form" loading={save.isPending}>
+            {t('Saqlash')}
+          </Button>
+        </>
+      }
+    >
+      <form id="password-form" onSubmit={submit} className="grid gap-4">
+        <Input type="password" label={t('Joriy parol')} autoComplete="current-password" value={form.current_password} required onChange={(e) => setForm({ ...form, current_password: e.target.value })} error={errors.current_password} />
+        <Input type="password" label={t('Yangi parol')} autoComplete="new-password" value={form.password} required onChange={(e) => setForm({ ...form, password: e.target.value })} error={errors.password} />
+        <Input
+          type="password"
+          label={t('Yangi parolni takrorlang')}
+          autoComplete="new-password"
+          value={form.password_confirmation}
+          required
+          onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
+        />
+      </form>
+    </Modal>
+  )
+}
 
 function TelegramLinkModal({ url, onClose }: { url: string; onClose: () => void }) {
   const t = useT()
@@ -58,8 +154,9 @@ function TelegramLinkModal({ url, onClose }: { url: string; onClose: () => void 
 
 export default function ProfilePage() {
   const t = useT()
-  const { user, config, refresh } = useAuth()
+  const { user, config, refresh, isSuperAdmin } = useAuth()
   const [linkUrl, setLinkUrl] = useState<string | null>(null)
+  const [editing, setEditing] = useState<'name' | 'password' | null>(null)
 
   const link = useMutation({
     mutationFn: async () => (await api.post<{ data: { url: string } }>('/api/me/telegram')).data.data.url,
@@ -81,9 +178,6 @@ export default function ProfilePage() {
   const rows = [
     { label: t('HEMIS ID'), value: user.hemis_id },
     { label: t('Boʻlim'), value: user.department },
-    { label: t('Telefon'), value: user.phone },
-    { label: t('Email'), value: user.email },
-    { label: t('Masʼul administrator'), value: user.managed_by?.name },
     { label: t('Oxirgi kirish'), value: user.last_login_at ? formatDateTime(user.last_login_at) : null },
   ]
 
@@ -115,6 +209,20 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+          {(isSuperAdmin || user.has_password) && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {isSuperAdmin && (
+                <Button variant="secondary" size="sm" icon={<Pencil className="size-4" />} onClick={() => setEditing('name')}>
+                  {t('Ism-sharifni oʻzgartirish')}
+                </Button>
+              )}
+              {user.has_password && (
+                <Button variant="secondary" size="sm" icon={<KeyRound className="size-4" />} onClick={() => setEditing('password')}>
+                  {t('Parolni almashtirish')}
+                </Button>
+              )}
+            </div>
+          )}
           <dl className="mt-6 divide-y divide-steel-100 border-t border-steel-100">
             {rows.map((row) => (
               <div key={row.label} className="grid grid-cols-[11rem_1fr] gap-3 py-3 text-sm">
@@ -155,6 +263,8 @@ export default function ProfilePage() {
       </div>
 
       {linkUrl && <TelegramLinkModal url={linkUrl} onClose={() => setLinkUrl(null)} />}
+      {editing === 'name' && <NameModal onClose={() => setEditing(null)} />}
+      {editing === 'password' && <PasswordModal onClose={() => setEditing(null)} />}
     </>
   )
 }

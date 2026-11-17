@@ -14,9 +14,7 @@ class LessonPolicy
 
     public function view(User $user, Lesson $lesson): bool
     {
-        return $user->isSuperAdmin()
-            || $lesson->user_id === $user->id
-            || ($user->isAdmin() && $lesson->group?->admin_id === $user->id);
+        return $user->canViewAll() || $lesson->user_id === $user->id;
     }
 
     /** Host havolasi faqat darsni yaratgan o'qituvchiga beriladi. */
@@ -27,6 +25,6 @@ class LessonPolicy
 
     public function end(User $user, Lesson $lesson): bool
     {
-        return $lesson->isOpen() && $this->view($user, $lesson);
+        return $lesson->isOpen() && ($lesson->user_id === $user->id || $user->isSuperAdmin());
     }
 }

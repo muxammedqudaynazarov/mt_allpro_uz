@@ -2,17 +2,25 @@
 
 namespace App\Enums;
 
+/**
+ * Tizim rollari. Foydalanuvchida bir nechta rol bo'lishi mumkin
+ * (masalan, O'quv bo'limi xodimi ham dars o'tsa — Oʻqituvchi ham).
+ */
 enum Role: string
 {
+    /** Tizim egasi: hamma narsa, jumladan Zoom akkauntlari, foydalanuvchilar va rollar. */
     case SuperAdmin = 'super_admin';
-    case Admin = 'admin';
+
+    /** O'quv bo'limi: barcha darslar va guruhlarni kuzatadi, hisobot oladi. Dars yaratmaydi. */
+    case Education = 'education';
+
     case Teacher = 'teacher';
 
     public function label(): string
     {
         return match ($this) {
-            self::SuperAdmin => 'Bosh administrator',
-            self::Admin => 'Administrator',
+            self::SuperAdmin => 'Administrator',
+            self::Education => 'Oʻquv boʻlimi',
             self::Teacher => 'Oʻqituvchi',
         };
     }
@@ -27,12 +35,16 @@ enum Role: string
     {
         return match ($this) {
             self::Teacher => ['lessons.create', 'lessons.view-own'],
-            self::Admin => ['lessons.create', 'lessons.view-own', 'lessons.view-group', 'users.manage', 'groups.view', 'groups.toggle', 'reports.view'],
+            self::Education => [
+                'lessons.view-own', 'lessons.view-all', 'lessons.monitor',
+                'groups.view', 'students.manage', 'reports.view', 'users.view',
+            ],
             self::SuperAdmin => [
-                'lessons.create', 'lessons.view-own', 'lessons.view-group', 'lessons.view-all',
-                'users.manage', 'users.roles', 'users.delete',
-                'groups.view', 'groups.toggle', 'groups.manage',
-                'zoom.manage', 'slots.manage', 'reports.view', 'audit.view',
+                'lessons.create', 'lessons.view-own', 'lessons.view-all', 'lessons.monitor',
+                'groups.view', 'groups.toggle', 'groups.manage', 'students.manage', 'reports.view',
+                'users.view', 'users.manage', 'users.roles', 'users.delete',
+                'calendar.manage', 'calendar.manage-all',
+                'zoom.manage', 'slots.manage', 'settings.manage', 'audit.view',
             ],
         };
     }

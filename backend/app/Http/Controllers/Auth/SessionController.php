@@ -44,7 +44,7 @@ class SessionController extends Controller
         $user = User::where('login', Str::lower($data['login']))->first();
         $valid = $user && $user->password && Hash::check($data['password'], $user->password);
 
-        if (! $valid || ! $user->isAdmin() || $user->status !== UserStatus::Active) {
+        if (! $valid || ! $user->canViewAll() || $user->status !== UserStatus::Active) {
             RateLimiter::hit($key, 60);
             // Bir xil xabar: login mavjudligini oshkor qilmaymiz.
             throw ValidationException::withMessages(['login' => __('Login yoki parol notoʻgʻri.')]);

@@ -27,6 +27,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
     // Tasdiqlanmagan xodimlar ham foydalana oladi
     Route::get('/me', [MeController::class, 'show']);
     Route::patch('/me', [MeController::class, 'update']);
+    Route::put('/me/password', [MeController::class, 'password'])->middleware('throttle:auth');
     Route::post('/me/telegram', [MeController::class, 'telegramLink']);
     Route::delete('/me/telegram', [MeController::class, 'telegramUnlink']);
 
@@ -43,7 +44,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::get('/lessons/{lesson}/attendance/export', [LessonAttendanceController::class, 'export']);
         Route::post('/lessons/{lesson}/attendance/sync', [LessonAttendanceController::class, 'sync'])->middleware('throttle:10,1');
 
-        Route::middleware('role:admin,super_admin')->group(function () {
+        Route::middleware('role:education,super_admin')->group(function () {
             Route::get('/users', [UserController::class, 'index']);
             Route::get('/users/counts', [UserController::class, 'counts']);
             Route::patch('/users/{user}', [UserController::class, 'update']);

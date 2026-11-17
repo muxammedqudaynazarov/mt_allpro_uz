@@ -176,22 +176,10 @@ class Lesson extends Model
             ->where('ends_at', '>', $from);
     }
 
-    /**
-     * Foydalanuvchi ko'ra oladigan darslar:
-     * o'qituvchi — o'zinikini, administrator — o'zinikini va o'z guruhlaridagini, bosh administrator — hammasini.
-     */
+    /** Foydalanuvchi ko'ra oladigan darslar: o'qituvchi — o'zinikini, Administrator va O'quv bo'limi — hammasini. */
     public function scopeVisibleTo(Builder $query, User $viewer): Builder
     {
-        if ($viewer->isSuperAdmin()) {
-            return $query;
-        }
-        if ($viewer->isAdmin()) {
-            return $query->where(fn (Builder $q) => $q
-                ->where('user_id', $viewer->id)
-                ->orWhereIn('group_id', Group::withTrashed()->where('admin_id', $viewer->id)->select('id')));
-        }
-
-        return $query->where('user_id', $viewer->id);
+        return $viewer->canViewAll() ? $query : $query->where('user_id', $viewer->id);
     }
 
     public function durationMinutes(): int

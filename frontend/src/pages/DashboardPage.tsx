@@ -90,7 +90,7 @@ function TodaySchedule({ slots, lessons }: { slots: LessonSlot[]; lessons: Lesso
 
 export default function DashboardPage() {
   const t = useT()
-  const { user, isAdmin, config } = useAuth()
+  const { user, isSuperAdmin, canViewAll, can, config } = useAuth()
   const { data, isPending } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => (await api.get<{ data: DashboardData }>('/api/dashboard')).data.data,
@@ -105,14 +105,16 @@ export default function DashboardPage() {
         title={`${greeting()}, ${firstName}`}
         description={formatLongToday()}
         actions={
-          <Link to="/lessons/new" className={buttonClass({ size: 'lg' })}>
-            <CalendarPlus className="size-5" />
-            {t('Dars yaratish')}
-          </Link>
+          can('lessons.create') && (
+            <Link to="/lessons/new" className={buttonClass({ size: 'lg' })}>
+              <CalendarPlus className="size-5" />
+              {t('Dars yaratish')}
+            </Link>
+          )
         }
       />
 
-      {isAdmin && !!data?.stats.pending_users && (
+      {isSuperAdmin && !!data?.stats.pending_users && (
         <Link
           to="/users?status=pending"
           className="mb-6 flex items-center gap-3 rounded-panel bg-amber-50 px-5 py-4 text-amber-600 ring-1 ring-amber-500/20 transition-colors hover:bg-amber-50/70"
@@ -159,7 +161,7 @@ export default function DashboardPage() {
                 ))}
               </dl>
               <p className="border-t border-steel-100 px-5 py-3 text-xs leading-relaxed text-steel-500">
-                {isAdmin ? t('Siz masʼul boʻlgan guruhlar boʻyicha.') : t('Siz yaratgan darslar boʻyicha.')}
+                {canViewAll ? t('Barcha guruhlar boʻyicha.') : t('Siz yaratgan darslar boʻyicha.')}
               </p>
             </Panel>
           </div>

@@ -3,8 +3,8 @@ import type { LessonStatus, Role, UserStatus } from './types'
 // Qiymatlar o'zbekcha manba matnlar — ko'rsatishda t(...) orqali tarjima qilinadi.
 
 export const ROLE_LABELS: Record<Role, string> = {
-  super_admin: 'Bosh administrator',
-  admin: 'Administrator',
+  super_admin: 'Administrator',
+  education: 'Oʻquv boʻlimi',
   teacher: 'Oʻqituvchi',
 }
 
@@ -25,6 +25,6 @@ export const COURSES = [1, 2, 3, 4, 5] as const
 
 export function topRole(roles: Role[]): Role {
   if (roles.includes('super_admin')) return 'super_admin'
-  if (roles.includes('admin')) return 'admin'
+  if (roles.includes('education')) return 'education'
   return 'teacher'
 }

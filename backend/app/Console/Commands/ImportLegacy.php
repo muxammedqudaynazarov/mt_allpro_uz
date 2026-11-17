@@ -126,12 +126,6 @@ class ImportLegacy extends Command
             $this->users[(int) $row->id] = $user->id;
         }
 
-        foreach ($rows as $row) {
-            if (! empty($row->admin_id) && isset($this->users[(int) $row->id], $this->users[(int) $row->admin_id])) {
-                User::whereKey($this->users[(int) $row->id])->update(['managed_by_id' => $this->users[(int) $row->admin_id]]);
-            }
-        }
-
         $this->line('Foydalanuvchilar: '.count($this->users).($skipped ? " (shundan {$skipped} tasi avval mavjud edi)" : ''));
         $withoutHemis = $rows->filter(fn ($row) => empty($row->hemis_id))->count();
         if ($withoutHemis) {
@@ -174,7 +168,6 @@ class ImportLegacy extends Command
                 'course' => max(1, (int) ($row->course ?? 1)),
                 'zoom_account_id' => $accounts[$key],
                 'zoom_user_email' => mb_strtolower(trim((string) $row->email)),
-                'admin_id' => ! empty($row->admin_id) ? ($this->users[(int) $row->admin_id] ?? null) : null,
                 'is_active' => (string) ($row->active ?? '1') === '1',
             ]);
             $this->groups[(int) $row->id] = $group->id;
@@ -233,6 +226,8 @@ class ImportLegacy extends Command
     {
         $list = json_decode((string) ($row->roles_list ?? '[]'), true) ?: [];
         $list[] = $row->current_role ?? 'teacher';
+        // Eski tizimdagi "admin" (guruh mas'uli) yangi tizimda O'quv bo'limi.
+        $list = array_map(fn (string $role) => $role === 'admin' ? Role::Education->value : $role, $list);
         $roles = array_values(array_intersect(array_unique($list), Role::values()));
 
         return $roles ?: [Role::Teacher->value];

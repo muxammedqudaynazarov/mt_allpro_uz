@@ -16,7 +16,7 @@ class Group extends Model
     /** @use HasFactory<GroupFactory> */
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'hemis_id', 'course', 'zoom_account_id', 'zoom_user_email', 'admin_id', 'is_active'];
+    protected $fillable = ['name', 'hemis_id', 'course', 'zoom_account_id', 'zoom_user_email', 'is_active'];
 
     protected function casts(): array
     {
@@ -37,20 +37,15 @@ class Group extends Model
         return $this->belongsTo(ZoomAccount::class);
     }
 
-    public function admin(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'admin_id')->withTrashed();
-    }
-
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class);
     }
 
-    /** Guruhlar ro'yxati: bosh administrator hammasini, administrator o'zinikini ko'radi. */
+    /** Guruhlar ro'yxati: Administrator va O'quv bo'limi hammasini ko'radi. */
     public function scopeVisibleTo(Builder $query, User $viewer): Builder
     {
-        return $viewer->isSuperAdmin() ? $query : $query->where('admin_id', $viewer->id);
+        return $viewer->canViewAll() ? $query : $query->whereRaw('1 = 0');
     }
 
     /** Dars yaratish mumkin bo'lgan guruhlar. */

@@ -15,6 +15,8 @@ class MeResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'first_name' => $this->firstName(),
+            'last_name' => $this->last_name,
+            'middle_name' => $this->middle_name,
             'short_name' => $this->shortName(),
             'email' => $this->email,
             'phone' => $this->phone,
@@ -31,7 +33,6 @@ class MeResource extends JsonResource
                 'linked' => $this->telegram_chat_id !== null,
                 'username' => $this->telegram_username,
             ],
-            'managed_by' => $this->managedBy ? ['id' => $this->managedBy->id, 'name' => $this->managedBy->name] : null,
             'last_login_at' => $this->last_login_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

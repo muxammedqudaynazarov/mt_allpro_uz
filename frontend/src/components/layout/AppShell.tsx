@@ -32,6 +32,8 @@ interface NavItem {
   label: string
   icon: ReactNode
   roles?: Role[]
+  /** Faqat shu ruxsat bo'lsa ko'rinadi (masalan, O'quv bo'limi dars yaratmaydi). */
+  permission?: string
   end?: boolean
   badge?: number | null
 }
@@ -43,11 +45,11 @@ interface NavSection {
 
 function useNav(): NavSection[] {
   const t = useT()
-  const { isAdmin, user } = useAuth()
+  const { isSuperAdmin, user } = useAuth()
   const pending = useQuery({
     queryKey: ['users', 'pending-count'],
     queryFn: async () => (await api.get<{ data: { pending: number } }>('/api/users/counts')).data.data.pending,
-    enabled: isAdmin && user?.status === 'active',
+    enabled: isSuperAdmin && user?.status === 'active',
     refetchInterval: 60_000,
   })
 
@@ -55,16 +57,16 @@ function useNav(): NavSection[] {
     {
       items: [
         { to: '/', label: t('Bosh sahifa'), icon: <LayoutDashboard />, end: true },
-        { to: '/lessons/new', label: t('Dars yaratish'), icon: <PlusCircle /> },
+        { to: '/lessons/new', label: t('Dars yaratish'), icon: <PlusCircle />, permission: 'lessons.create' },
         { to: '/lessons', label: t('Darslar'), icon: <CalendarClock />, end: true },
       ],
     },
     {
       title: t('Boshqaruv'),
       items: [
-        { to: '/users', label: t('Foydalanuvchilar'), icon: <Users />, roles: ['admin', 'super_admin'], badge: pending.data },
-        { to: '/groups', label: t('Guruhlar'), icon: <UsersRound />, roles: ['admin', 'super_admin'] },
-        { to: '/reports', label: t('Hisobotlar'), icon: <BarChart3 />, roles: ['admin', 'super_admin'] },
+        { to: '/users', label: t('Foydalanuvchilar'), icon: <Users />, roles: ['education', 'super_admin'], badge: isSuperAdmin ? pending.data : null },
+        { to: '/groups', label: t('Guruhlar'), icon: <UsersRound />, roles: ['education', 'super_admin'] },
+        { to: '/reports', label: t('Hisobotlar'), icon: <BarChart3 />, roles: ['education', 'super_admin'] },
       ],
     },
     {
@@ -80,7 +82,7 @@ function useNav(): NavSection[] {
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const t = useT()
-  const { hasRole, user } = useAuth()
+  const { hasRole, can, user } = useAuth()
   const sections = useNav()
 
   if (user?.status !== 'active') {
@@ -94,7 +96,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex-1 space-y-7 overflow-y-auto px-3 py-2" aria-label={t('Asosiy menyu')}>
       {sections.map((section, index) => {
-        const items = section.items.filter((item) => !item.roles || hasRole(...item.roles))
+        const items = section.items.filter((item) => (!item.roles || hasRole(...item.roles)) && (!item.permission || can(item.permission)))
         if (!items.length) return null
         return (
           <div key={section.title ?? index}>

@@ -32,7 +32,7 @@ class DemoSeeder extends Seeder
         ]);
         $admin = User::updateOrCreate(['hemis_id' => '2001'], [
             'name' => 'Aytmuratova Gulnara Baxitovna', 'first_name' => 'Gulnara', 'last_name' => 'Aytmuratova',
-            'status' => UserStatus::Active, 'roles' => [Role::Admin->value, Role::Teacher->value], 'department' => 'Iqtisodiyot fakulteti',
+            'status' => UserStatus::Active, 'roles' => [Role::Education->value], 'department' => 'Oʻquv-uslubiy boshqarma',
         ]);
 
         $teachers = collect([
@@ -42,7 +42,7 @@ class DemoSeeder extends Seeder
             ['Nurlibaeva Dilfuza Ermekovna', 'Dilfuza', 'Nurlibaeva', 'Iqtisodiyot kafedrasi'],
         ])->map(fn ($t, $i) => User::updateOrCreate(['hemis_id' => (string) (3001 + $i)], [
             'name' => $t[0], 'first_name' => $t[1], 'last_name' => $t[2], 'department' => $t[3],
-            'status' => UserStatus::Active, 'roles' => [Role::Teacher->value], 'managed_by_id' => $admin->id,
+            'status' => UserStatus::Active, 'roles' => [Role::Teacher->value],
             'telegram_chat_id' => $i % 2 ? (string) (900000 + $i) : null,
         ]));
 
@@ -74,7 +74,7 @@ class DemoSeeder extends Seeder
             ['1-B1 Iqtisodiyot', 1, 'zoom_8@karsu.uz', $account],
         ])->map(fn ($g, $i) => Group::updateOrCreate(['hemis_id' => (string) (1300 + $i)], [
             'name' => $g[0], 'course' => $g[1], 'zoom_user_email' => $g[2], 'zoom_account_id' => $g[3]->id,
-            'admin_id' => $i < 5 ? $admin->id : null, 'is_active' => $i !== 8,
+            'is_active' => $i !== 8,
         ]));
 
         if (Lesson::exists()) {

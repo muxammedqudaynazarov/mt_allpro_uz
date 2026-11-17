@@ -11,7 +11,8 @@ interface AuthContextValue {
   loading: boolean
   hasRole: (...roles: Role[]) => boolean
   can: (permission: string) => boolean
-  isAdmin: boolean
+  /** Barcha guruh va darslarni ko'radi: Administrator yoki O'quv bo'limi. */
+  canViewAll: boolean
   isSuperAdmin: boolean
   refresh: () => Promise<unknown>
   logout: () => Promise<void>
@@ -91,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading: meQuery.isPending,
       hasRole,
       can,
-      isAdmin: hasRole('admin', 'super_admin'),
+      canViewAll: hasRole('education', 'super_admin'),
       isSuperAdmin: hasRole('super_admin'),
       refresh: () => queryClient.invalidateQueries({ queryKey: ME_KEY }),
       logout,
