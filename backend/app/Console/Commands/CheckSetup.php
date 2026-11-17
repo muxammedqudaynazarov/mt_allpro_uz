@@ -81,7 +81,7 @@ class CheckSetup extends Command
             $this->check($expectedHost === $host, 'APP_URL sayt manziliga mos', "APP_URL ({$host}) sayt manzili ({$expectedHost}) bilan bir xil emas. .env da APP_URL va FRONTEND_URL ni https://{$expectedHost} qiling.");
         }
         $this->check(filled(config('app.key')), 'APP_KEY oʻrnatilgan', 'APP_KEY boʻsh. Buyruq: php artisan key:generate');
-        // Yo'lda ishlash (dist.karsu.uz/zoom): cookie yo'li sayt yo'liga mos bo'lishi kerak.
+        // Yo'lda ishlash (masalan, /zoom): cookie yo'li sayt yo'liga mos bo'lishi kerak.
         $path = rtrim((string) parse_url($appUrl, PHP_URL_PATH), '/');
         if ($path !== '') {
             $this->line("  Yoʻl: {$path}");
@@ -96,7 +96,7 @@ class CheckSetup extends Command
         $this->check(config('app.locale') === 'kaa', 'APP_LOCALE=kaa', 'APP_LOCALE='.config('app.locale').' — asosiy til qoraqalpoqcha boʻlishi uchun APP_LOCALE=kaa qiling.', warning: true);
     }
 
-    /** dist.karsu.uz boshqa serverdan proksi qilsa: uning IP manzili TRUSTED_PROXIES da bo'lishi kerak. */
+    /** Sayt oldida boshqa serverdagi proksi bo'lsa: uning IP manzili TRUSTED_PROXIES da bo'lishi kerak. */
     private function proxy(): void
     {
         $proxies = (string) (is_array($value = config('trustedproxy.proxies')) ? implode(',', $value) : $value);
@@ -112,7 +112,7 @@ class CheckSetup extends Command
         }
         $at = Carbon::parse((string) $seen['at'])->timezone(config('app.timezone'))->format('d.m.Y H:i');
         $this->check(false, '', "Proksi soʻrovlari {$seen['ip']} manzilidan kelgan ({$at}), lekin u TRUSTED_PROXIES da yoʻq — havolalar va kirish buziladi."
-            ."\n    Bu dist.karsu.uz serveri boʻlsa: .env da TRUSTED_PROXIES={$seen['ip']}, keyin php artisan optimize");
+            ."\n    Bu sizning proksi serveringiz boʻlsa: .env da TRUSTED_PROXIES={$seen['ip']}, keyin php artisan optimize");
     }
 
     /** Frontend APP_URL dagi yo'l uchun yig'ilganmi (aks holda sahifa oq ekran bo'lib qoladi). */

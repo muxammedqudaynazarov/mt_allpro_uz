@@ -43,7 +43,7 @@ class DetectUntrustedProxy
             // Har IP uchun 10 daqiqada bir marta yoziladi — noto'g'ri sozlamada har so'rov bazaga yozmaydi.
             if (Cache::add(self::CACHE_KEY.':'.$ip, true, 600)) {
                 Cache::put(self::CACHE_KEY, ['ip' => $ip, 'at' => now()->toIso8601String()], now()->addDays(2));
-                Log::warning("Proksi sarlavhalari ishonchsiz IP'dan keldi: {$ip}. Bu dist.karsu.uz serveri bo'lsa, .env: TRUSTED_PROXIES={$ip}");
+                Log::warning("Proksi sarlavhalari ishonchsiz IP'dan keldi: {$ip}. Bu sizning proksi serveringiz bo'lsa, .env: TRUSTED_PROXIES={$ip}");
             }
         } catch (Throwable) {
             // Kesh ishlamasa ham so'rov to'xtamasin.

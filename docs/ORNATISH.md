@@ -1,6 +1,6 @@
 # Serverga o'rnatish qo'llanmasi
 
-Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosqich ko'rsatadi. Misollarda sayt manzili **`https://dist.karsu.uz/zoom`** (universitet sayti ichidagi yo'l), kod papkasi `/var/www/mt.allpro.uz`. Tizim alohida domenda ham ishlaydi (masalan, `https://mt.regofis.uz`) — farqi 5 va 7-bo'limlarda ko'rsatilgan.
+Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosqich ko'rsatadi. Sayt manzili **`https://mt.regofis.uz`**, kod papkasi `/var/www/mt.allpro.uz`. Papka boshqa bo'lsa, uni hamma joyda almashtiring.
 
 ## Mundarija
 
@@ -18,7 +18,7 @@ Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosq
 12. [Zoom ulash](#12-zoom-ulash)
 13. [Video yozuvlar](#13-video-yozuvlar)
 14. [Telegram bot](#14-telegram-bot)
-15. [mt.regofis.uz dan dist.karsu.uz/zoom ga ko'chirish](#15-mtregofisuz-dan-distkarsuuzzoom-ga-kochirish)
+15. [Ixtiyoriy: boshqa sayt ichida ochish](#15-ixtiyoriy-boshqa-sayt-ichida-ochish)
 16. [Eski bazadan ko'chirish](#16-eski-bazadan-kochirish)
 17. [Yangilanishlarni chiqarish](#17-yangilanishlarni-chiqarish)
 18. [Zaxira nusxa](#18-zaxira-nusxa)
@@ -101,13 +101,13 @@ Eng muhim qiymatlar:
 |---|---|
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` (**hech qachon `true` qilmang** — xato sahifasida maxfiy ma'lumot chiqadi) |
-| `APP_URL`, `FRONTEND_URL` | Sayt brauzerda ochiladigan manzil, ikkalasi bir xil, oxirida `/` siz: `https://dist.karsu.uz/zoom` (alohida domenda: `https://mt.regofis.uz`) |
-| `SESSION_PATH` | Sayt yo'li: `/zoom`. Alohida domenda: `/` |
-| `SESSION_COOKIE` | `karsu_zoom_session` — dist.karsu.uz'dagi boshqa saytlar cookie'si bilan to'qnashmasligi uchun |
+| `APP_URL`, `FRONTEND_URL` | Sayt manzili, ikkalasi bir xil, oxirida `/` siz: `https://mt.regofis.uz` |
+| `SESSION_PATH` | `/` |
+| `SESSION_COOKIE` | `karsu_zoom_session` (lotin harflaridagi cookie nomi) |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `APP_LOCALE` | `kaa` (qoraqalpoqcha, asosiy til) yoki `uz` |
 | `DB_*` | 3-bosqichdagi baza ma'lumotlari |
-| `TRUSTED_PROXIES` | dist.karsu.uz boshqa serverdan proksi qilsa — o'sha serverning IP manzili ([7.2](#72-b-mtregofisuz--distkarsuuz-proksi-karsu)). Aks holda `127.0.0.1` |
+| `TRUSTED_PROXIES` | `127.0.0.1`. Sayt oldida boshqa serverdagi proksi bo'lsa — uning IP manzili |
 | `HEMIS_*` | [10](#10-hemis-oauth-ulash) va [11-bo'lim](#11-hemis-talabalar-api-hemis-sync) |
 | `RECORDINGS_*` | [13-bo'lim](#13-video-yozuvlar) |
 | `TELEGRAM_*` | [14-bo'lim](#14-telegram-bot) |
@@ -129,110 +129,47 @@ sudo chmod -R ug+rwX storage bootstrap/cache
 ```bash
 cd /var/www/mt.allpro.uz/frontend
 npm ci
-VITE_BASE_PATH=/zoom/ npm run build      # natija: frontend/dist
+npm run build      # natija: frontend/dist
 ```
 
-`VITE_BASE_PATH` — sayt yo'li (`APP_URL` dagi `/zoom`). Alohida domenda uni yozmang: `npm run build`. Keyingi yangilanishlarda `deploy/deploy.sh` bu yo'lni `APP_URL` dan o'zi oladi ([17-bo'lim](#17-yangilanishlarni-chiqarish)).
-
-> Frontend bir yo'l uchun yig'ilib, sayt boshqa yo'lda ochilsa — oq sahifa chiqadi. `php artisan app:check` buni tekshiradi.
+Frontend uchun `.env` kerak emas: u backend bilan bir domenda ishlaydi. Keyingi yangilanishlarni `deploy/deploy.sh` o'zi yig'adi ([17-bo'lim](#17-yangilanishlarni-chiqarish)).
 
 ## 7. nginx va SSL
 
-Uchta variantdan o'zingiznikini tanlang. Uchala konfiguratsiya `deploy/nginx/` papkasida va nginx + PHP-FPM'da sinab ko'rilgan.
-
-| Variant | Qachon | Fayl |
-|---|---|---|
-| **A** | Tizim dist.karsu.uz bilan **bir serverda** | `dist.karsu.uz-zoom.conf` |
-| **B** ✅ | Tizim **mt.regofis.uz serverida** (o'z guvohnomasi bilan), dist.karsu.uz uni proksi qiladi — **KarSU uchun tanlangan variant** | `dist.karsu.uz-proxy.conf` + `mt.regofis.uz-origin.conf` |
-| **C** | Tizim faqat o'z domenida (`https://mt.regofis.uz`) | `root-domain.conf` |
-
-### 7.1. A: dist.karsu.uz bilan bir serverda
-
-dist.karsu.uz'ning mavjud nginx konfiguratsiyasiga (masalan, `/etc/nginx/sites-available/dist.karsu.uz`) faqat bitta qator qo'shiladi:
+Avval mt.regofis.uz uchun guvohnoma oling (nginx standart sayti yoqiq turgan holda):
 
 ```bash
-sudo cp /var/www/mt.allpro.uz/deploy/nginx/dist.karsu.uz-zoom.conf /etc/nginx/snippets/
-sudo nano /etc/nginx/sites-available/dist.karsu.uz
+sudo certbot certonly --nginx -d mt.regofis.uz
 ```
 
-`listen 443` bo'lgan `server { ... }` bloki ichiga, boshqa `location` lardan **oldin**:
-
-```nginx
-include snippets/dist.karsu.uz-zoom.conf;
-```
+Keyin tizim konfiguratsiyasini o'rnating:
 
 ```bash
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-Snippet `/zoom/api`, `/zoom/auth`, `/zoom/sanctum`, `/zoom/l`, `/zoom/up` ni Laravel'ga (`SCRIPT_NAME=/zoom/index.php`), qolgan `/zoom/...` ni React'ga beradi. dist.karsu.uz'ning o'z sahifalariga tegmaydi. SSL sertifikati dist.karsu.uz'niki ishlatiladi.
-
-> dist.karsu.uz `Content-Security-Policy` sarlavhasini o'rnatgan bo'lsa, u `/zoom` ga ham ta'sir qiladi: `script-src 'self'`, `media-src 'self'` va `img-src` da `https:` (HEMIS rasmlari) ruxsat etilgan bo'lishi kerak.
-
-### 7.2. B: mt.regofis.uz + dist.karsu.uz proksi (KarSU)
-
-```
- Brauzer ──► https://dist.karsu.uz/zoom/...  (universitet serveri, nginx proxy_pass)
-                        │  /zoom olib tashlanadi, X-Forwarded-Prefix: /zoom
-                        ▼
-             https://mt.regofis.uz/...       (tizim serveri: Laravel, MySQL, video yozuvlar)
-```
-
-**1. mt.regofis.uz serverida** (tizim turgan joy):
-
-```bash
-sudo cp /var/www/mt.allpro.uz/deploy/nginx/mt.regofis.uz-origin.conf /etc/nginx/sites-available/mt.regofis.uz
+sudo cp /var/www/mt.allpro.uz/deploy/nginx/mt.regofis.uz.conf /etc/nginx/sites-available/mt.regofis.uz
 sudo ln -sf /etc/nginx/sites-available/mt.regofis.uz /etc/nginx/sites-enabled/mt.regofis.uz
-sudo certbot --nginx -d mt.regofis.uz        # mt.regofis.uz ning o'z guvohnomasi
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-`.env`:
+Guvohnoma sotib olingan bo'lsa (certbot emas), konfiguratsiyadagi `ssl_certificate` va `ssl_certificate_key` yo'llarini almashtiring. PHP 8.4 o'rnatilgan bo'lsa, `php8.3-fpm.sock` ni `php8.4-fpm.sock` ga almashtiring.
 
-```dotenv
-APP_URL=https://dist.karsu.uz/zoom
-FRONTEND_URL=https://dist.karsu.uz/zoom
-SESSION_PATH=/zoom
-SESSION_COOKIE=karsu_zoom_session
-TRUSTED_PROXIES=<dist.karsu.uz serverining IP manzili>
-```
+Konfiguratsiya qiladigan ishlar:
+- `/api`, `/auth`, `/sanctum`, `/l`, `/up` so'rovlarini Laravel'ga beradi, qolgan barcha manzillarni React'ga;
+- xavfsizlik sarlavhalarini qo'shadi (CSP, HSTS va boshqalar);
+- video yozuvlarni ichki `/_zoom_recordings/` manzili orqali beradi ([13-bo'lim](#13-video-yozuvlar)).
 
-mt.regofis.uz ga to'g'ridan-to'g'ri kirganlar (eski xatcho'plar) `https://dist.karsu.uz/zoom/...` ga yo'naltiriladi.
-
-**2. dist.karsu.uz serverida** (universitet IT bo'limi): `deploy/nginx/dist.karsu.uz-proxy.conf` dagi ikkita `location` blokini `listen 443` server bloki ichiga qo'shib, `sudo nginx -t && sudo systemctl reload nginx`. Proksi mt.regofis.uz guvohnomasini tekshiradi (`proxy_ssl_verify on`) — guvohnoma haqiqiy (Let's Encrypt) bo'lishi kerak, aks holda 502.
-
-**3. `TRUSTED_PROXIES` ni aniqlash.** Bu dist.karsu.uz so'rovlari mt.regofis.uz ga **qaysi IP'dan kelishi** (ko'pincha `dig +short dist.karsu.uz` natijasi, lekin NAT bo'lsa boshqacha). Eng ishonchlisi: sozlab bo'lgach brauzerda `https://dist.karsu.uz/zoom` ni oching va
-
-```bash
-sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom
-```
-
-IP noto'g'ri bo'lsa, buyruq aniq yozadi: *"Proksi so'rovlari 1.2.3.4 manzilidan kelgan ... TRUSTED_PROXIES=1.2.3.4"*. Shu qiymatni yozing va `php artisan optimize`. Noto'g'ri IP bilan Laravel proksi sarlavhalariga ishonmaydi: havolalar `/zoom` siz chiqadi va kirish ishlamaydi.
-
-Video yozuvlar ham proksi orqali o'tadi (`proxy_buffering off`) — serverlar orasidagi tarmoq tezligi video ochilish tezligiga ta'sir qiladi.
-
-### 7.3. C: o'z domenida
-
-```bash
-sudo cp /var/www/mt.allpro.uz/deploy/nginx/root-domain.conf /etc/nginx/sites-available/mt.regofis.uz
-sudo sed -i 's/mt\.allpro\.uz;/mt.regofis.uz;/; s#live/mt\.allpro\.uz/#live/mt.regofis.uz/#g' /etc/nginx/sites-available/mt.regofis.uz
-sudo ln -s /etc/nginx/sites-available/mt.regofis.uz /etc/nginx/sites-enabled/
-sudo certbot --nginx -d mt.regofis.uz
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-Kod papkasi boshqa bo'lsa, fayldagi `/var/www/mt.allpro.uz` ni almashtiring. PHP 8.4 o'rnatilgan bo'lsa, `php8.3-fpm.sock` ni `php8.4-fpm.sock` ga almashtiring (A variantida ham).
+> Serverda avvalgi versiyaning konfiguratsiyasi turgan bo'lsa, uni shu fayl bilan almashtiring: unda video uchun yangi `location /_zoom_recordings/` bloki va CSP'da `media-src` qo'shilgan.
 
 ### Tekshirish
 
-`https://dist.karsu.uz/zoom/up` — yashil "Application up", `https://dist.karsu.uz/zoom` — kirish sahifasi. Keyin:
+`https://mt.regofis.uz/up` — yashil "Application up", `https://mt.regofis.uz` — kirish sahifasi. Keyin:
 
 ```bash
 cd /var/www/mt.allpro.uz/backend
-sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom
+sudo -u www-data php artisan app:check --url=https://mt.regofis.uz
 ```
 
-Buyruq domen, cookie yo'li, frontend yig'ilgan yo'l, baza, papka huquqlari, HEMIS, Zoom va Telegram'ni tekshiradi va har bir muammo uchun nima qilishni yozadi. `.env` o'zgartirilgandan keyin har safar `sudo -u www-data php artisan optimize` ishga tushiring — aks holda eski sozlamalar keshda qoladi.
+Buyruq domen, cookie, frontend yig'ilgan yo'l, baza, papka huquqlari, HEMIS, Zoom va Telegram'ni tekshiradi va har bir muammo uchun nima qilishni yozadi. `.env` o'zgartirilgandan keyin har safar `sudo -u www-data php artisan optimize` ishga tushiring — aks holda eski sozlamalar keshda qoladi.
 
 ## 8. Navbat ishchisi va scheduler
 
@@ -271,7 +208,7 @@ Tizimda uchta rol bor: **Administrator** (hammasi), **O'quv bo'limi** (barcha da
 ## 10. HEMIS OAuth ulash
 
 1. Universitet HEMIS administratoriga murojaat qilib, tizimni **OAuth mijozi** (client) sifatida ro'yxatdan o'tkazishni so'rang. Unga quyidagilarni bering:
-   - **Redirect URI:** `https://dist.karsu.uz/zoom/auth/hemis/callback` (alohida domenda: `https://mt.regofis.uz/auth/hemis/callback`). Aniq qiymatni `php artisan app:check` ko'rsatadi.
+   - **Redirect URI:** `https://mt.regofis.uz/auth/hemis/callback` (aniq qiymatni `php artisan app:check` ham ko'rsatadi)
    - Kerakli maydonlar: `id, type, name, firstname, surname, patronymic, picture, login, university_id`
 2. Berilgan **Client ID** va **Client Secret**ni `.env`ga yozing:
 
@@ -349,7 +286,7 @@ Har bir Zoom akkaunt (litsenziyalar to'plami) uchun bitta **Server-to-Server OAu
 Jonli qatnashchilar ro'yxati (Monitoring) va video yozuvlar webhook orqali keladi. Shu ilovaning o'zida:
 
 1. **Feature → Event Subscriptions** ni yoqing → **Add Event Subscription**.
-2. **Event notification endpoint URL** — tizimdagi **Zoom akkauntlar** sahifasida har bir akkaunt uchun ko'rsatilgan manzil, masalan `https://dist.karsu.uz/zoom/api/zoom/webhook/1` (**Nusxalash** tugmasi).
+2. **Event notification endpoint URL** — tizimdagi **Zoom akkauntlar** sahifasida har bir akkaunt uchun ko'rsatilgan manzil, masalan `https://mt.regofis.uz/api/zoom/webhook/1` (**Nusxalash** tugmasi).
 3. Hodisalar:
    - **Meeting:** `meeting.started`, `meeting.ended`, `meeting.participant_joined`, `meeting.participant_left`
    - **Recording:** `recording.completed`
@@ -402,7 +339,7 @@ Yoqilganda darslar Zoom bulutiga yoziladi, keyin tizim ularni serverga ko'chirad
    RECORDINGS_ACCEL_PREFIX=/_zoom_recordings/  # videoni nginx beradi
    ```
 
-   `RECORDINGS_ACCEL_PREFIX` — nginx'dagi ichki `location /_zoom_recordings/` (uchala konfiguratsiyada bor). Laravel faqat ruxsatni tekshiradi, katta faylni nginx beradi — video ijro va o'rash (seek) tez ishlaydi, PHP band bo'lmaydi. Papka boshqa bo'lsa, nginx'dagi `alias /var/www/recordings/;` ni ham almashtiring. Bo'sh qoldirilsa, fayl PHP orqali beriladi.
+   `RECORDINGS_ACCEL_PREFIX` — nginx'dagi ichki `location /_zoom_recordings/` (`mt.regofis.uz.conf` da bor). Laravel faqat ruxsatni tekshiradi, katta faylni nginx beradi — video ijro va o'rash (seek) tez ishlaydi, PHP band bo'lmaydi. Papka boshqa bo'lsa, nginx'dagi `alias /var/www/recordings/;` ni ham almashtiring. Bo'sh qoldirilsa, fayl PHP orqali beriladi.
 4. **Tizimda:** **Umumiy sozlamalar → Video yozuvlar → Darslarni avtomatik yozib olish** ni yoqing. Yoqilgandan keyin **yangi yaratilgan** darslar yoziladi.
 
 Zoom'dan o'chirish usuli shu sahifada tanlanadi: **Savatga** (tavsiya etiladi; 30 kun ichida Zoom'da tiklash mumkin, savatdagi fayllar bulut hajmiga hisoblanmaydi) yoki **Butunlay**. Fayl serverga to'liq ko'chib, hajmi Zoom'dagi bilan mos kelmaguncha Zoom'dan hech narsa o'chirilmaydi. Yuklash xato bersa, 5 martagacha qayta urinadi; **Video yozuvlar** sahifasida **Qayta urinish** tugmasi bor.
@@ -422,7 +359,7 @@ Bot ixtiyoriy, lekin tavsiya etiladi: o'qituvchiga har bir dars havolasi va "Dar
    TELEGRAM_WEBHOOK_SECRET=<openssl rand -hex 32 natijasi>
    ```
 
-3. Webhook'ni o'rnating (manzil `APP_URL` dan olinadi: `https://dist.karsu.uz/zoom/api/telegram/webhook`):
+3. Webhook'ni o'rnating (manzil `APP_URL` dan olinadi: `https://mt.regofis.uz/api/telegram/webhook`):
 
    ```bash
    sudo -u www-data php artisan optimize
@@ -431,29 +368,20 @@ Bot ixtiyoriy, lekin tavsiya etiladi: o'qituvchiga har bir dars havolasi va "Dar
 
 Xodimlar Telegram'ni **Profil → Telegram'ni ulash** tugmasi orqali o'zlari ulaydi (QR kod yoki havola).
 
-## 15. mt.regofis.uz dan dist.karsu.uz/zoom ga ko'chirish
+## 15. Ixtiyoriy: boshqa sayt ichida ochish
 
-Baza, Zoom kalitlari va foydalanuvchilar o'zgarmaydi — faqat manzil o'zgaradi. Tizim mt.regofis.uz serverida qoladi (variant B). Kechqurun, darslar bo'lmagan vaqtda qiling.
+KarSU uchun kerak emas: asosiy manzil `https://mt.regofis.uz`. Kelajakda tizimni boshqa sayt ichida, yo'lda ochish kerak bo'lsa (masalan, `https://dist.karsu.uz/zoom`), kod buni qo'llaydi. Konfiguratsiyalar `deploy/nginx/yolda-ishlash/` papkasida:
 
-1. **HEMIS** administratoriga yangi Redirect URI'ni oldindan yuboring: `https://dist.karsu.uz/zoom/auth/hemis/callback`. Eski URI ham o'tish davrida qolishi mumkin (HEMIS bir nechta URI'ni qabul qilsa).
-2. **nginx**: 7.2 (ikkala serverda) va mt.regofis.uz guvohnomasi.
-3. **.env**:
+| Fayl | Qachon |
+|---|---|
+| `bir-serverda.conf` | Tizim o'sha sayt bilan bir serverda: bloklar o'sha saytning `server` bloki ichiga qo'shiladi |
+| `proksi.conf` + `proksi-manba.conf` | Tizim mt.regofis.uz da qoladi, o'sha sayt unga proksi qiladi. mt.regofis.uz ga to'g'ridan-to'g'ri kirganlar yangi manzilga yo'naltiriladi |
 
-   ```dotenv
-   APP_URL=https://dist.karsu.uz/zoom
-   FRONTEND_URL=https://dist.karsu.uz/zoom
-   SESSION_PATH=/zoom
-   SESSION_COOKIE=karsu_zoom_session
-   TRUSTED_PROXIES=<dist.karsu.uz IP>
-   ```
-
-   `HEMIS_REDIRECT_URI="${APP_URL}/auth/hemis/callback"` bo'lsa, o'zi yangilanadi.
-4. **Yangilash**: `sudo -u www-data APP_DIR=/var/www/mt.allpro.uz ./deploy/deploy.sh` — frontend `/zoom/` uchun qayta yig'iladi.
-5. **Telegram**: `sudo -u www-data php artisan telegram:set-webhook`.
-6. **Zoom**: har bir ilovada **Event Subscriptions → Event notification endpoint URL** ni yangi manzilga o'zgartiring (Zoom akkauntlar sahifasidan nusxalang) va **Validate** qiling.
-7. **Tekshirish**: brauzerda `https://dist.karsu.uz/zoom` ni oching, keyin `sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom` (`TRUSTED_PROXIES` ni ham tekshiradi). HEMIS orqali kirib ko'ring.
-
-Eski `https://mt.regofis.uz/...` havolalar yangi manzilga yo'naltiriladi. Ko'chish paytida efirda bo'lgan darslarning Telegram'dagi "Darsni boshlash" tugmalari ishlamaydi (imzo eski manzil uchun) — saytdagi tugmadan foydalaning. Foydalanuvchilar yangi manzilda bir marta qayta kiradi.
+O'zgartiriladiganlar:
+1. `.env`: `APP_URL` va `FRONTEND_URL` yangi manzil (masalan, `https://dist.karsu.uz/zoom`), `SESSION_PATH=/zoom`. Proksi bo'lsa — `TRUSTED_PROXIES=<proksi serverining IP manzili>`: noto'g'ri bo'lsa, `app:check` to'g'ri IP'ni ko'rsatadi.
+2. `deploy.sh` — frontend yangi yo'l uchun o'zi qayta yig'iladi.
+3. HEMIS'da yangi Redirect URI, `php artisan telegram:set-webhook`, Zoom ilovalarida yangi webhook manzili va **Validate**.
+4. `php artisan app:check --url=<yangi manzil>`.
 
 ## 16. Eski bazadan ko'chirish
 
@@ -502,14 +430,10 @@ Kunlik baza nusxasi (cron), masalan `/etc/cron.d/mt-allpro-backup`:
 
 ## 19. Muammolarni hal qilish
 
-Avval `sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom` ni ishga tushiring — ko'p muammolarni o'zi topadi.
+Avval `sudo -u www-data php artisan app:check --url=https://mt.regofis.uz` ni ishga tushiring — ko'p muammolarni o'zi topadi.
 
 | Belgisi | Sabab va yechim |
 |---|---|
-| `/zoom` da oq sahifa, brauzer konsolida `/assets/...` 404 | Frontend boshqa yo'l uchun yig'ilgan. `VITE_BASE_PATH=/zoom/ npm run build` yoki `deploy.sh` |
-| `/zoom/api/...` 404 yoki dist.karsu.uz sahifasi chiqadi | nginx: snippet `server` bloki ichiga, boshqa `location` lardan oldin qo'shilmagan (7.1) |
-| Havolalar `/zoom` siz yoki `mt.regofis.uz` bilan chiqadi, kirishda 419 | Variant B: `TRUSTED_PROXIES` noto'g'ri — `app:check` to'g'ri IP'ni ko'rsatadi. Keyin `php artisan optimize` |
-| dist.karsu.uz/zoom 502 beradi | Variant B: mt.regofis.uz ishlamayapti yoki guvohnomasi yaroqsiz/muddati o'tgan (`proxy_ssl_verify`). dist.karsu.uz'dagi nginx `error.log` ni ko'ring |
 | Kirgandan keyin yana login sahifasiga qaytadi | `SESSION_PATH` sayt yo'liga mos emas, yoki `SESSION_SECURE_COOKIE=true`, lekin sayt HTTP'da |
 | "CSRF token mismatch" (419) | `SESSION_DOMAIN=null`, `APP_URL` haqiqiy manzil, keyin `php artisan optimize` |
 | "HEMIS bilan bog'lanib bo'lmadi" yoki HEMIS "redirect_uri" xatosi | HEMIS'da ro'yxatdan o'tgan Redirect URI `app:check` ko'rsatgan bilan bir xil emas |

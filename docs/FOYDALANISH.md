@@ -1,6 +1,6 @@
 # Foydalanish qo'llanmasi
 
-Sayt: **https://dist.karsu.uz/zoom**. Interfeys qoraqalpoqcha ochiladi, o'zbekchaga yuqoridagi til tugmasi bilan o'tiladi.
+Sayt: **https://mt.regofis.uz**. Interfeys qoraqalpoqcha ochiladi, o'zbekchaga yuqoridagi til tugmasi bilan o'tiladi.
 
 Tizimda uchta rol bor. Bir xodimda bir nechta rol bo'lishi mumkin: masalan, O'quv bo'limi xodimi o'zi ham dars o'tsa — unga O'qituvchi roli ham beriladi.
 
@@ -16,7 +16,7 @@ Tizimda uchta rol bor. Bir xodimda bir nechta rol bo'lishi mumkin: masalan, O'qu
 
 ### Tizimga kirish
 
-1. **dist.karsu.uz/zoom** ni oching va **"HEMIS orqali kirish"** tugmasini bosing.
+1. **mt.regofis.uz** ni oching va **"HEMIS orqali kirish"** tugmasini bosing.
 2. HEMIS sahifasida odatdagi login va parolingizni kiriting.
 3. Birinchi marta kirsangiz, hisobingiz **"Tasdiq kutmoqda"** holatida bo'ladi. Administrator tasdiqlagach, ishlashingiz mumkin.
 

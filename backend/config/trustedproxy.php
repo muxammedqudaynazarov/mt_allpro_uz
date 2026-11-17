@@ -6,7 +6,8 @@
  * (Avval bootstrap/app.php da env() bilan o'qilardi: config keshlanganda .env o'qilmaydi
  * va qiymat jimgina 127.0.0.1 ga qaytardi.)
  *
- * dist.karsu.uz boshqa serverdan proksi qilsa — o'sha serverning IP manzili, vergul bilan bir nechta.
+ * Sayt oldida boshqa serverdagi proksi bo'lsa — o'sha serverning IP manzili, vergul bilan bir nechta.
+ * Proksi bo'lmasa: 127.0.0.1.
  * Noto'g'ri bo'lsa, `php artisan app:check` proksi so'rovlari kelgan haqiqiy IP'ni ko'rsatadi.
  */
 return [

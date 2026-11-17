@@ -1,4 +1,4 @@
-# Masofaviy taʼlim tizimi — dist.karsu.uz/zoom
+# Masofaviy taʼlim tizimi — mt.regofis.uz
 
 Berdaq nomidagi Qoraqalpoq davlat universitetining sirtqi va masofaviy guruhlari uchun Zoom darslarini boshqarish tizimi.
 
@@ -12,21 +12,21 @@ O'quv bo'limi efirdagi darslarni va ulardagi qatnashchilarni jonli kuzatadi (Zoo
 |---|---|
 | [`backend/`](backend) | **Laravel 13** (PHP 8.3+). Faqat JSON API, HEMIS OAuth, Zoom va Telegram integratsiyasi |
 | [`frontend/`](frontend) | **React 19 + TypeScript + Tailwind CSS 4** (Vite). Bitta sahifali ilova (SPA) |
-| [`deploy/`](deploy) | nginx (`/zoom` yo'li, proksi, alohida domen), supervisor, cron va `deploy.sh` yangilash skripti |
+| [`deploy/`](deploy) | nginx (`mt.regofis.uz.conf`), supervisor, cron va `deploy.sh` yangilash skripti |
 | [`docs/`](docs) | O'rnatish, foydalanish va ishlab chiqish qo'llanmalari |
 
 ## Qo'llanmalar
 
-- **[Serverga o'rnatish](docs/ORNATISH.md)** — Ubuntu serverni noldan sozlash, dist.karsu.uz/zoom ga ko'chirish, HEMIS/Zoom/Telegram ulash, video yozuvlar
+- **[Serverga o'rnatish](docs/ORNATISH.md)** — Ubuntu serverni noldan sozlash, HEMIS/Zoom/Telegram ulash, video yozuvlar
 - **[Foydalanish qo'llanmasi](docs/FOYDALANISH.md)** — o'qituvchi, O'quv bo'limi va administrator uchun
 - **[Ishlab chiqish](docs/ISHLAB_CHIQISH.md)** — lokal muhit, testlar, API ro'yxati, arxitektura
 
 ## Qanday ishlaydi
 
 ```
- Brauzer ──► nginx (dist.karsu.uz)
-              ├─ /zoom/              → frontend/dist (React)
-              └─ /zoom/api, /auth …  → backend/public/index.php (Laravel)
+ Brauzer ──► nginx (mt.regofis.uz)
+              ├─ /                   → frontend/dist (React)
+              └─ /api, /auth …       → backend/public/index.php (Laravel)
                                          ├─ HEMIS OAuth + REST API (xodim kirishi, talabalar F.I.Sh.)
                                          ├─ Zoom API + webhook'lar (Server-to-Server OAuth)
                                          ├─ Telegram Bot          (navbat orqali xabarlar)

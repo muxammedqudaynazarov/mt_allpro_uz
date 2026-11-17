@@ -43,7 +43,7 @@ Vite `/api`, `/auth`, `/sanctum`, `/l` so'rovlarini Laravel'ga proksi qiladi (`f
 
 `DemoSeeder` namunaviy xodimlar, guruhlar va 30 kunlik dars tarixini yaratadi. Kirish: **admin / demo-password-2026**. Demo Zoom kalitlari soxta, shuning uchun lokal muhitda haqiqiy dars yaratish uchun haqiqiy Zoom akkaunt qo'shing.
 
-### Yo'lda ishlashni sinash (dist.karsu.uz/zoom)
+### Yo'lda ishlashni sinash (ixtiyoriy, masalan /zoom)
 
 ```bash
 cd frontend
