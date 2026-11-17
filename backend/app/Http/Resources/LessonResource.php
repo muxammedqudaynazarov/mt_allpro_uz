@@ -32,6 +32,17 @@ class LessonResource extends JsonResource
             ],
             'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->name],
             'slot' => $this->slot ? ['id' => $this->slot->id, 'name' => $this->slot->label(), 'starts_at' => $this->slot->starts_at] : null,
+            // Zoom'dagi haqiqiy holat: host qachon boshlagan/tugatgan, nechta talaba qatnashgan.
+            'tracking' => [
+                'state' => $this->zoom_state,
+                'started_at' => $this->zoom_started_at?->toIso8601String(),
+                'ended_at' => $this->zoom_ended_at?->toIso8601String(),
+                'start_delay_minutes' => $this->startDelayMinutes(),
+                'minutes' => $this->actualMinutes(),
+                'participants' => $this->attendance_synced_at ? $this->resource->getAttribute('participants_count') : null,
+                'synced' => $this->attendance_synced_at !== null,
+                'error' => $this->attendance_synced_at ? null : $this->attendance_error,
+            ],
             'can' => [
                 'start' => (bool) $user?->can('start', $this->resource),
                 'end' => (bool) $user?->can('end', $this->resource),

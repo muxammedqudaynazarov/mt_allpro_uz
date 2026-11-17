@@ -214,12 +214,40 @@ Har bir Zoom akkaunt (litsenziyalar to'plami) uchun bitta **Server-to-Server OAu
    - `meeting:delete:meeting:admin`: boshlanmagan darsni bekor qilish
    - `user:read:list_users:admin`: Zoom foydalanuvchilari ro'yxati
 
-   Eski ilovalarda bu ruxsatlar `meeting:write:admin`, `meeting:read:admin`, `user:read:admin` deb ataladi.
+   Davomat va dars Zoom'da haqiqatda qachon boshlanganini kuzatish uchun (2026-yil noyabrdan):
+   - `meeting:read:list_past_instances:admin`: o'tgan uchrashuvlar ro'yxati
+   - `meeting:read:past_meeting:admin`: uchrashuvning aniq boshlanish/tugash vaqti
+   - `report:read:list_meeting_participants:admin`: qatnashchilar va ularning kirib-chiqish vaqtlari (**Pro yoki undan yuqori tarif**)
+   - `meeting:read:list_past_participants:admin`: zaxira (hisobot ruxsati ko'rinmasa)
+
+   Eski ilovalarda bu ruxsatlar `meeting:write:admin`, `meeting:read:admin`, `user:read:admin`, `report:read:admin` deb ataladi. Ruxsat qo'shilgandan keyin tizimda **Zoom akkauntlar → Ulanishni tekshirish** tugmasini bosing — yangi ruxsatlar bilan token darhol olinadi (aks holda eski token muddati tugaguncha, ko'pi bilan bir soat kutiladi).
 3. Ilovani **Activate** qiling. **Account ID, Client ID, Client Secret** qiymatlarini oling.
 4. Tizimga bosh administrator sifatida kiring: **Sozlamalar → Zoom akkauntlar → Akkaunt qo'shish**. "Ulanishni tekshirish" tugmasi Zoom foydalanuvchilari sonini ko'rsatishi kerak.
 5. **Guruhlar → Guruh qo'shish**: guruhga Zoom akkaunt va **host** (dars o'tkaziladigan Zoom foydalanuvchisi emaili, masalan `zoom_1@karsu.uz`) biriktiring.
 
 Bitta Zoom foydalanuvchisi bir vaqtda faqat bitta uchrashuv o'tkaza oladi. Bir nechta guruh bitta hostga biriktirilsa, tizim ular uchun bir vaqtda dars yaratishga ruxsat bermaydi.
+
+### Talabalar uchun tavsiya etiladigan Zoom sozlamalari
+
+Uchrashuv ichidagi ruxsatlarni (kamerani yoqish, ismni o'zgartirish) Zoom API orqali har bir uchrashuvga berib bo'lmaydi — ular Zoom akkaunt sozlamalaridan olinadi. Zoom saytida akkaunt egasi sifatida: **Admin → Account Management → Account Settings → Meeting** bo'limida (qidiruv: Ctrl+F):
+
+| Sozlama | Qiymat | Nima uchun |
+|---|---|---|
+| Allow participants to rename themselves | **o'chiq** 🔒 | Talaba dars o'rtasida ismini o'zgartira olmaydi — davomat ism bo'yicha aniqroq hisoblanadi |
+| Start Video / Allow participants to start video | **o'chiq** 🔒 | Talabalar kamerani yoqmaydi |
+| Participants video | **off** | Talabalar kamerasi o'chiq holda kiradi |
+| Embed passcode in invite link for one-click join | **yoqilgan** | Havolani bosgan talaba kod kiritmaydi |
+| Waiting room | **o'chiq** | Talabalar darhol kiradi |
+
+🔒 — sozlamani qulflang (lock), shunda barcha hostlarga, keyin qo'shiladiganlariga ham qo'llanadi. O'qituvchi dars davomida **Security** menyusidan bu ruxsatlarni vaqtincha o'zgartirishi mumkin.
+
+### Zoom holatini kuzatish va davomat
+
+Scheduler (`* * * * * php artisan schedule:run`) har daqiqada `lessons:track-zoom` buyrug'ini ishga tushiradi:
+- dars Zoom'da boshlandimi, host tugatdimi — shu orqali hostning kechikishi va darsning haqiqiy davomiyligi aniqlanadi. Host uchrashuvni tugatsa, dars tizimda ham yakunlanadi;
+- dars tugagach (3 daqiqadan keyin) Zoom hisobotidan har bir qatnashchining kirib-chiqish vaqti olinadi. Hisobot tayyor bo'lmasa, 10, 30, 60, 180 daqiqadan keyin qayta urinadi.
+
+Talabalar tizimga kirmaydi: ular Zoom'dagi ismi bo'yicha guruh ichida avtomatik aniqlanadi (kirill/lotin, so'zlar tartibi, "(iPhone)" kabi qo'shimchalar farq qilmaydi). Bir talaba bir necha yozuv bo'lib qolsa, administrator **Guruhlar → guruh nomi → Talabalar** sahifasida birlashtiradi.
 
 ## 12. Telegram bot
 
@@ -291,6 +319,8 @@ Kunlik baza nusxasi (cron), masalan `/etc/cron.d/mt-allpro-backup`:
 ## 16. Muammolarni hal qilish
 
 Avval `sudo -u www-data php artisan app:check --url=https://SAYT-MANZILI` ni ishga tushiring — ko'p muammolarni o'zi topadi.
+
+Davomat chiqmasa: dars sahifasida xato matni ko'rinadi (masalan, `does not contain scopes:[report:read:list_meeting_participants:admin]` — Zoom ilovasiga shu ruxsatni qo'shing). Zoom bepul tarifida hisobot API ishlamaydi.
 
 | Belgisi | Sabab va yechim |
 |---|---|

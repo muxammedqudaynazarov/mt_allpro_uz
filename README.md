@@ -4,6 +4,8 @@ Berdaq nomidagi Qoraqalpoq davlat universitetining sirtqi va masofaviy guruhlari
 
 O'qituvchi HEMIS hisobi bilan kiradi, guruh va juftlikni tanlaydi. Tizim shu guruhga biriktirilgan Zoom hisobida uchrashuv yaratadi. "Darsni boshlash" va "Guruhga yuborish" tugmalari o'qituvchiga saytda va Telegram'da beriladi. Administratorlar foydalanuvchilarni tasdiqlaydi, guruhlarni boshqaradi va hisobotlarni ko'radi.
 
+Tizim har daqiqada Zoom'dan dars holatini so'raydi: host darsni necha daqiqa kechikib boshlagani, dars qancha davom etgani va host tugatganini aniqlaydi. Dars tugagach Zoom hisobotidan har bir talabaning qatnashgan vaqti olinadi. Talabalar tizimga kirmaydi — ular Zoom'dagi ismi bo'yicha aniqlanadi, administrator bir talabaning turli yozuvlarini birlashtiradi.
+
 ## Tarkib
 
 | Papka | Nima |

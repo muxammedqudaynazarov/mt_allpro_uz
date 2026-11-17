@@ -53,6 +53,17 @@ Bosh sahifadagi **"Efirda"** paneli hozir davom etayotgan darslarni ko'rsatadi: 
 
 **Darslar** sahifasida barcha darslaringiz bor. Holat (Efirda, Rejalashtirilgan, Yakunlangan) va sana bo'yicha filtrlash mumkin.
 
+Har bir dars ostida Zoom'dagi haqiqiy holat ko'rinadi: dars qachon boshlangani va tugagani, host necha daqiqa kechikkani, nechta talaba qatnashgani. Host Zoom'da hali boshlamagan bo'lsa — sariq **"Host Zoom'da hali boshlamagan"** yozuvi chiqadi.
+
+### Davomat
+
+Guruh nomini yoki **Davomat** tugmasini bosing. Dars sahifasida:
+- **Jadval bo'yicha / Zoom'da boshlandi / Davom etdi / Qatnashdi** — rejadagi va haqiqiy vaqt;
+- har bir talaba uchun vaqt chizig'i: u darsda qachon bo'lgan (uzilib, qayta kirgan bo'lsa — bo'laklar bilan), qachon kirgani va necha daqiqa kechikkani, jami qatnashgan vaqti va foizi;
+- **Excel (CSV)** — davomatni yuklab olish.
+
+Davomat dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Talabalar tizimga kirmaydi — ular Zoom'dagi ismi bo'yicha aniqlanadi, shuning uchun talabalarga Zoom'ga **to'liq familiya va ism** bilan kirishni ayting.
+
 ---
 
 ## Administrator uchun
@@ -74,9 +85,17 @@ Siz tasdiqlagan xodim avtomatik sizga biriktiriladi. Keyinchalik uni faqat siz (
 
 **Guruhlar** sahifasida sizga biriktirilgan guruhlar ko'rinadi. **"Faol"** kalitini o'chirsangiz, o'qituvchilar bu guruhga dars yarata olmaydi (masalan, ta'til yoki amaliyot paytida).
 
+### Guruh talabalari
+
+**Guruhlar** sahifasida guruh nomini bosing. Tanlangan davr bo'yicha har bir talaba: nechta darsda qatnashgani (o'tkazilgan darslardan), jami vaqti va foizi, o'rtacha kechikishi.
+
+- **Birlashtirish.** Bir talaba turli ism bilan kirgan bo'lsa ("Madina T." va "Madina Tursınbaeva"), ikkala qatorni belgilang → **Birlashtirish** → qaysi nom qolishini tanlang. Uning darslari qayta hisoblanadi, keyingi darslarda bu ismlar avtomatik tanib olinadi.
+- **Nomini o'zgartirish** (⋯) — hisobotlarda ko'rinadigan nom.
+- **Talaba emas** (⋯) — o'qituvchining shaxsiy hisobi, mehmon yoki "iPhone" kabi yozuvlar hisobotlarda hisobga olinmaydi.
+
 ### Hisobotlar
 
-**Hisobotlar** sahifasi tanlangan davr bo'yicha natijalarni ko'rsatadi: darslar soni, umumiy vaqt, o'qituvchilar va guruhlar kesimida. **"Batafsil ro'yxat (CSV)"** fayli Excel'da ochiladi. **Darslar** sahifasidagi filtrlangan ro'yxatni ham CSV qilib yuklab olish mumkin.
+**Hisobotlar** sahifasi tanlangan davr bo'yicha natijalarni ko'rsatadi: darslar soni, umumiy vaqt, o'qituvchilar va guruhlar kesimida. Zoom kuzatuvi bo'yicha: nechta dars haqiqatda o'tkazilgani va o'tkazilmagani, nechta dars 5 daqiqadan ko'p kechikib boshlangani, o'qituvchilarning o'rtacha kechikishi va darsdagi o'rtacha talabalar soni. **"Batafsil ro'yxat (CSV)"** fayli Excel'da ochiladi. **Darslar** sahifasidagi filtrlangan ro'yxatni ham CSV qilib yuklab olish mumkin.
 
 ---
 

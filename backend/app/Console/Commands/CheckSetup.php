@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\LessonStatus;
 use App\Enums\Role;
 use App\Enums\UserStatus;
+use App\Models\Lesson;
 use App\Models\User;
 use App\Models\ZoomAccount;
 use App\Services\Hemis\HemisOAuth;
@@ -154,6 +156,18 @@ class CheckSetup extends Command
 
         $count = ZoomAccount::where('is_active', true)->count();
         $this->check($count > 0, "Faol Zoom akkauntlar: {$count}", 'Faol Zoom akkaunt yoʻq — saytda: Sozlamalar → Zoom akkauntlar.', warning: true);
+
+        // Boshlangan darslar har daqiqada tekshirilishi kerak — tekshirilmagan bo'lsa, cron ishlamayapti.
+        $unchecked = Lesson::query()
+            ->whereNotNull('zoom_meeting_id')
+            ->where('status', '!=', LessonStatus::Cancelled->value)
+            ->whereBetween('starts_at', [now()->subHours(6), now()->subMinutes(5)])
+            ->whereNull('zoom_checked_at')
+            ->count();
+        $this->check($unchecked === 0, 'Zoom holati kuzatilmoqda (scheduler ishlayapti)', "{$unchecked} ta dars Zoom'da tekshirilmagan — scheduler (cron) ishlamayapti. Cron'ga qoʻshing: * * * * * www-data php ".base_path('artisan').' schedule:run', warning: true);
+
+        $failed = Lesson::query()->whereNull('attendance_synced_at')->whereNotNull('attendance_error')->latest('ends_at')->first();
+        $this->check(! $failed, 'Davomat Zoom hisobotidan olinmoqda', 'Davomat olinmadi ('.$failed?->starts_at->format('d.m H:i').'): '.$failed?->attendance_error, warning: true);
     }
 
     private function telegram(): void

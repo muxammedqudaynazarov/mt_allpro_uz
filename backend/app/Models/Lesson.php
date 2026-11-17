@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -15,16 +16,30 @@ use Illuminate\Support\Carbon;
  * @property Carbon $starts_at
  * @property Carbon $ends_at
  * @property Carbon|null $ended_at
+ * @property string|null $zoom_state
+ * @property Carbon|null $zoom_started_at
+ * @property Carbon|null $zoom_ended_at
  */
 class Lesson extends Model
 {
     /** @use HasFactory<LessonFactory> */
     use HasFactory;
 
+    /** Zoom'dagi holat (zoom_state): hali boshlanmagan, efirda, tugagan, o'tkazilmagan. */
+    public const ZOOM_WAITING = 'waiting';
+
+    public const ZOOM_STARTED = 'started';
+
+    public const ZOOM_ENDED = 'ended';
+
+    public const ZOOM_MISSED = 'missed';
+
     protected $fillable = [
         'user_id', 'group_id', 'lesson_slot_id', 'zoom_account_id',
         'zoom_meeting_id', 'zoom_host_email', 'topic', 'join_url', 'start_url', 'passcode',
         'status', 'starts_at', 'ends_at', 'ended_at', 'ended_by_id',
+        'zoom_state', 'zoom_started_at', 'zoom_ended_at', 'zoom_minutes', 'zoom_checked_at',
+        'attendance_due_at', 'attendance_synced_at', 'attendance_attempts', 'attendance_error',
     ];
 
     protected $hidden = ['start_url'];
@@ -37,6 +52,13 @@ class Lesson extends Model
             'ends_at' => 'datetime',
             'ended_at' => 'datetime',
             'start_url' => 'encrypted',
+            'zoom_started_at' => 'datetime',
+            'zoom_ended_at' => 'datetime',
+            'zoom_minutes' => 'integer',
+            'zoom_checked_at' => 'datetime',
+            'attendance_due_at' => 'datetime',
+            'attendance_synced_at' => 'datetime',
+            'attendance_attempts' => 'integer',
         ];
     }
 
@@ -63,6 +85,42 @@ class Lesson extends Model
     public function endedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ended_by_id')->withTrashed();
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(LessonAttendance::class);
+    }
+
+    public function participations(): HasMany
+    {
+        return $this->hasMany(ZoomParticipation::class);
+    }
+
+    /** Qatnashgan talabalar soni ("talaba emas" deb belgilanganlarsiz). */
+    public function scopeWithParticipantsCount(Builder $query): Builder
+    {
+        return $query->withCount(['attendances as participants_count' => fn (Builder $q) => $q
+            ->whereHas('student', fn (Builder $s) => $s->where('is_ignored', false))]);
+    }
+
+    /** Host darsni jadvaldagi vaqtdan necha daqiqa keyin boshlagani (manfiy — oldinroq). */
+    public function startDelayMinutes(): ?int
+    {
+        return $this->zoom_started_at ? (int) round($this->starts_at->diffInSeconds($this->zoom_started_at, false) / 60) : null;
+    }
+
+    /** Dars Zoom'da haqiqatda necha daqiqa davom etgani. */
+    public function actualMinutes(): ?int
+    {
+        if ($this->zoom_minutes !== null) {
+            return $this->zoom_minutes;
+        }
+        if ($this->zoom_started_at && $this->zoom_ended_at) {
+            return max(0, (int) round($this->zoom_started_at->diffInSeconds($this->zoom_ended_at) / 60));
+        }
+
+        return null;
     }
 
     /**

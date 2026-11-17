@@ -17,6 +17,12 @@ class GroupPolicy
         return $user->isSuperAdmin() || ($user->isAdmin() && $group->admin_id === $user->id);
     }
 
+    /** Guruh talabalari (davomat) — ko'rish, birlashtirish, nomini o'zgartirish. */
+    public function manageStudents(User $user, Group $group): bool
+    {
+        return $this->toggle($user, $group);
+    }
+
     public function create(User $user): bool
     {
         return $user->isSuperAdmin();

@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Search, Trash2, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
@@ -180,6 +181,7 @@ function GroupModal({ group, onClose }: { group: Group | 'new'; onClose: () => v
 
 export default function GroupsPage() {
   const t = useT()
+  const navigate = useNavigate()
   const { isSuperAdmin } = useAuth()
   const queryClient = useQueryClient()
   const [course, setCourse] = useState('all')
@@ -278,7 +280,9 @@ export default function GroupsPage() {
                   <tr key={group.id} className="hover:bg-steel-50/60">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-ink-900">{group.name}</p>
+                        <Link to={`/groups/${group.id}/students`} className="font-medium text-ink-900 underline-offset-4 hover:text-azure-700 hover:underline">
+                          {group.name}
+                        </Link>
                         {group.live && (
                           <Badge tone="onair" className="gap-2">
                             <OnAirDot className="size-2" />
@@ -302,6 +306,7 @@ export default function GroupsPage() {
                       <td className="px-3 py-2 text-right">
                         <ActionMenu
                           items={[
+                            { label: t('Talabalar'), icon: <UsersRound className="size-4" />, onClick: () => navigate(`/groups/${group.id}/students`) },
                             { label: t('Tahrirlash'), icon: <Pencil className="size-4" />, onClick: () => setEditing(group) },
                             { label: t('Oʻchirish'), icon: <Trash2 className="size-4" />, danger: true, onClick: () => setDeleting(group) },
                           ]}

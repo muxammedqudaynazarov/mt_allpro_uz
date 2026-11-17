@@ -50,6 +50,22 @@ export interface SlotRef {
   starts_at: string
 }
 
+/** Darsning Zoom'dagi haqiqiy holati (har daqiqada tekshiriladi). */
+export type ZoomState = 'waiting' | 'started' | 'ended' | 'missed'
+
+export interface LessonTracking {
+  state: ZoomState | null
+  started_at: string | null
+  ended_at: string | null
+  /** Host jadvaldagi vaqtdan necha daqiqa keyin boshlagani (manfiy — oldinroq). */
+  start_delay_minutes: number | null
+  /** Zoom'da haqiqatda necha daqiqa davom etgani. */
+  minutes: number | null
+  participants: number | null
+  synced: boolean
+  error: string | null
+}
+
 export interface Lesson {
   id: number
   topic: string
@@ -62,6 +78,7 @@ export interface Lesson {
   group: GroupRef
   teacher: UserRef
   slot: SlotRef | null
+  tracking: LessonTracking
   can: { start: boolean; end: boolean }
   created_at: string
 }
@@ -178,10 +195,62 @@ export interface AuditLog {
   created_at: string
 }
 
+export interface ZoomStats {
+  held: number
+  missed: number
+  late_starts: number
+  avg_start_delay: number | null
+  actual_minutes: number
+  avg_participants: number | null
+}
+
 export interface ReportSummary {
   from: string
   to: string
-  totals: { lessons: number; minutes: number; teachers: number; groups: number }
-  by_teacher: { teacher: UserRef; lessons: number; minutes: number }[]
-  by_group: { group: GroupRef; lessons: number; minutes: number }[]
+  totals: { lessons: number; minutes: number; teachers: number; groups: number } & ZoomStats
+  by_teacher: ({ teacher: UserRef; lessons: number; minutes: number } & ZoomStats)[]
+  by_group: ({ group: GroupRef; lessons: number; minutes: number } & ZoomStats)[]
+}
+
+export interface AttendanceRow {
+  student_id: number
+  name: string
+  ignored: boolean
+  /** Talaba Zoom'da qanday ismlar bilan kirgan. */
+  names: string[]
+  first_joined_at: string | null
+  last_left_at: string | null
+  late_minutes: number
+  minutes: number
+  percent: number | null
+  sessions: number
+  /** Zoom'da bo'lgan oraliqlar [kirdi, chiqdi] (ustma-ust tushganlari birlashtirilgan). */
+  segments: [string, string][]
+}
+
+export interface LessonAttendance {
+  lesson: Lesson
+  host: { first_joined_at: string | null; names: string[]; segments: [string, string][] } | null
+  students: AttendanceRow[]
+  can_manage_students: boolean
+}
+
+export interface GroupStudentRow {
+  id: number
+  name: string
+  ignored: boolean
+  names: string[]
+  lessons_attended: number
+  minutes: number
+  percent: number | null
+  avg_late_minutes: number | null
+  last_seen_at: string | null
+}
+
+export interface GroupStudents {
+  group: GroupRef
+  from: string
+  to: string
+  lessons_held: number
+  students: GroupStudentRow[]
 }

@@ -57,6 +57,9 @@ Testlar SQLite xotirasida ishlaydi. Tashqi xizmatlarga so'rov ketmaydi: `Http::p
 - `LessonTest`: dars yaratish (juftlik, "hozir", boshlangan juftlik), guruh va host bandligi, Zoom xatolari, host havolasi faqat egasiga, imzolangan Telegram havolasi, CSV eksport (formula injection himoyasi)
 - `AdministrationTest`: rollar bo'yicha ruxsatlar, Zoom secret shifrlanishi, soft-delete, hisobotlar, amallar jurnali
 - `TelegramTest`: webhook maxfiy kaliti, bir martalik ulash havolasi
+- `AttendanceTest`: Zoom holatini kuzatish (boshlandi, host tugatdi, o'tkazilmagan), hisobotdan davomat (ustma-ust vaqt bir marta, kutish zali va host hisobga olinmaydi), talabani ism va Zoom ID bo'yicha tanish, ruxsat yo'q bo'lsa `past_meetings` zaxirasi, qayta urinish, birlashtirish, "talaba emas", hisobot ko'rsatkichlari
+- `DeploymentTest`: o'z domenida login, `app:check`
+- `Unit/StudentNameTest`: ism kaliti (kirill/lotin, tartib, qurilma nomlari), vaqt oraliqlarini birlashtirish
 
 Frontend tekshiruvi:
 
@@ -74,7 +77,7 @@ Kod uslubi (backend): `vendor/bin/pint`.
 backend/
   app/
     Actions/            CreateLesson, EndLesson — asosiy biznes-mantiq
-    Console/Commands/   lessons:sync-statuses, app:create-admin, telegram:set-webhook, legacy:import
+    Console/Commands/   lessons:sync-statuses, lessons:track-zoom, app:create-admin, app:check, telegram:set-webhook, legacy:import
     Enums/              Role, UserStatus, LessonStatus
     Exceptions/         ExternalServiceException (Zoom/HEMIS xatolari → tushunarli 502/422)
     Http/
@@ -110,6 +113,13 @@ frontend/src/
 | `lesson_slots` | Juftliklar: boshlanish vaqti, davomiylik. Standart nomlar (`1-juplıq`) ekranda tilga moslab ko'rsatiladi (`label`) |
 | `lessons` | Darslar: o'qituvchi, guruh, Zoom meeting ID, havolalar (`start_url` shifrlangan), holat, vaqt |
 | `audit_logs` | Amallar jurnali (2 yildan keyin avtomatik tozalanadi) |
+| `lessons.zoom_*` | Zoom'dagi haqiqiy holat: `zoom_state` (waiting/started/ended/missed), `zoom_started_at`, `zoom_ended_at`, `zoom_minutes`; `attendance_*` — hisobotni olish holati |
+| `students` | Guruh talabalari (Zoom'dagi ism bo'yicha avtomatik yaratiladi), `is_ignored` |
+| `student_aliases` | Talabani tanish kalitlari: `name` (`StudentName::key()`), `zoom_id`, `email`. Guruh ichida yagona |
+| `zoom_participations` | Zoom hisobotidagi har bir kirish-chiqish (xom ma'lumot; birlashtirishda davomat shundan qayta hisoblanadi) |
+| `lesson_attendances` | Dars bo'yicha talabaning yakuniy qatnashuvi: jami soniya (ustma-ust vaqt bir marta), kechikish, kirishlar soni |
+
+Zoom'dagi haqiqiy holatni `lessons:track-zoom` (har daqiqa) kuzatadi: `GET /meetings/{id}` faqat `waiting`/`started` qaytaradi, `started` → `waiting` o'tishi host tugatganini bildiradi (`MeetingTracker`). Tugagan dars uchun `SyncLessonAttendance` Zoom'dan uchrashuv nusxalari (`/past_meetings/{id}/instances`), aniq vaqtlar (`/past_meetings/{uuid}`) va qatnashchilarni (`/report/meetings/{uuid}/participants`, ruxsat bo'lmasa `/past_meetings/{uuid}/participants`) oladi.
 
 Dars holati bazada saqlanadi va har daqiqada `lessons:sync-statuses` yangilaydi. API esa holatni vaqtdan qo'shimcha hisoblaydi (`Lesson::effectiveStatus()`), shuning uchun scheduler to'xtab qolsa ham foydalanuvchi to'g'ri holatni ko'radi.
 
@@ -133,6 +143,12 @@ Barcha `/api/*` marshrutlari JSON qaytaradi. Autentifikatsiya: Sanctum SPA (cook
 | POST | `/api/lessons/{id}/start` | egasi | Yangi host havolasi |
 | POST | `/api/lessons/{id}/end` | egasi, guruh admini | Yakunlash / bekor qilish |
 | GET | `/api/lessons/export` | admin | CSV |
+| GET | `/api/lessons/{id}/attendance` | dars egasi, guruh admini | Zoom vaqtlari, host va talabalar (vaqt oraliqlari bilan) |
+| GET | `/api/lessons/{id}/attendance/export` | dars egasi, guruh admini | Davomat CSV |
+| POST | `/api/lessons/{id}/attendance/sync` | dars egasi, guruh admini | Zoom hisobotini hozir qayta olish |
+| GET | `/api/groups/{id}/students?from&to` | guruh admini | Talabalar va davr bo'yicha davomat |
+| POST | `/api/groups/{id}/students/merge` | guruh admini | `{target_id, source_ids[]}` — birlashtirish |
+| PATCH | `/api/students/{id}` | guruh admini | `{name?, ignored?}` |
 | GET | `/api/users`, `/api/users/counts` | admin | Foydalanuvchilar |
 | PATCH | `/api/users/{id}` | admin* | `status`; bosh admin uchun `roles`, `managed_by_id`, `hemis_id` |
 | DELETE | `/api/users/{id}` | bosh admin | Soft-delete |

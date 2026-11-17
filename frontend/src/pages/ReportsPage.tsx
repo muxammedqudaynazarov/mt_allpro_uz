@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Input } from '@/components/ui/Field'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { delayToneClass, LATE_START_MINUTES, startDelay } from '@/features/lessons/ZoomTracking'
 import { useT } from '@/i18n/I18nProvider'
 
 function monthStart(): string {
@@ -48,11 +49,11 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title={t('Hisobotlar')}
-        description={t('Yakunlangan va davom etayotgan darslar soni hamda davomiyligi.')}
+        description={t('Darslar soni va davomiyligi, ular Zoom’da haqiqatda qachon boshlangani va nechta talaba qatnashgani.')}
         actions={
           <a href={`/api/lessons/export?from=${from}&to=${to}`} className={buttonClass({ variant: 'secondary' })}>
             <Download className="size-4" />
-            Batafsil roʻyxat (CSV)
+            {t('Batafsil roʻyxat')} (CSV)
           </a>
         }
       />
@@ -83,16 +84,25 @@ export default function ReportsPage() {
         <EmptyState className="rounded-panel bg-white ring-1 ring-steel-200" icon={<BarChart3 className="size-5" />} title={t('Bu davrda darslar yoʻq')} description={t('Boshqa sana oraligʻini tanlang.')} />
       ) : (
         <>
-          <dl className="mb-6 grid grid-cols-2 overflow-hidden rounded-panel bg-white ring-1 ring-steel-200/70 lg:grid-cols-4">
+          <dl className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-panel bg-steel-100 ring-1 ring-steel-200/70 lg:grid-cols-4">
             {[
               { label: t('Darslar'), value: data.totals.lessons.toLocaleString('ru-RU') },
-              { label: t('Umumiy vaqt'), value: formatDuration(data.totals.minutes) },
+              { label: t('Rejadagi vaqt'), value: formatDuration(data.totals.minutes) },
               { label: t('Oʻqituvchilar'), value: data.totals.teachers },
               { label: t('Guruhlar'), value: data.totals.groups },
-            ].map((item, index) => (
-              <div key={item.label} className={`px-5 py-5 ${index % 2 ? 'border-l' : ''} ${index > 1 ? 'border-t lg:border-t-0' : ''} ${index === 2 ? 'lg:border-l' : ''} border-steel-100`}>
+              { label: t('Zoom’da oʻtkazildi'), value: data.totals.held, note: formatDuration(data.totals.actual_minutes) },
+              { label: t('Oʻtkazilmagan'), value: data.totals.missed, warn: data.totals.missed > 0 },
+              { label: t('Kechikib boshlangan'), value: data.totals.late_starts, warn: data.totals.late_starts > 0, note: t('{count} daqiqadan koʻp', { count: LATE_START_MINUTES }) },
+              {
+                label: t('Oʻrtacha kechikish'),
+                value: data.totals.avg_start_delay !== null ? formatDuration(Math.max(0, data.totals.avg_start_delay)) : '—',
+                note: data.totals.avg_participants !== null ? t('Darsda oʻrtacha {count} talaba', { count: data.totals.avg_participants }) : undefined,
+              },
+            ].map((item) => (
+              <div key={item.label} className="bg-white px-5 py-5">
                 <dt className="text-sm text-steel-600">{item.label}</dt>
-                <dd className="mt-1 font-display text-xl font-semibold tabular-nums">{item.value}</dd>
+                <dd className={`mt-1 font-display text-xl font-semibold tabular-nums ${item.warn ? 'text-amber-600' : ''}`}>{item.value}</dd>
+                {item.note && <dd className="mt-0.5 text-sm text-steel-500">{item.note}</dd>}
               </div>
             ))}
           </dl>
@@ -110,18 +120,27 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-steel-100">
-                  {data.by_teacher.map((row) => (
-                    <tr key={row.teacher.id}>
-                      <td className="w-1/2 px-5 py-3">
-                        <p className="font-medium">{row.teacher.name}</p>
-                        <div className="mt-2">
-                          <Bar value={row.lessons} max={maxTeacher} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right font-semibold tabular-nums">{row.lessons}</td>
-                      <td className="px-5 py-3 text-right whitespace-nowrap text-steel-600">{formatDuration(row.minutes)}</td>
-                    </tr>
-                  ))}
+                  {data.by_teacher.map((row) => {
+                    const delay = startDelay(t, row.avg_start_delay)
+                    return (
+                      <tr key={row.teacher.id}>
+                        <td className="w-1/2 px-5 py-3">
+                          <p className="font-medium">{row.teacher.name}</p>
+                          <div className="mt-2">
+                            <Bar value={row.lessons} max={maxTeacher} />
+                          </div>
+                          {(delay || row.missed > 0) && (
+                            <p className="mt-1.5 flex flex-wrap gap-x-3 text-xs">
+                              {delay && <span className={delayToneClass[delay.tone]}>{t('Oʻrtacha: {text}', { text: delay.text })}</span>}
+                              {row.missed > 0 && <span className="text-amber-600">{t('Oʻtkazilmagan: {count}', { count: row.missed })}</span>}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 text-right font-semibold tabular-nums">{row.lessons}</td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap text-steel-600">{formatDuration(row.minutes)}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </Panel>
@@ -142,6 +161,7 @@ export default function ReportsPage() {
                         <div className="mt-2">
                           <Bar value={row.lessons} max={maxGroup} />
                         </div>
+                        {row.avg_participants !== null && <p className="mt-1.5 text-xs text-steel-600">{t('Darsda oʻrtacha {count} talaba', { count: row.avg_participants })}</p>}
                       </td>
                       <td className="px-3 py-3 text-right font-semibold tabular-nums">{row.lessons}</td>
                       <td className="px-5 py-3 text-right whitespace-nowrap text-steel-600">{formatDuration(row.minutes)}</td>

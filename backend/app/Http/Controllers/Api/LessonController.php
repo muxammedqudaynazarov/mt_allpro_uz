@@ -11,6 +11,7 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\LessonSlot;
 use App\Services\Zoom\ZoomClient;
+use App\Support\Csv;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class LessonController extends Controller
     {
         $lessons = $this->filtered($request)
             ->with(['group', 'teacher', 'slot', 'zoomAccount'])
+            ->withParticipantsCount()
             ->orderByDesc('starts_at')
             ->paginate(min(100, max(5, (int) $request->integer('per_page', 20))))
             ->withQueryString();
@@ -134,23 +136,23 @@ class LessonController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403);
 
-        $query = $this->filtered($request)->with(['group', 'teacher', 'slot'])->orderBy('starts_at');
-        $filename = __('darslar').'-'.now()->format('Y-m-d-His').'.csv';
+        $query = $this->filtered($request)->with(['group', 'teacher', 'slot'])->withParticipantsCount()->orderBy('starts_at');
+        $header = array_map(fn (string $title) => __($title), [
+            'Sana', 'Boshlanish', 'Tugash', 'Guruh', 'Kurs', 'Oʻqituvchi', 'Mavzu', 'Holat', 'Davomiyligi (daqiqa)',
+            'Zoom’da boshlandi', 'Kechikish (daqiqa)', 'Haqiqiy davomiylik (daqiqa)', 'Qatnashgan talabalar',
+        ]);
 
-        return response()->streamDownload(function () use ($query) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // Excel UTF-8 ni to'g'ri ochishi uchun BOM
-            fputcsv($out, array_map(fn (string $title) => __($title), ['Sana', 'Boshlanish', 'Tugash', 'Guruh', 'Kurs', 'Oʻqituvchi', 'Mavzu', 'Holat', 'Davomiyligi (daqiqa)']), ';');
-            $query->chunk(500, function ($lessons) use ($out) {
+        return Csv::download(__('darslar').'-'.now()->format('Y-m-d-His').'.csv', $header, function (\Closure $write) use ($query) {
+            $query->chunk(500, function ($lessons) use ($write) {
                 foreach ($lessons as $lesson) {
-                    fputcsv($out, [
+                    $write([
                         $lesson->starts_at->format('d.m.Y'),
                         $lesson->starts_at->format('H:i'),
                         ($lesson->ended_at && $lesson->ended_at->lessThan($lesson->ends_at) ? $lesson->ended_at : $lesson->ends_at)->format('H:i'),
-                        $lesson->group->name,
+                        Csv::safe($lesson->group->name),
                         $lesson->group->course,
-                        $lesson->teacher->name,
-                        self::csvSafe($lesson->topic),
+                        Csv::safe($lesson->teacher->name),
+                        Csv::safe($lesson->topic),
                         match ($lesson->effectiveStatus()) {
                             LessonStatus::Scheduled => __('Rejalashtirilgan'),
                             LessonStatus::Live => __('Efirda'),
@@ -158,11 +160,14 @@ class LessonController extends Controller
                             LessonStatus::Cancelled => __('Bekor qilingan'),
                         },
                         $lesson->status === LessonStatus::Cancelled ? 0 : $lesson->durationMinutes(),
-                    ], ';');
+                        $lesson->zoom_started_at?->format('H:i') ?? ($lesson->zoom_state === Lesson::ZOOM_MISSED ? __('Oʻtkazilmagan') : ''),
+                        $lesson->startDelayMinutes() ?? '',
+                        $lesson->actualMinutes() ?? '',
+                        $lesson->attendance_synced_at ? $lesson->participants_count : '',
+                    ]);
                 }
             });
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        });
     }
 
     private function filtered(Request $request): Builder
@@ -204,13 +209,5 @@ class LessonController extends Controller
         }
 
         return $query;
-    }
-
-    /** CSV injection'dan himoya: formulaga o'xshash qiymatlar oldiga apostrof qo'yiladi. */
-    private static function csvSafe(?string $value): string
-    {
-        $value = (string) $value;
-
-        return preg_match('/^[=+\-@\t\r]/', $value) ? "'".$value : $value;
     }
 }

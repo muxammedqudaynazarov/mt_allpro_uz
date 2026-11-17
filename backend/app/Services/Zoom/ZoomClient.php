@@ -171,6 +171,151 @@ class ZoomClient
         return $users;
     }
 
+    /**
+     * Uchrashuvning hozirgi holati: "waiting" (boshlanmagan yoki tugagan) yoki "started" (efirda).
+     * Zoom'da uchrashuv topilmasa (o'chirilgan) — null.
+     */
+    public function meetingStatus(ZoomAccount $account, string $meetingId): ?string
+    {
+        $response = $this->send($account, 'get', '/meetings/'.rawurlencode($meetingId));
+        if ($response->status() === 404) {
+            return null;
+        }
+        if ($response->failed()) {
+            throw $this->error(__('Zoom uchrashuvi holatini olib boʻlmadi'), $response);
+        }
+
+        return (string) $response->json('status', 'waiting');
+    }
+
+    /**
+     * O'tgan uchrashuv nusxalari. Host uchrashuvni tugatib, qayta boshlasa — bir nechta bo'ladi.
+     *
+     * @return list<array{uuid: string, start_time: string}>
+     */
+    public function pastInstances(ZoomAccount $account, string $meetingId): array
+    {
+        $response = $this->send($account, 'get', '/past_meetings/'.rawurlencode($meetingId).'/instances');
+        if ($response->status() === 404) {
+            return [];
+        }
+        if ($response->failed()) {
+            throw $this->error(__('Zoom’dan oʻtgan uchrashuvlarni olib boʻlmadi'), $response);
+        }
+
+        $instances = [];
+        foreach ((array) $response->json('meetings', []) as $meeting) {
+            if (! empty($meeting['uuid'])) {
+                $instances[] = ['uuid' => (string) $meeting['uuid'], 'start_time' => (string) ($meeting['start_time'] ?? '')];
+            }
+        }
+
+        return $instances;
+    }
+
+    /**
+     * Uchrashuv nusxasining aniq boshlanish/tugash vaqti. Ixtiyoriy ma'lumot:
+     * olinmasa (ruxsat yo'q va h.k.) — null, vaqtlar qatnashchilardan hisoblanadi.
+     *
+     * @return array{start_time: ?string, end_time: ?string, host_id: ?string, participants_count: ?int}|null
+     */
+    public function pastMeeting(ZoomAccount $account, string $uuid): ?array
+    {
+        $response = $this->send($account, 'get', '/past_meetings/'.$this->encodeUuid($uuid));
+        if ($response->failed()) {
+            return null;
+        }
+
+        return [
+            'start_time' => $response->json('start_time'),
+            'end_time' => $response->json('end_time'),
+            'host_id' => $response->json('host_id'),
+            'participants_count' => $response->json('participants_count'),
+        ];
+    }
+
+    /**
+     * Uchrashuv nusxasi qatnashchilari — har bir kirish-chiqish alohida qator.
+     * Avval hisobot API (Pro va undan yuqori tarif), unga ruxsat bo'lmasa — past_meetings.
+     * Hisobot hali tayyor bo'lmasa — null.
+     *
+     * @return list<array{id: string, name: string, email: string, join_time: string, leave_time: ?string}>|null
+     */
+    public function meetingParticipants(ZoomAccount $account, string $uuid): ?array
+    {
+        $encoded = $this->encodeUuid($uuid);
+        $rows = $this->paginate($account, '/report/meetings/'.$encoded.'/participants', 'participants');
+
+        if ($rows instanceof Response && $this->missingScope($rows)) {
+            $rows = $this->paginate($account, '/past_meetings/'.$encoded.'/participants', 'participants');
+        }
+        if ($rows instanceof Response) {
+            if (in_array($rows->status(), [404, 400], true) && ! $this->missingScope($rows)) {
+                return null;
+            }
+            throw $this->error(__('Zoom’dan qatnashchilar roʻyxatini olib boʻlmadi'), $rows);
+        }
+
+        $participants = [];
+        foreach ($rows as $row) {
+            if (($row['status'] ?? 'in_meeting') === 'in_waiting_room' || empty($row['join_time'])) {
+                continue;
+            }
+            $participants[] = [
+                'id' => (string) (($row['participant_user_id'] ?? '') ?: ($row['id'] ?? '')),
+                'name' => (string) ($row['name'] ?? ''),
+                'email' => (string) ($row['user_email'] ?? ''),
+                'join_time' => (string) $row['join_time'],
+                'leave_time' => isset($row['leave_time']) && $row['leave_time'] !== '' ? (string) $row['leave_time'] : null,
+            ];
+        }
+
+        return $participants;
+    }
+
+    /**
+     * Sahifalab o'qish. Xato bo'lsa — javobning o'zi qaytariladi.
+     *
+     * @return list<array<string, mixed>>|Response
+     */
+    private function paginate(ZoomAccount $account, string $path, string $key): array|Response
+    {
+        $rows = [];
+        $next = null;
+        do {
+            $response = $this->send($account, 'get', $path, array_filter(['page_size' => 300, 'next_page_token' => $next]));
+            if ($response->failed()) {
+                return $response;
+            }
+            array_push($rows, ...array_values((array) $response->json($key, [])));
+            $next = $response->json('next_page_token') ?: null;
+        } while ($next);
+
+        return $rows;
+    }
+
+    /** Ilovada kerakli ruxsat (scope) yo'q: Zoom 4711 kodini qaytaradi. */
+    private function missingScope(Response $response): bool
+    {
+        return (int) $response->json('code') === 4711 || $response->status() === 403;
+    }
+
+    /** UUID "/" bilan boshlansa yoki "//" bo'lsa, Zoom uni ikki marta kodlashni talab qiladi. */
+    private function encodeUuid(string $uuid): string
+    {
+        $encoded = rawurlencode($uuid);
+
+        return str_starts_with($uuid, '/') || str_contains($uuid, '//') ? rawurlencode($encoded) : $encoded;
+    }
+
+    /** Logga yozmasdan xato yaratadi (har daqiqalik kuzatuv logni to'ldirmasligi uchun). */
+    private function error(string $message, Response $response): ExternalServiceException
+    {
+        $reason = $response->json('message');
+
+        return new ExternalServiceException($message.($reason ? ": {$reason}" : ' (HTTP '.$response->status().').'));
+    }
+
     /** @param array<string, mixed> $payload */
     private function send(ZoomAccount $account, string $method, string $path, array $payload = []): Response
     {

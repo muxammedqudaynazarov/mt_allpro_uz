@@ -4,10 +4,12 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GroupController;
+use App\Http\Controllers\Api\LessonAttendanceController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\LessonSlotController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ZoomAccountController;
@@ -37,6 +39,9 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::post('/lessons', [LessonController::class, 'store'])->middleware('throttle:lesson-create');
         Route::post('/lessons/{lesson}/start', [LessonController::class, 'start']);
         Route::post('/lessons/{lesson}/end', [LessonController::class, 'end']);
+        Route::get('/lessons/{lesson}/attendance', [LessonAttendanceController::class, 'show']);
+        Route::get('/lessons/{lesson}/attendance/export', [LessonAttendanceController::class, 'export']);
+        Route::post('/lessons/{lesson}/attendance/sync', [LessonAttendanceController::class, 'sync'])->middleware('throttle:10,1');
 
         Route::middleware('role:admin,super_admin')->group(function () {
             Route::get('/users', [UserController::class, 'index']);
@@ -49,6 +54,10 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::put('/groups/{group}', [GroupController::class, 'update']);
             Route::post('/groups/{group}/toggle', [GroupController::class, 'toggle']);
             Route::delete('/groups/{group}', [GroupController::class, 'destroy']);
+
+            Route::get('/groups/{group}/students', [StudentController::class, 'index']);
+            Route::post('/groups/{group}/students/merge', [StudentController::class, 'merge']);
+            Route::patch('/students/{student}', [StudentController::class, 'update']);
 
             Route::get('/reports/summary', [ReportController::class, 'summary']);
         });
