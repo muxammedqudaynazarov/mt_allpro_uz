@@ -24,7 +24,8 @@ use Throwable;
 class CheckSetup extends Command
 {
     protected $signature = 'app:check
-        {--url= : Sayt brauzerda ochiladigan manzil (APP_URL shunga teng boʻlishi kerak)}';
+        {--url= : Sayt brauzerda ochiladigan manzil (APP_URL shunga teng boʻlishi kerak)}
+        {--frontend= : Yigʻilgan frontend papkasi (standart: ../frontend/dist)}';
 
     protected $description = 'Oʻrnatish sozlamalarini tekshirish (.env, baza, papkalar, HEMIS, Zoom, Telegram)';
 
@@ -77,11 +78,36 @@ class CheckSetup extends Command
             $this->check($expectedHost === $host, 'APP_URL sayt manziliga mos', "APP_URL ({$host}) sayt manzili ({$expectedHost}) bilan bir xil emas. .env da APP_URL va FRONTEND_URL ni https://{$expectedHost} qiling.");
         }
         $this->check(filled(config('app.key')), 'APP_KEY oʻrnatilgan', 'APP_KEY boʻsh. Buyruq: php artisan key:generate');
+        // Yo'lda ishlash (dist.karsu.uz/zoom): cookie yo'li sayt yo'liga mos bo'lishi kerak.
+        $path = rtrim((string) parse_url($appUrl, PHP_URL_PATH), '/');
+        if ($path !== '') {
+            $this->line("  Yoʻl: {$path}");
+            $this->check(rtrim((string) config('session.path'), '/') === $path, 'SESSION_PATH sayt yoʻliga mos', "Sayt {$path} yoʻlida, lekin SESSION_PATH=".config('session.path').". .env da SESSION_PATH={$path} qiling.", warning: true);
+        }
+        $this->frontendBuild($path);
         $this->check($frontendHost === $host, 'FRONTEND_URL va APP_URL bir domenda', "FRONTEND_URL ({$frontendHost}) APP_URL ({$host}) bilan bir xil boʻlishi kerak: HEMIS orqali kirgandan keyin shu manzilga qaytiladi.");
         $this->check(! config('session.secure') || $https, 'Cookie sozlamasi APP_URL ga mos', 'SESSION_SECURE_COOKIE=true, lekin APP_URL https emas — brauzer cookie saqlamaydi va kirish ishlamaydi. SSL oʻrnating yoki SESSION_SECURE_COOKIE=false qiling.');
         $this->check($https || app()->isLocal(), 'HTTPS', 'APP_URL http:// bilan boshlanadi. Serverda SSL (https) oʻrnatish tavsiya etiladi.', warning: true);
         $this->check(! config('app.debug') || app()->isLocal(), 'APP_DEBUG=false', 'APP_DEBUG=true — xato tafsilotlari hammaga koʻrinadi. Serverda false qiling.', warning: true);
         $this->check(config('app.locale') === 'kaa', 'APP_LOCALE=kaa', 'APP_LOCALE='.config('app.locale').' — asosiy til qoraqalpoqcha boʻlishi uchun APP_LOCALE=kaa qiling.', warning: true);
+    }
+
+    /** Frontend APP_URL dagi yo'l uchun yig'ilganmi (aks holda sahifa oq ekran bo'lib qoladi). */
+    private function frontendBuild(string $path): void
+    {
+        $dir = rtrim((string) ($this->option('frontend') ?: dirname(base_path()).'/frontend/dist'), '/');
+        $index = @file_get_contents($dir.'/index.html');
+        if ($index === false) {
+            $this->check(false, '', "Frontend yigʻilmagan ({$dir}/index.html yoʻq). Buyruq: cd ../frontend && npm ci && npm run build", warning: true);
+
+            return;
+        }
+        if (! preg_match('#\bsrc="([^"]*)/assets/[^"]+\.js"#', $index, $match)) {
+            return;
+        }
+        $built = rtrim($match[1], '/');
+        $this->check($built === $path, 'Frontend '.($path ?: '/').' yoʻli uchun yigʻilgan', 'Frontend '.($built ?: '/').' yoʻli uchun yigʻilgan, sayt esa '.($path ?: '/')
+            .' da — sahifa ochilmaydi. Qayta yigʻing: deploy/deploy.sh yoʻlni APP_URL dan oʻzi oladi, qoʻlda: VITE_BASE_PATH='.($path ?: '').'/ npm run build');
     }
 
     private function database(): bool

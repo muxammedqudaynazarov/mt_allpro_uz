@@ -13,6 +13,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 /** Darslarning video yozuvlari (serverdagi nusxa). */
@@ -49,7 +51,7 @@ class RecordingController extends Controller
      * Faylni berish. Range so'rovlari qo'llab-quvvatlanadi — video brauzerda istalgan joyidan
      * ijro etiladi. ?download=1 — yuklab olish.
      */
-    public function file(Request $request, Recording $recording): BinaryFileResponse
+    public function file(Request $request, Recording $recording): BinaryFileResponse|Response
     {
         if ($recording->lesson) {
             Gate::authorize('view', $recording->lesson);
@@ -59,19 +61,28 @@ class RecordingController extends Controller
         $path = $recording->absolutePath();
         abort_unless($recording->status === Recording::DOWNLOADED && $path && is_file($path), 404, __('Fayl serverda topilmadi.'));
 
-        $response = new BinaryFileResponse($path, 200, [
-            'Content-Type' => $recording->mimeType(),
-            'Cache-Control' => 'private, max-age=3600',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
         $name = basename($recording->path);
-        $response->setContentDisposition(
+        $disposition = HeaderUtils::makeDisposition(
             $request->boolean('download') ? ResponseHeaderBag::DISPOSITION_ATTACHMENT : ResponseHeaderBag::DISPOSITION_INLINE,
             $name,
             Str::ascii($name),
         );
+        $headers = [
+            'Content-Type' => $recording->mimeType(),
+            'Content-Disposition' => $disposition,
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ];
 
-        return $response;
+        // nginx faylni o'zi beradi (Range ham nginx'da) — PHP jarayoni darhol bo'shaydi.
+        $accel = rtrim((string) config('recordings.accel_prefix'), '/');
+        if ($accel !== '') {
+            $location = $accel.'/'.implode('/', array_map('rawurlencode', explode('/', $recording->path)));
+
+            return new Response('', 200, $headers + ['X-Accel-Redirect' => $location]);
+        }
+
+        return new BinaryFileResponse($path, 200, $headers);
     }
 
     /** Xato bilan qolgan faylni qayta navbatga qo'yish. */

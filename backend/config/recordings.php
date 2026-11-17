@@ -7,6 +7,11 @@ return [
     // Diskda shundan kam joy qolsa, yangi yozuvlar yuklanmaydi (GB).
     'min_free_gb' => (int) env('RECORDINGS_MIN_FREE_GB', 5),
 
+    // nginx X-Accel-Redirect: PHP faqat ruxsatni tekshiradi, faylni nginx beradi (katta
+    // videolar PHP jarayonini band qilmaydi). nginx'dagi "internal" location prefiksi,
+    // masalan /_zoom_recordings/. Bo'sh bo'lsa — fayl PHP orqali beriladi.
+    'accel_prefix' => env('RECORDINGS_ACCEL_PREFIX', ''),
+
     // Bitta faylni yuklashga urinishlar soni.
     'max_attempts' => 5,
 

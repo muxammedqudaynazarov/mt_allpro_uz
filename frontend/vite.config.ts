@@ -9,20 +9,26 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const backend = env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
-  const proxy = { target: backend, changeOrigin: false, xfwd: true }
+  // Ilova domen ildizida emas, yo'lda ishlasa (masalan, dist.karsu.uz/zoom): VITE_BASE_PATH=/zoom/
+  const base = `/${(env.VITE_BASE_PATH || '/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
+  const prefix = base.replace(/\/$/, '')
+  // Proksi production'dagi nginx kabi: prefiksni olib tashlab, Laravel'ga X-Forwarded-Prefix bilan uzatadi.
+  const target = { target: backend, changeOrigin: false, xfwd: true, headers: prefix ? { 'X-Forwarded-Prefix': prefix } : {}, rewrite: (path: string) => path.slice(prefix.length) }
+  const proxy = Object.fromEntries(['/api/', '/auth/', '/sanctum/', '/l/'].map((path) => [`${prefix}${path}`, target]))
 
   return {
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
     server: {
       port: 5173,
-      proxy: { '/api': proxy, '/auth': proxy, '/sanctum': proxy },
+      proxy,
     },
     preview: {
       port: 4173,
-      proxy: { '/api': proxy, '/auth': proxy, '/sanctum': proxy },
+      proxy,
     },
     build: {
       sourcemap: false,

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3, Download } from 'lucide-react'
+import { withBase } from '@/lib/base'
 import { api } from '@/lib/api'
 import { addDays, formatDate, formatDuration, isoDate } from '@/lib/format'
 import type { ReportSummary } from '@/lib/types'
@@ -100,7 +101,7 @@ function PeriodReport() {
             </button>
           ))}
         </div>
-        <a href={`/api/lessons/export?from=${from}&to=${to}`} className={buttonClass({ variant: 'secondary', className: 'sm:ml-auto' })}>
+        <a href={withBase(`/api/lessons/export?from=${from}&to=${to}`)} className={buttonClass({ variant: 'secondary', className: 'sm:ml-auto' })}>
           <Download className="size-4" />
           {t('Batafsil roʻyxat')} (.xlsx)
         </a>

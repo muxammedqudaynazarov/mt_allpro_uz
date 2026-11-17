@@ -131,6 +131,13 @@ class RecordingTest extends TestCase
             ->assertStatus(206)->assertHeader('Content-Type', 'video/mp4');
         $this->actingAsUser(User::factory()->create())->get("/api/recordings/{$videoFile->id}/file")->assertForbidden();
         $this->actingAsUser($teacher)->getJson('/api/recordings')->assertOk()->assertJsonCount(2, 'data');
+
+        // nginx rejimi: PHP faqat ruxsatni tekshiradi, faylni nginx beradi.
+        config(['recordings.accel_prefix' => '/_zoom_recordings/']);
+        $accel = $this->actingAsUser($teacher)->get("/api/recordings/{$videoFile->id}/file?download=1")->assertOk();
+        $this->assertSame('/_zoom_recordings/'.implode('/', array_map('rawurlencode', explode('/', $videoFile->path))), $accel->headers->get('X-Accel-Redirect'));
+        $this->assertStringStartsWith('attachment;', (string) $accel->headers->get('Content-Disposition'));
+        $this->assertSame('', $accel->getContent());
         $this->actingAsUser(User::factory()->create())->getJson('/api/recordings')->assertOk()->assertJsonCount(0, 'data');
     }
 

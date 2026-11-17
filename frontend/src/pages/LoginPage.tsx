@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { AlertCircle, KeyRound, LogIn } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { withBase } from '@/lib/base'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Field'
@@ -151,7 +152,7 @@ export default function LoginPage() {
                 className="w-full"
                 icon={<LogIn className="size-5" />}
                 onClick={() => {
-                  window.location.href = '/auth/hemis/redirect'
+                  window.location.href = withBase('/auth/hemis/redirect')
                 }}
               >
                 {t('HEMIS orqali kirish')}

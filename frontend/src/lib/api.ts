@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { tGlobal } from '@/i18n/I18nProvider'
 import { getLocale } from '@/i18n/locale'
+import { BASE } from '@/lib/base'
 
 /**
  * Backend bilan ishlash uchun yagona axios nusxasi.
@@ -11,7 +12,8 @@ import { getLocale } from '@/i18n/locale'
  * CSRF himoyasi esa XSRF-TOKEN cookie'si orqali ishlaydi.
  */
 export const api = axios.create({
-  baseURL: '/',
+  // "/api/..." so'rovlari ilova yo'liga nisbatan (dist.karsu.uz/zoom → /zoom/api/...).
+  baseURL: BASE || '/',
   withCredentials: true,
   withXSRFToken: true,
   headers: {

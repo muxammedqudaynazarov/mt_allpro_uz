@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, GraduationCap } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { withBase } from '@/lib/base'
 import { api, errorMessage } from '@/lib/api'
 import { dayDate, formatDate, formatDuration } from '@/lib/format'
 import type { AssessmentCriteria, AssessmentLevel, Semester, SemesterGroupReport, SemesterOverview, SemesterTotals } from '@/lib/types'
@@ -136,7 +137,7 @@ function GroupDetail({ semester, groupId }: { semester: Semester; groupId: strin
             {semester.name}, {formatDate(dayDate(semester.starts_on))} – {formatDate(dayDate(semester.ends_on))}
           </p>
         </div>
-        <a href={`/api/reports/semester/export?semester_id=${semester.id}&group_id=${report.group.id}`} className={buttonClass({ variant: 'secondary' })}>
+        <a href={withBase(`/api/reports/semester/export?semester_id=${semester.id}&group_id=${report.group.id}`)} className={buttonClass({ variant: 'secondary' })}>
           <Download className="size-4" />
           {t('Excel (.xlsx)')}
         </a>
@@ -248,7 +249,7 @@ export function SemesterReportSection() {
               </option>
             ))}
           </Select>
-          <a href={`/api/reports/semester/export?semester_id=${selected.id}`} className={buttonClass({ variant: 'secondary' })}>
+          <a href={withBase(`/api/reports/semester/export?semester_id=${selected.id}`)} className={buttonClass({ variant: 'secondary' })}>
             <Download className="size-4" />
             {t('Barcha guruhlar (.xlsx)')}
           </a>

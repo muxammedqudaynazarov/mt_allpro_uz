@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
+import { BASE } from '@/lib/base'
 import { GuestOnly, RequireAuth, RequireRole } from '@/auth/guards'
 import { AppShell } from '@/components/layout/AppShell'
 import { FullPageLoader, SectionLoader } from '@/components/ui/Spinner'
@@ -27,7 +28,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE || undefined}>
       <Suspense fallback={<FullPageLoader />}>
         <Routes>
           <Route

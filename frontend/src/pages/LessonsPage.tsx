@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { CalendarPlus, CalendarX2, Download } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { withBase } from '@/lib/base'
 import { api, cleanParams } from '@/lib/api'
 import type { Group, Lesson, Paginated, Semester } from '@/lib/types'
 import { buttonClass } from '@/components/ui/Button'
@@ -66,7 +67,7 @@ export default function LessonsPage() {
     }, {}),
   )
 
-  const exportUrl = `/api/lessons/export?${new URLSearchParams(cleanParams({ ...filters }) as Record<string, string>).toString()}`
+  const exportUrl = withBase(`/api/lessons/export?${new URLSearchParams(cleanParams({ ...filters }) as Record<string, string>).toString()}`)
 
   return (
     <>

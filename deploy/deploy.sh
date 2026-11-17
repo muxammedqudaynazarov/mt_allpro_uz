@@ -14,6 +14,15 @@ git pull --ff-only origin "$BRANCH"
 
 echo "==> Frontend yig'ilmoqda"
 cd "$APP_DIR/frontend"
+# Frontend yo'li backend .env'dagi APP_URL'dan olinadi: https://dist.karsu.uz/zoom -> /zoom/,
+# https://mt.regofis.uz -> /. Shunda ikkalasi bir-biridan farq qilib qolmaydi.
+if [[ -z "${VITE_BASE_PATH:-}" && -f "$APP_DIR/backend/.env" ]]; then
+    app_url="$(grep -E '^APP_URL=' "$APP_DIR/backend/.env" | tail -n 1 | cut -d= -f2- | tr -d "\"' \r")"
+    rest="${app_url#*://}"
+    if [[ "$rest" == */* ]]; then base="/${rest#*/}"; else base="/"; fi
+    export VITE_BASE_PATH="${base%/}/"
+fi
+echo "    VITE_BASE_PATH=${VITE_BASE_PATH:-/}"
 npm ci --no-audit --no-fund
 npm run build
 

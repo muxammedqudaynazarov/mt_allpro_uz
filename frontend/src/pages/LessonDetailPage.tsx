@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Download, RefreshCw, UserRoundX, Users } from 'lucide-react'
 import { toast } from 'sonner'
+import { withBase } from '@/lib/base'
 import { api, errorMessage, isStatus } from '@/lib/api'
 import { formatDuration, formatLongToday, formatTime } from '@/lib/format'
 import type { AttendanceRow, LessonAttendance } from '@/lib/types'
@@ -209,7 +210,7 @@ export default function LessonDetailPage() {
         actions={
           <>
             {finished && (
-              <a href={`/api/lessons/${lesson.id}/attendance/export`} className={buttonClass({ variant: 'secondary' })}>
+              <a href={withBase(`/api/lessons/${lesson.id}/attendance/export`)} className={buttonClass({ variant: 'secondary' })}>
                 <Download className="size-4" />
                 {t('Excel (.xlsx)')}
               </a>
