@@ -175,7 +175,7 @@ function AssessmentPanel() {
                 </p>
               ),
           )}
-          <p className="mt-2 text-sm text-steel-600">{t('Hech bir chegaraga yetmagan talaba — “Past”.')}</p>
+          <p className="mt-2 text-sm text-steel-600">{t('Hech bir chegaraga yetmagan talaba — “Qoniqarsiz”.')}</p>
         </fieldset>
 
         <ScalePreview thresholds={form.thresholds} />

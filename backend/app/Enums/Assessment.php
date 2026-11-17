@@ -7,7 +7,7 @@ use App\Models\Setting;
 /**
  * O'zlashtirish taxmini — faqat Zoom'dagi qatnashuv asosida (baho emas). Chegaralar
  * (foizda) Administrator sozlamalaridan olinadi: talaba eng yuqori qaysi chegaraga
- * yetgan bo'lsa, o'sha daraja. Hech biriga yetmasa — "Past".
+ * yetgan bo'lsa, o'sha daraja. Hech biriga yetmasa — "Qoniqarsiz".
  */
 enum Assessment: string
 {
@@ -34,7 +34,7 @@ enum Assessment: string
     public function label(): string
     {
         return match ($this) {
-            self::Past => __('Past'),
+            self::Past => __('Qoniqarsiz'),
             self::Sust => __('Sust'),
             self::Qoniqarli => __('Qoniqarli'),
             self::Ortacha => __('Oʻrtacha'),

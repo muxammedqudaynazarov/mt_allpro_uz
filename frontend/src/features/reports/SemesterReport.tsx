@@ -18,7 +18,7 @@ import { useT } from '@/i18n/I18nProvider'
 export const LEVELS: AssessmentLevel[] = ['past', 'sust', 'qoniqarli', 'ortacha', 'yaxshi', 'alo']
 
 export const LEVEL_LABELS: Record<AssessmentLevel, string> = {
-  past: 'Past',
+  past: 'Qoniqarsiz',
   sust: 'Sust',
   qoniqarli: 'Qoniqarli',
   ortacha: 'Oʻrtacha',

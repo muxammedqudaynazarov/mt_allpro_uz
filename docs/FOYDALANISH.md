@@ -103,7 +103,7 @@ Qatnashuv dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Tala
 
 **Hisobotlar** sahifasida ikki tur bor.
 
-**Semestr yakuni** — o'quv yili va semestrni tanlang. Guruhlar kesimida: o'tkazilgan va o'tkazilmagan darslar, Zoom'dagi umumiy vaqt, dars boshiga o'rtacha qatnashuv. Guruhni bossangiz — talabalar bo'yicha: nechta darsda qatnashgani, jami vaqti, vaqt foizi, o'rtacha kechikishi va **O'zlashtirish taxmini** (Past, Sust, Qoniqarli, O'rtacha, Yaxshi, A'lo). Hisobot birinchi darsdan keyinoq ko'rinadi va har dars bilan yangilanadi. **Excel (.xlsx)** — bitta guruh yoki barcha guruhlar.
+**Semestr yakuni** — o'quv yili va semestrni tanlang. Guruhlar kesimida: o'tkazilgan va o'tkazilmagan darslar, Zoom'dagi umumiy vaqt, dars boshiga o'rtacha qatnashuv. Guruhni bossangiz — talabalar bo'yicha: nechta darsda qatnashgani, jami vaqti, vaqt foizi, o'rtacha kechikishi va **O'zlashtirish taxmini** (Qoniqarsiz, Sust, Qoniqarli, O'rtacha, Yaxshi, A'lo). Hisobot birinchi darsdan keyinoq ko'rinadi va har dars bilan yangilanadi. **Excel (.xlsx)** — bitta guruh yoki barcha guruhlar.
 
 > O'zlashtirish taxmini faqat Zoom'dagi qatnashuvdan hisoblanadi — bu baho emas. Mezonni Administrator **Umumiy sozlamalar** da belgilaydi.
 
@@ -170,7 +170,7 @@ Semestr sanalari o'zgartirilsa, darslar yangi sanalarga qarab qayta biriktirilad
 
 - **Nima bo'yicha hisoblansin** — *Jami qatnashgan vaqt* (talaba Zoom'da bo'lgan vaqt ÷ barcha darslar davomiyligi) yoki *Qatnashgan darslar soni* (qatnashgan darslar ÷ o'tkazilgan darslar);
 - **Darsda qatnashgan hisoblanish chegarasi** — talaba darsning kamida shuncha foizida bo'lsa, shu darsga qatnashgan hisoblanadi (standart 50%);
-- **Darajalar chegarasi** — Sust 30%, Qoniqarli 50%, O'rtacha 65%, Yaxshi 80%, A'lo 90% dan (standart). Hech bir chegaraga yetmagan — Past.
+- **Darajalar chegarasi** — Sust 30%, Qoniqarli 50%, O'rtacha 65%, Yaxshi 80%, A'lo 90% dan (standart). Hech bir chegaraga yetmagan — Qoniqarsiz.
 
 O'zgartirish barcha semestr hisobotlariga darhol ta'sir qiladi.
 
