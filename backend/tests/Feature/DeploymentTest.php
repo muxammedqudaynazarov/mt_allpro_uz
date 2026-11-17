@@ -55,6 +55,16 @@ class DeploymentTest extends TestCase
 
     public function test_check_command_passes_on_correct_setup(): void
     {
+        // CI'da .env fayli yo'q: testning o'z vaqtinchalik .env fayli beriladi.
+        $dir = sys_get_temp_dir().'/mt-env-'.uniqid();
+        mkdir($dir);
+        file_put_contents($dir.'/.env', "APP_ENV=testing\n");
+        $this->app->useEnvironmentPath($dir);
+        $this->beforeApplicationDestroyed(function () use ($dir) {
+            @unlink($dir.'/.env');
+            @rmdir($dir);
+        });
+
         User::factory()->superAdmin()->create();
         config([
             'app.url' => 'https://mt.regofis.uz',

@@ -17,11 +17,24 @@ class Student extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['group_id', 'name', 'is_ignored'];
+    protected $fillable = ['group_id', 'name', 'is_ignored', 'hemis_id', 'picture_url', 'hemis_synced_id', 'hemis_synced_at', 'hemis_error'];
 
     protected function casts(): array
     {
-        return ['is_ignored' => 'boolean'];
+        return ['is_ignored' => 'boolean', 'hemis_synced_at' => 'datetime'];
+    }
+
+    /** HEMIS holati: synced — ma'lumot olingan, pending — ID kiritilgan/o'zgargan, not_found — HEMIS'da yo'q. */
+    public function hemisStatus(): ?string
+    {
+        if (! $this->hemis_id) {
+            return null;
+        }
+        if ($this->hemis_synced_id !== $this->hemis_id) {
+            return 'pending';
+        }
+
+        return $this->hemis_error ? 'not_found' : 'synced';
     }
 
     public function group(): BelongsTo

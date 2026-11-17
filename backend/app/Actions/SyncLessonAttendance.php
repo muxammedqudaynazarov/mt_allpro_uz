@@ -119,7 +119,7 @@ class SyncLessonAttendance
                 ZoomParticipation::query()->where('lesson_id', $lesson->id)->delete();
                 foreach ($segments as $segment) {
                     $student = $segment['is_host'] ? null : $resolver->resolve($lesson->group_id, $segment['name'], $segment['email'], $segment['zoom_user_id']);
-                    ZoomParticipation::create($segment + ['lesson_id' => $lesson->id, 'student_id' => $student?->id]);
+                    ZoomParticipation::create(['email' => null] + $segment + ['lesson_id' => $lesson->id, 'student_id' => $student?->id]);
                 }
                 $this->finish($lesson, Lesson::ZOOM_ENDED);
                 $this->calculator->rebuild($lesson);

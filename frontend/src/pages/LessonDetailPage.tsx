@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { api, errorMessage, isStatus } from '@/lib/api'
 import { formatDuration, formatLongToday, formatTime } from '@/lib/format'
 import type { AttendanceRow, LessonAttendance } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { Button, buttonClass } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -200,7 +201,7 @@ export default function LessonDetailPage() {
         description={
           <>
             <span className="block">
-              {formatLongToday(lesson.starts_at)}, {lesson.teacher.name}
+              {formatLongToday(lesson.starts_at)}, <StaffName name={lesson.teacher.name} />
             </span>
             {lesson.topic && <span className="block text-steel-500">{lesson.topic}</span>}
           </>
@@ -284,7 +285,7 @@ export default function LessonDetailPage() {
                 {host && (
                   <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 bg-mist/60 px-5 py-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_5.5rem_8.5rem]">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-ink-900">{lesson.teacher.name}</p>
+                      <p className="truncate font-medium text-ink-900"><StaffName name={lesson.teacher.name} /></p>
                       <p className="text-sm text-steel-500">{t('Oʻqituvchi (host)')}</p>
                     </div>
                     <PresenceStrip

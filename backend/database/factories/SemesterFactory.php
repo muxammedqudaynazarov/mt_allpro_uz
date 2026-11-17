@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\AcademicYear;
 use App\Models\Semester;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -13,7 +14,9 @@ class SemesterFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => '2026–2027, 1-semestr',
+            'academic_year_id' => fn () => AcademicYear::query()->firstOrCreate(['name' => '2026–2027'], ['status' => AcademicYear::ACTIVE])->id,
+            'type' => Semester::AUTUMN,
+            'name' => 'Kuzgi semestr',
             'starts_on' => today()->subMonths(2)->toDateString(),
             'ends_on' => today()->addMonths(2)->toDateString(),
         ];

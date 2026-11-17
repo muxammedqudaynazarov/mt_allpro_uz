@@ -86,7 +86,7 @@ final class SemesterReport
             'lessons' => $held->map(fn (Lesson $lesson, int $index) => [
                 'id' => $lesson->id,
                 'starts_at' => $lesson->starts_at->toIso8601String(),
-                'teacher' => $lesson->teacher->name,
+                'teacher' => $lesson->teacher->displayName(),
                 'minutes' => $lesson->actualMinutes(),
                 'present' => $perLessonPresent[$index],
             ])->values(),
@@ -122,7 +122,9 @@ final class SemesterReport
     {
         return [
             'id' => $semester->id,
-            'name' => $semester->name,
+            'name' => $semester->fullLabel(),
+            'type' => $semester->type,
+            'academic_year' => $semester->academicYear ? ['id' => $semester->academicYear->id, 'name' => $semester->academicYear->name, 'status' => $semester->academicYear->status] : null,
             'starts_on' => $semester->starts_on->toDateString(),
             'ends_on' => $semester->ends_on->toDateString(),
         ];

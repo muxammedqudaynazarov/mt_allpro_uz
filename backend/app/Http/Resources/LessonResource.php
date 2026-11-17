@@ -30,7 +30,7 @@ class LessonResource extends JsonResource
                 'name' => $this->group->name,
                 'course' => $this->group->course,
             ],
-            'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->name],
+            'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->displayName()],
             'host' => $this->zoom_host_email,
             // Har haftalik jadvaldan yaratilgan bo'lsa.
             'series_id' => $this->lesson_series_id,

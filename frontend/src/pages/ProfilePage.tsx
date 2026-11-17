@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import { ROLE_LABELS, USER_STATUS_LABELS } from '@/lib/labels'
+import { StaffName } from '@/components/ui/StaffName'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button, buttonClass } from '@/components/ui/Button'
@@ -177,7 +178,6 @@ export default function ProfilePage() {
 
   const rows = [
     { label: t('HEMIS ID'), value: user.hemis_id },
-    { label: t('Boʻlim'), value: user.department },
     { label: t('Oxirgi kirish'), value: user.last_login_at ? formatDateTime(user.last_login_at) : null },
   ]
 
@@ -196,7 +196,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <Avatar name={user.name} src={user.picture_url} className="size-16 text-base" />
             <div className="min-w-0">
-              <p className="text-lg font-semibold">{user.name}</p>
+              <p className="text-lg font-semibold"><StaffName name={user.name} /></p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {user.roles.map((role) => (
                   <Badge key={role} tone="azure">

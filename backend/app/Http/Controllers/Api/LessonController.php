@@ -12,6 +12,7 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\LessonSeries;
 use App\Models\LessonSlot;
+use App\Models\Semester;
 use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
 use App\Support\HostAvailability;
@@ -102,7 +103,8 @@ class LessonController extends Controller
 
         $data = $request->validate([
             'group_id' => ['required', 'integer', Rule::exists('groups', 'id')->whereNull('deleted_at')],
-            'slot_id' => ['nullable', 'integer', Rule::exists('lesson_slots', 'id')->where('is_active', true)],
+            // Faqat jadvaldagi juftlikka: oldindan rejalashtirilmagan ("hozir") dars yaratilmaydi.
+            'slot_id' => ['required', 'integer', Rule::exists('lesson_slots', 'id')->where('is_active', true)],
             'host_id' => ['nullable', 'integer', Rule::exists('zoom_hosts', 'id')],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'topic' => ['nullable', 'string', 'max:200'],
@@ -111,6 +113,7 @@ class LessonController extends Controller
         ], [
             'group_id.required' => __('Guruhni tanlang.'),
             'group_id.exists' => __('Tanlangan guruh topilmadi.'),
+            'slot_id.required' => __('Dars vaqtini (juftlikni) tanlang.'),
             'slot_id.exists' => __('Tanlangan dars vaqti topilmadi.'),
             'host_id.exists' => __('Tanlangan Zoom host topilmadi.'),
             'topic.max' => __('Mavzu 200 belgidan oshmasligi kerak.'),
@@ -122,15 +125,12 @@ class LessonController extends Controller
         }
 
         $group = Group::findOrFail($data['group_id']);
-        $slot = isset($data['slot_id']) ? LessonSlot::findOrFail($data['slot_id']) : null;
+        $slot = LessonSlot::findOrFail($data['slot_id']);
         $host = isset($data['host_id']) ? ZoomHost::with('zoomAccount')->findOrFail($data['host_id']) : null;
 
         $series = null;
         if ($request->boolean('repeat_weekly')) {
             Gate::authorize('create', LessonSeries::class);
-            if (! $slot) {
-                throw ValidationException::withMessages(['slot_id' => __('Har haftalik dars uchun juftlikni tanlang.')]);
-            }
             $day = $date ?? today();
             $series = $createSeries->handle($request->user(), $group, $slot, $day->isoWeekday(), $host, $data['topic'] ?? null, $day, null, $request->user());
         }
@@ -192,7 +192,7 @@ class LessonController extends Controller
                         ($lesson->ended_at && $lesson->ended_at->lessThan($lesson->ends_at) ? $lesson->ended_at : $lesson->ends_at)->format('H:i'),
                         $lesson->group->name,
                         $lesson->group->course,
-                        $lesson->teacher->name,
+                        $lesson->teacher->displayName(),
                         $lesson->zoom_host_email,
                         $lesson->topic,
                         match ($lesson->effectiveStatus()) {
@@ -221,6 +221,9 @@ class LessonController extends Controller
             'mine' => ['nullable', 'boolean'],
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d'],
+            // Arxiv: o'quv yili yoki semestr bo'yicha.
+            'semester_id' => ['nullable', 'integer'],
+            'academic_year_id' => ['nullable', 'integer'],
         ]);
 
         $user = $request->user();
@@ -248,6 +251,11 @@ class LessonController extends Controller
         }
         if (! empty($data['to'])) {
             $query->where('starts_at', '<=', Carbon::parse($data['to'])->endOfDay());
+        }
+        if (! empty($data['semester_id'])) {
+            $query->where('semester_id', $data['semester_id']);
+        } elseif (! empty($data['academic_year_id'])) {
+            $query->whereIn('semester_id', Semester::query()->where('academic_year_id', $data['academic_year_id'])->select('id'));
         }
 
         return $query;

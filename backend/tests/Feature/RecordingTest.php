@@ -65,7 +65,7 @@ class RecordingTest extends TestCase
         $this->fakeZoom();
         Setting::put('recording', ['enabled' => true, 'delete_from_zoom' => true, 'delete_action' => 'trash', 'include_audio' => false]);
 
-        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => Group::factory()->create()->id])->assertCreated();
+        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => Group::factory()->create()->id, 'slot_id' => $this->slotNow()->id])->assertCreated();
 
         $this->assertTrue(Lesson::sole()->record_cloud);
         Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/meetings') && $request['settings']['auto_recording'] === 'cloud');
@@ -130,6 +130,8 @@ class RecordingTest extends TestCase
         $this->actingAsUser($teacher)->get("/api/recordings/{$videoFile->id}/file", ['Range' => 'bytes=0-99'])
             ->assertStatus(206)->assertHeader('Content-Type', 'video/mp4');
         $this->actingAsUser(User::factory()->create())->get("/api/recordings/{$videoFile->id}/file")->assertForbidden();
+        $this->actingAsUser($teacher)->getJson('/api/recordings')->assertOk()->assertJsonCount(2, 'data');
+        $this->actingAsUser(User::factory()->create())->getJson('/api/recordings')->assertOk()->assertJsonCount(0, 'data');
     }
 
     public function test_admin_controls_recording_settings_and_sees_storage(): void
@@ -144,7 +146,8 @@ class RecordingTest extends TestCase
         $this->actingAsUser($admin)->putJson('/api/settings', ['recording' => ['enabled' => true, 'delete_from_zoom' => true, 'delete_action' => 'shred', 'include_audio' => false]])
             ->assertStatus(422);
         $this->actingAsUser(User::factory()->education()->create())->getJson('/api/recordings')->assertOk()->assertJsonPath('meta.storage.files', 0);
-        $this->actingAsUser(User::factory()->create())->getJson('/api/recordings')->assertForbidden();
+        // O'qituvchi faqat o'z darslarining yozuvlarini ko'radi, xotira holatini emas.
+        $this->actingAsUser(User::factory()->create())->getJson('/api/recordings')->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('meta.storage', null);
     }
 
     public function test_recordings_are_polled_when_webhook_is_missing(): void

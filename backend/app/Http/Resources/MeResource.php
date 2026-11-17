@@ -13,15 +13,12 @@ class MeResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => $this->displayName(),
             'first_name' => $this->firstName(),
             'last_name' => $this->last_name,
             'middle_name' => $this->middle_name,
             'short_name' => $this->shortName(),
-            'email' => $this->email,
-            'phone' => $this->phone,
             'picture_url' => $this->picture_url,
-            'department' => $this->department,
             'hemis_id' => $this->hemis_id,
             'status' => $this->status->value,
             // Faqat foydalanuvchi o'zi tanlagan til; tanlamagan bo'lsa null — interfeys asosiy tilda ochiladi.

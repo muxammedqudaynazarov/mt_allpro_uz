@@ -65,19 +65,15 @@ class LessonTest extends TestCase
             && str_contains($job->buttons[0][0]['url'], '/l/'.$lesson->id.'/start'));
     }
 
-    public function test_now_lesson_starts_immediately_with_default_duration(): void
+    public function test_unplanned_lesson_without_slot_is_rejected(): void
     {
         $this->fakeZoom();
-        $teacher = User::factory()->create();
         $group = Group::factory()->create();
 
-        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id])
-            ->assertCreated()
-            ->assertJsonPath('data.status', 'live')
-            ->assertJsonPath('data.topic', $group->name);
-
-        $lesson = Lesson::firstOrFail();
-        $this->assertSame(80, (int) $lesson->starts_at->diffInMinutes($lesson->ends_at));
+        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => $group->id])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('slot_id');
+        $this->assertSame(0, Lesson::count());
     }
 
     public function test_started_slot_is_shortened_and_finished_slot_rejected(): void
@@ -105,7 +101,7 @@ class LessonTest extends TestCase
         Lesson::factory()->for($group)->create();
 
         $this->actingAsUser(User::factory()->create())
-            ->postJson('/api/lessons', ['group_id' => $group->id])
+            ->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id])
             ->assertStatus(422)
             ->assertJsonValidationErrors('group_id');
 
@@ -122,13 +118,13 @@ class LessonTest extends TestCase
         $teacher = User::factory()->create();
 
         // Yagona host band — bo'sh host yo'q.
-        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $second->id])
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $second->id, 'slot_id' => $this->slotNow()->id])
             ->assertStatus(422)
             ->assertJsonValidationErrors('host_id');
 
         // Boshqa host qo'shildi — dars avtomatik o'sha hostda yaratiladi.
         $free = ZoomHost::factory()->create(['zoom_account_id' => $first->zoom_account_id, 'email' => 'zoom_2@karsu.uz']);
-        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $second->id])->assertCreated();
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $second->id, 'slot_id' => $this->slotNow()->id])->assertCreated();
         $this->assertSame('zoom_2@karsu.uz', Lesson::latest('id')->value('zoom_host_email'));
         Http::assertSent(fn (Request $request) => str_contains($request->url(), '/users/zoom_2%40karsu.uz/meetings'));
         $this->assertTrue($free->is_active);
@@ -148,11 +144,11 @@ class LessonTest extends TestCase
             ->assertJsonFragment(['email' => 'busy@karsu.uz', 'busy' => true])
             ->assertJsonFragment(['email' => 'chosen@karsu.uz', 'busy' => false]);
 
-        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'host_id' => $busy->id])
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'host_id' => $busy->id, 'slot_id' => $this->slotNow()->id])
             ->assertStatus(422)
             ->assertJsonPath('errors.host_id.0', fn ($msg) => str_contains($msg, 'busy@karsu.uz'));
 
-        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'host_id' => $chosen->id])->assertCreated();
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'host_id' => $chosen->id, 'slot_id' => $this->slotNow()->id])->assertCreated();
         $this->assertSame('chosen@karsu.uz', Lesson::latest('id')->value('zoom_host_email'));
     }
 
@@ -183,7 +179,7 @@ class LessonTest extends TestCase
         Lesson::factory()->for($group)->create(['status' => LessonStatus::Finished, 'ended_at' => now()]);
 
         $this->actingAsUser(User::factory()->create())
-            ->postJson('/api/lessons', ['group_id' => $group->id])
+            ->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id])
             ->assertCreated();
     }
 
@@ -193,7 +189,7 @@ class LessonTest extends TestCase
         $group = Group::factory()->create(['is_active' => false]);
 
         $this->actingAsUser(User::factory()->create())
-            ->postJson('/api/lessons', ['group_id' => $group->id])
+            ->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id])
             ->assertStatus(422);
     }
 
@@ -203,7 +199,7 @@ class LessonTest extends TestCase
         $group = Group::factory()->create();
 
         $this->actingAsUser(User::factory()->create())
-            ->postJson('/api/lessons', ['group_id' => $group->id])
+            ->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id])
             ->assertStatus(422)
             ->assertJsonPath('message', fn ($msg) => str_contains($msg, $group->zoom_user_email));
 

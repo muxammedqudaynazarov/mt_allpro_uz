@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\MergeStudents;
+use App\Actions\SyncStudentsFromHemis;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\Student;
 use App\Models\ZoomParticipation;
+use App\Services\Hemis\HemisStudentApi;
 use App\Support\Audit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -63,10 +65,18 @@ class StudentController extends Controller
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'lessons_held' => $lessons->count(),
+            'hemis' => [
+                'enabled' => app(HemisStudentApi::class)->enabled(),
+                'pending' => $students->filter(fn (Student $student) => $student->hemisStatus() === 'pending')->count(),
+            ],
             'students' => $students
                 ->map(fn (Student $student) => [
                     'id' => $student->id,
                     'name' => $student->name,
+                    'hemis_id' => $student->hemis_id,
+                    'hemis_status' => $student->hemisStatus(),
+                    'hemis_error' => $student->hemis_error,
+                    'picture_url' => $student->picture_url,
                     'ignored' => $student->is_ignored,
                     'names' => $names->get($student->id, collect())->pluck('name')->unique()->values()->all(),
                     'lessons_attended' => (int) $student->lessons_attended,
@@ -86,6 +96,10 @@ class StudentController extends Controller
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'min:1', 'max:120'],
             'ignored' => ['sometimes', 'boolean'],
+            'hemis_id' => ['sometimes', 'nullable', 'string', 'max:32', 'regex:/^[0-9A-Za-z-]+$/', Rule::unique('students', 'hemis_id')->where('group_id', $student->group_id)->ignore($student->id)],
+        ], [
+            'hemis_id.regex' => __('HEMIS ID faqat raqam va harflardan iborat boʻladi.'),
+            'hemis_id.unique' => __('Bu HEMIS ID guruhdagi boshqa talabaga kiritilgan.'),
         ]);
 
         $changes = [];
@@ -97,12 +111,39 @@ class StudentController extends Controller
             $student->is_ignored = $data['ignored'];
             $changes[] = 'ignored';
         }
+        if (array_key_exists('hemis_id', $data)) {
+            $hemisId = filled($data['hemis_id']) ? trim($data['hemis_id']) : null;
+            if ($hemisId !== $student->hemis_id) {
+                $student->hemis_id = $hemisId;
+                // Yangi ID uchun ma'lumot HEMIS SYNC'da olinadi; ID o'chirilsa — rasm ham.
+                $student->hemis_error = null;
+                if (! $hemisId) {
+                    $student->picture_url = null;
+                    $student->hemis_synced_id = null;
+                }
+                $changes[] = 'hemis_id';
+            }
+        }
         if ($changes) {
             $student->save();
             Audit::log('student.updated', 'Talaba maʼlumotlari oʻzgartirildi: :name (:fields)', $student, replace: ['name' => $student->name, 'fields' => implode(', ', $changes)]);
         }
 
-        return response()->json(['data' => ['id' => $student->id, 'name' => $student->name, 'ignored' => $student->is_ignored]]);
+        return response()->json(['data' => [
+            'id' => $student->id,
+            'name' => $student->name,
+            'ignored' => $student->is_ignored,
+            'hemis_id' => $student->hemis_id,
+            'hemis_status' => $student->hemisStatus(),
+        ]]);
+    }
+
+    /** HEMIS SYNC: o'zgargan HEMIS ID'lar uchun haqiqiy F.I.Sh. va rasm. */
+    public function hemisSync(Group $group, SyncStudentsFromHemis $sync): JsonResponse
+    {
+        Gate::authorize('manageStudents', $group);
+
+        return response()->json(['data' => $sync->handle($group)]);
     }
 
     public function merge(Request $request, Group $group, MergeStudents $merge): JsonResponse

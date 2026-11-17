@@ -16,7 +16,7 @@ export function startDelay(t: TFunction, minutes: number | null): { text: string
   if (minutes < -1) return { text: t('{count} daqiqa erta', { count: -minutes }), tone: 'ok' }
   if (minutes <= 1) return { text: t('Oʻz vaqtida'), tone: 'ok' }
   return {
-    text: t('{count} daqiqa kechikdi', { count: minutes }),
+    text: t('{count} daqiqa kech boshlandi', { count: minutes }),
     tone: minutes > LATE_START_MINUTES ? 'late' : 'mild',
   }
 }
@@ -25,6 +25,15 @@ export const delayToneClass: Record<DelayTone, string> = {
   ok: 'text-leaf-600',
   mild: 'text-steel-700',
   late: 'text-amber-600',
+}
+
+/** Darslar ro'yxatidagi ko'rsatkich "chip"lari — har biri alohida, aralashib ketmaydi. */
+const chip = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 whitespace-nowrap'
+
+const delayChipClass: Record<DelayTone, string> = {
+  ok: 'bg-leaf-50 text-leaf-600',
+  mild: 'bg-steel-100 text-steel-700',
+  late: 'bg-amber-50 text-amber-600',
 }
 
 /**
@@ -56,21 +65,23 @@ export function ZoomTrackingLine({ lesson, className }: { lesson: Lesson; classN
 
   if (tracking.state === 'ended' && tracking.started_at) {
     return (
-      <p className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-steel-600', className)}>
-        <span className="inline-flex items-center gap-1.5 tabular-nums">
+      <ul className={cn('flex flex-wrap items-center gap-1.5 text-[0.8125rem]', className)} aria-label={t('Zoom’dagi dars')}>
+        <li className={cn(chip, 'bg-steel-100 text-steel-700')}>
           <Video className="size-3.5 text-steel-500" aria-hidden />
-          {formatTime(tracking.started_at)}
-          {tracking.ended_at && `–${formatTime(tracking.ended_at)}`}
-          {tracking.minutes !== null && <span className="text-steel-500">({formatDuration(tracking.minutes)})</span>}
-        </span>
-        {delay && <span className={delayToneClass[delay.tone]}>{delay.text}</span>}
-        {tracking.participants !== null && (
-          <span className="inline-flex items-center gap-1.5">
-            <Users className="size-3.5 text-steel-500" aria-hidden />
-            {t('{count} talaba', { count: tracking.participants })}
+          <span className="tabular-nums">
+            {formatTime(tracking.started_at)}
+            {tracking.ended_at && `–${formatTime(tracking.ended_at)}`}
           </span>
+          {tracking.minutes !== null && <span className="text-steel-500">{formatDuration(tracking.minutes)}</span>}
+        </li>
+        {delay && <li className={cn(chip, delayChipClass[delay.tone])}>{delay.text}</li>}
+        {tracking.participants !== null && (
+          <li className={cn(chip, 'bg-azure-50 text-azure-700')}>
+            <Users className="size-3.5" aria-hidden />
+            {t('{count} talaba', { count: tracking.participants })}
+          </li>
         )}
-      </p>
+      </ul>
     )
   }
 

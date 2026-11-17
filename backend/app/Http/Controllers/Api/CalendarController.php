@@ -75,7 +75,7 @@ class CalendarController extends Controller
                     'starts_at' => $starts->toIso8601String(),
                     'ends_at' => $ends->toIso8601String(),
                     'group' => ['id' => $item->group->id, 'name' => $item->group->name, 'course' => $item->group->course],
-                    'teacher' => ['id' => $item->teacher->id, 'name' => $item->teacher->name],
+                    'teacher' => ['id' => $item->teacher->id, 'name' => $item->teacher->displayName()],
                     'slot' => ['id' => $item->slot->id, 'name' => $item->slot->label()],
                     'topic' => $item->topic,
                     'skipped' => $skipped->has($date->toDateString()),

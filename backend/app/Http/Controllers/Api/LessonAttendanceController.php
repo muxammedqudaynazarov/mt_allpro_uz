@@ -13,9 +13,9 @@ use App\Support\AttendanceCalculator;
 use App\Support\Xlsx;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -60,7 +60,7 @@ class LessonAttendanceController extends Controller
                 ->title(__('Dars hisoboti').': '.$lesson->group->name)
                 ->meta(__('Sana'), $lesson->starts_at->format('d.m.Y'))
                 ->meta(__('Juftlik'), $lesson->slot?->label() ?? '—')
-                ->meta(__('Oʻqituvchi'), $lesson->teacher->name)
+                ->meta(__('Oʻqituvchi'), $lesson->teacher->displayName())
                 ->meta(__('Mavzu'), $lesson->topic)
                 ->meta(__('Jadval boʻyicha'), $lesson->starts_at->format('H:i').'–'.$lesson->ends_at->format('H:i'))
                 ->meta(__('Zoom’da boshlandi'), $lesson->zoom_started_at?->format('H:i') ?? ($lesson->zoom_state === Lesson::ZOOM_MISSED ? __('Oʻtkazilmagan') : '—'))

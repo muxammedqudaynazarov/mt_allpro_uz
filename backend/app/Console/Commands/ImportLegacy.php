@@ -117,7 +117,6 @@ class ImportLegacy extends Command
             $user = User::create([
                 'name' => User::normalizeName((string) $row->name) ?? 'Nomaʼlum',
                 'hemis_id' => $hemisId,
-                'phone' => $row->phone ?? null,
                 'telegram_chat_id' => $chatId,
                 'roles' => $roles,
                 'status' => ($row->status ?? 'active') === 'active' ? UserStatus::Active : UserStatus::Blocked,

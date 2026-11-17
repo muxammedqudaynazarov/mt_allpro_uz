@@ -67,7 +67,7 @@ class CheckSetup extends Command
         $https = parse_url($appUrl, PHP_URL_SCHEME) === 'https';
         $frontendHost = parse_url((string) config('app.frontend_url'), PHP_URL_HOST);
 
-        $env = base_path('.env');
+        $env = $this->laravel->environmentFilePath();
         $this->check(is_readable($env), '.env faylini oʻqish mumkin', file_exists($env)
             ? '.env faylini oʻqib boʻlmaydi. Tuzatish: sudo chgrp www-data .env && sudo chmod 640 .env'
             : '.env fayli yoʻq. Namuna: cp .env.example .env');

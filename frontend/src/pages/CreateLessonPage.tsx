@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, Check, Copy, Play, Send, Sparkles, Zap } from 'lucide-react'
+import { AlertTriangle, Check, Copy, Play, Send, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
@@ -19,7 +19,8 @@ import { cn } from '@/components/ui/cn'
 import { copyText, telegramShareUrl, useLessonActions } from '@/features/lessons/useLessonActions'
 import { useT } from '@/i18n/I18nProvider'
 
-type SlotChoice = 'now' | number
+/** Faqat jadvaldagi juftlik: oldindan rejalashtirilmagan ("hozir") dars yaratilmaydi. */
+type SlotChoice = number | null
 type HostChoice = 'auto' | number
 
 /** Kalendar huquqi bo'lsa — bugundan boshlab 14 kun ichida rejalashtirish mumkin. */
@@ -111,7 +112,7 @@ export default function CreateLessonPage() {
   const days = useMemo(() => Array.from({ length: canPlan ? PLAN_DAYS : 1 }, (_, index) => isoDate(addDays(new Date(), index))), [canPlan])
   const initialDate = params.get('date')
   const [date, setDate] = useState<string>(initialDate && days.includes(initialDate) ? initialDate : today)
-  const [slot, setSlot] = useState<SlotChoice>(params.get('slot') ? Number(params.get('slot')) : 'now')
+  const [slot, setSlot] = useState<SlotChoice>(params.get('slot') ? Number(params.get('slot')) : null)
   const [course, setCourse] = useState<string>('')
   const [groupId, setGroupId] = useState<number | null>(null)
   const [host, setHost] = useState<HostChoice>('auto')
@@ -124,15 +125,18 @@ export default function CreateLessonPage() {
   const options = useQuery({
     queryKey: ['lesson-options', date, slot, groupId],
     queryFn: async () =>
-      (await api.get<{ data: LessonOptions }>('/api/lessons/options', { params: { slot_id: slot, date, group_id: groupId ?? undefined } })).data.data,
+      (await api.get<{ data: LessonOptions }>('/api/lessons/options', { params: { slot_id: slot ?? undefined, date, group_id: groupId ?? undefined } })).data.data,
     placeholderData: (previous) => previous,
     refetchInterval: 30_000,
   })
 
   useEffect(() => {
-    // Boshqa kunga "hozir" bo'lmaydi — birinchi juftlik tanlanadi.
-    if (!isToday && slot === 'now' && options.data?.slots.length) setSlot(options.data.slots[0].id)
-  }, [isToday, slot, options.data?.slots])
+    // Tanlanmagan yoki o'tib ketgan juftlik o'rniga birinchi mavjud juftlik tanlanadi.
+    const slots = options.data?.slots
+    if (!slots?.length) return
+    const current = slots.find((item) => item.id === slot)
+    if (!current || !current.available) setSlot(slots.find((item) => item.available)?.id ?? null)
+  }, [slot, options.data?.slots])
 
   const courses = useMemo(() => {
     const set = new Set(options.data?.groups.map((group) => group.course))
@@ -145,7 +149,7 @@ export default function CreateLessonPage() {
 
   const groups = options.data?.groups.filter((group) => String(group.course) === course) ?? []
   const selectedGroup = options.data?.groups.find((group) => group.id === groupId)
-  const selectedSlot = slot === 'now' ? null : options.data?.slots.find((item) => item.id === slot)
+  const selectedSlot = options.data?.slots.find((item) => item.id === slot)
 
   useEffect(() => {
     // Tanlangan guruh band bo'lib qolsa, tanlovni bekor qilamiz.
@@ -166,11 +170,11 @@ export default function CreateLessonPage() {
       (
         await api.post<{ data: Lesson }>('/api/lessons', {
           group_id: groupId,
-          slot_id: slot === 'now' ? null : slot,
+          slot_id: slot,
           host_id: host === 'auto' ? null : host,
           date: isToday ? null : date,
           topic: topic.trim() || null,
-          repeat_weekly: canPlan && slot !== 'now' && repeat,
+          repeat_weekly: canPlan && repeat,
         })
       ).data.data,
     onSuccess: (lesson) => {
@@ -218,7 +222,7 @@ export default function CreateLessonPage() {
             <Step
               index={1}
               title={t('Qachon?')}
-              hint={canPlan ? t('Kunni va juftlikni tanlang. Bugun uchun darhol boshlash ham mumkin.') : t('Bugungi juftliklardan birini yoki darhol boshlashni tanlang.')}
+              hint={canPlan ? t('Kunni va juftlikni tanlang. Dars faqat jadvaldagi juftlikka yaratiladi.') : t('Bugungi juftliklardan birini tanlang.')}
             >
               {canPlan && (
                 <div className="-mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-1" role="radiogroup" aria-label={t('Kun')}>
@@ -252,10 +256,6 @@ export default function CreateLessonPage() {
               )}
               {errors.date && <p className="mb-2 text-sm text-onair-600">{errors.date}</p>}
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Dars vaqti')}>
-                <SlotPill active={slot === 'now'} disabled={!isToday} onClick={() => setSlot('now')}>
-                  <Zap className="size-4" />
-                  {t('Hozir, {time}', { time: formatDuration(options.data.default_duration) })}
-                </SlotPill>
                 {options.data.slots.map((item) => (
                   <SlotPill key={item.id} active={slot === item.id} disabled={!item.available} onClick={() => setSlot(item.id)}>
                     {item.name}
@@ -335,17 +335,15 @@ export default function CreateLessonPage() {
                 error={errors.topic}
               />
               {canPlan && (
-                <label className={cn('mt-5 flex items-start gap-3', slot === 'now' && 'opacity-60')}>
-                  <Switch checked={repeat && slot !== 'now'} disabled={slot === 'now'} onChange={setRepeat} label={t('Har hafta takrorlash')} />
+                <label className="mt-5 flex items-start gap-3">
+                  <Switch checked={repeat} onChange={setRepeat} label={t('Har hafta takrorlash')} />
                   <span className="text-sm">
                     <span className="block font-medium text-ink-900">
                       {t('Har hafta takrorlash')}
                       {selectedSlot && `: ${formatWeekday(new Date(`${date}T12:00:00+05:00`))}, ${selectedSlot.starts_at}`}
                     </span>
                     <span className="block text-steel-600">
-                      {slot === 'now'
-                        ? t('Takrorlash uchun juftlikni tanlang.')
-                        : t('Keyingi haftalarda Zoom uchrashuvi dars kuni, 1 soat oldin avtomatik yaratiladi va Telegram’ga yuboriladi.')}
+                      {t('Keyingi haftalarda Zoom uchrashuvi dars kuni, 1 soat oldin avtomatik yaratiladi va Telegram’ga yuboriladi.')}
                     </span>
                   </span>
                 </label>
@@ -369,7 +367,7 @@ export default function CreateLessonPage() {
                         {formatWeekday(new Date(`${date}T12:00:00+05:00`))}, {formatDayMonth(new Date(`${date}T12:00:00+05:00`))}
                       </span>
                     )}
-                    {selectedSlot ? `${selectedSlot.name}, ${selectedSlot.starts_at}–${selectedSlot.ends_at}` : t('Hozirdan boshlab')}
+                    {selectedSlot ? `${selectedSlot.name}, ${selectedSlot.starts_at}–${selectedSlot.ends_at}` : t('Tanlanmagan')}
                   </dd>
                 </div>
                 <div>
@@ -379,7 +377,7 @@ export default function CreateLessonPage() {
                     {host === 'auto' && shownHost && <span className="block text-xs font-normal text-steel-500">{t('avtomatik tanlanadi')}</span>}
                   </dd>
                 </div>
-                {repeat && slot !== 'now' && canPlan && (
+                {repeat && canPlan && (
                   <div>
                     <dt className="text-steel-600">{t('Takrorlanadi')}</dt>
                     <dd className="mt-0.5 font-medium text-ink-900">{t('Har hafta, bekor qilinguncha')}</dd>
@@ -390,7 +388,7 @@ export default function CreateLessonPage() {
                   <dd className="mt-0.5 font-medium text-ink-900">{formatDuration(duration)}</dd>
                 </div>
               </dl>
-              <Button type="submit" size="lg" className="mt-6 w-full" disabled={!groupId || !shownHost} loading={create.isPending}>
+              <Button type="submit" size="lg" className="mt-6 w-full" disabled={!groupId || !shownHost || !slot} loading={create.isPending}>
                 {t('Darsni yaratish')}
               </Button>
               {!groupId && <p className="mt-3 text-center text-sm text-steel-500">{t('Avval guruhni tanlang')}</p>}

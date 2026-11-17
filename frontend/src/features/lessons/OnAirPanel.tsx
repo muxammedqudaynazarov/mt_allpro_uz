@@ -1,3 +1,4 @@
+import { StaffName } from '@/components/ui/StaffName'
 import { OnAirDot } from '@/components/ui/Badge'
 import { useNow } from '@/hooks/useNow'
 import { useAuth } from '@/auth/AuthProvider'
@@ -37,7 +38,7 @@ export function OnAirPanel({ lessons }: { lessons: Lesson[] }) {
                 <div className="min-w-0">
                   <p className="truncate text-xl font-semibold">{lesson.group.name}</p>
                   <p className="mt-1 truncate text-sm text-ink-200">{lesson.topic || t('Mavzu koʻrsatilmagan')}</p>
-                  {!own && <p className="truncate text-sm text-ink-300">{lesson.teacher.name}</p>}
+                  {!own && <p className="truncate text-sm text-ink-300"><StaffName name={lesson.teacher.name} /></p>}
                 </div>
                 <div className="[&_button]:ring-white/20 [&_a]:ring-white/20">
                   <LessonActions lesson={lesson} compact />

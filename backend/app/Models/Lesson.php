@@ -35,7 +35,7 @@ class Lesson extends Model
     public const ZOOM_MISSED = 'missed';
 
     protected $fillable = [
-        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'zoom_account_id', 'record_cloud',
+        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'semester_id', 'zoom_account_id', 'record_cloud',
         'zoom_meeting_id', 'zoom_host_email', 'topic', 'join_url', 'start_url', 'passcode',
         'status', 'starts_at', 'ends_at', 'ended_at', 'ended_by_id',
         'zoom_state', 'zoom_started_at', 'zoom_ended_at', 'zoom_minutes', 'zoom_checked_at',
@@ -87,6 +87,21 @@ class Lesson extends Model
     public function endedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ended_by_id')->withTrashed();
+    }
+
+    protected static function booted(): void
+    {
+        // Dars sanasiga qarab semestrga biriktiriladi (o'quv yili arxivi).
+        static::creating(function (Lesson $lesson) {
+            if (! $lesson->semester_id && $lesson->starts_at) {
+                $lesson->semester_id = Semester::forDate($lesson->starts_at)?->id;
+            }
+        });
+    }
+
+    public function semester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class);
     }
 
     public function series(): BelongsTo

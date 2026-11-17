@@ -30,6 +30,11 @@ class MergeStudents
             return $target;
         }
 
+        // Asosiy yozuvda HEMIS ID bo'lmasa — birlashtirilayotganlardan olinadi.
+        if (! $target->hemis_id && ($donor = $sources->first(fn (Student $s) => $s->hemis_id && $s->id !== $target->id))) {
+            $target->forceFill($donor->only(['hemis_id', 'picture_url', 'hemis_synced_id', 'hemis_synced_at', 'hemis_error']));
+        }
+
         DB::transaction(function () use ($target, $ids) {
             $lessonIds = ZoomParticipation::query()->whereIn('student_id', $ids)->distinct()->pluck('lesson_id');
 
@@ -37,6 +42,9 @@ class MergeStudents
             ZoomParticipation::query()->whereIn('student_id', $ids)->update(['student_id' => $target->id]);
             LessonAttendance::query()->whereIn('student_id', $ids)->delete();
             Student::query()->whereIn('id', $ids)->delete();
+            if ($target->isDirty()) {
+                $target->save();
+            }
 
             Lesson::query()->whereIn('id', $lessonIds)->get()->each(fn (Lesson $lesson) => $this->calculator->rebuild($lesson));
         });

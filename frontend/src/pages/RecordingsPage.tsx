@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage } from '@/lib/api'
 import { formatBytes, formatDateTime } from '@/lib/format'
 import type { Paginated, Recording, RecordingStorage } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -29,7 +30,7 @@ export default function RecordingsPage() {
   const query = useQuery({
     queryKey: ['recordings', filter, page],
     queryFn: async () =>
-      (await api.get<Paginated<Recording> & { meta: { storage: RecordingStorage } }>('/api/recordings', { params: { status: filter === 'all' ? undefined : filter, page } })).data,
+      (await api.get<Paginated<Recording> & { meta: { storage: RecordingStorage | null } }>('/api/recordings', { params: { status: filter === 'all' ? undefined : filter, page } })).data,
     placeholderData: (previous) => previous,
   })
   const retry = useMutation({
@@ -117,7 +118,7 @@ export default function RecordingsPage() {
                         <span className="text-steel-500">{t('Dars topilmadi')}</span>
                       )}
                       <p className="text-steel-500">
-                        {item.lesson?.teacher}
+                        {item.lesson?.teacher && <StaffName name={item.lesson.teacher} />}
                         {item.lesson && `, ${formatDateTime(item.lesson.starts_at)}`}
                       </p>
                     </td>

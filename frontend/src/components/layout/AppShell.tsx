@@ -5,6 +5,7 @@ import {
   BarChart3,
   CalendarClock,
   CalendarDays,
+  CalendarRange,
   Clock3,
   LayoutDashboard,
   LogOut,
@@ -25,6 +26,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api } from '@/lib/api'
 import { ROLE_LABELS, topRole } from '@/lib/labels'
 import type { Role } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { Avatar } from '@/components/ui/Avatar'
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch'
 import { Logo } from '@/components/ui/Logo'
@@ -64,6 +66,7 @@ function useNav(): NavSection[] {
         { to: '/lessons/new', label: t('Dars yaratish'), icon: <PlusCircle />, permission: 'lessons.create' },
         { to: '/lessons', label: t('Darslar'), icon: <CalendarClock />, end: true },
         { to: '/calendar', label: t('Kalendar'), icon: <CalendarDays /> },
+        { to: '/recordings', label: t('Video yozuvlar'), icon: <Clapperboard /> },
         { to: '/monitor', label: t('Monitoring'), icon: <RadioTower />, permission: 'lessons.monitor' },
       ],
     },
@@ -73,7 +76,7 @@ function useNav(): NavSection[] {
         { to: '/users', label: t('Foydalanuvchilar'), icon: <Users />, roles: ['education', 'super_admin'], badge: isSuperAdmin ? pending.data : null },
         { to: '/groups', label: t('Guruhlar'), icon: <UsersRound />, roles: ['education', 'super_admin'] },
         { to: '/reports', label: t('Hisobotlar'), icon: <BarChart3 />, roles: ['education', 'super_admin'] },
-        { to: '/recordings', label: t('Video yozuvlar'), icon: <Clapperboard />, roles: ['education', 'super_admin'] },
+        { to: '/academic-years', label: t('Oʻquv yillari'), icon: <CalendarRange />, roles: ['education', 'super_admin'] },
       ],
     },
     {
@@ -164,7 +167,7 @@ function UserCard({ onNavigate }: { onNavigate?: () => void }) {
       >
         <Avatar name={user.name} src={user.picture_url} className="ring-white/20" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-white">{user.short_name}</span>
+          <StaffName name={user.name} className="block truncate text-sm font-medium text-white" />
           <span className="block truncate text-xs text-ink-300">{t(ROLE_LABELS[topRole(user.roles)])}</span>
         </span>
         <UserRound className="size-4 text-ink-300" aria-hidden />

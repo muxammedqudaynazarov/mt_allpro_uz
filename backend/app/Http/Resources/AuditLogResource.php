@@ -22,7 +22,7 @@ class AuditLogResource extends JsonResource
             'id' => $this->id,
             'action' => $this->action,
             'description' => $this->translatedDescription(),
-            'user' => $this->user ? ['id' => $this->user->id, 'name' => $this->user->name] : null,
+            'user' => $this->user ? ['id' => $this->user->id, 'name' => $this->user->displayName()] : null,
             'subject_type' => $this->subject_type,
             'subject_id' => $this->subject_id,
             'properties' => collect($this->properties ?? [])->except('_t')->all() ?: null,

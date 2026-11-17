@@ -14,10 +14,7 @@ export interface Me {
   last_name: string | null
   middle_name: string | null
   short_name: string
-  email: string | null
-  phone: string | null
   picture_url: string | null
-  department: string | null
   hemis_id: string | null
   status: UserStatus
   /** Profilda tanlangan til; null — tanlanmagan (asosiy til ishlatiladi). */
@@ -277,8 +274,6 @@ export interface UserListItem {
   can_manage_calendar: boolean
   picture_url: string | null
   hemis_id: string | null
-  phone: string | null
-  department: string | null
   status: UserStatus
   roles: Role[]
   has_password: boolean
@@ -355,6 +350,12 @@ export interface LessonAttendance {
 export interface GroupStudentRow {
   id: number
   name: string
+  /** O'quv bo'limi kiritgan HEMIS ID. */
+  hemis_id: string | null
+  /** synced — HEMIS'dan F.I.Sh. olingan, pending — sinxronlash kutilmoqda, not_found — topilmadi. */
+  hemis_status: 'synced' | 'pending' | 'not_found' | null
+  hemis_error: string | null
+  picture_url: string | null
   ignored: boolean
   names: string[]
   lessons_attended: number
@@ -369,15 +370,28 @@ export interface GroupStudents {
   from: string
   to: string
   lessons_held: number
+  hemis: { enabled: boolean; pending: number }
   students: GroupStudentRow[]
 }
 
+export type AcademicYearStatus = 'planned' | 'active' | 'archived'
+
 export interface Semester {
   id: number
+  /** "2026–2027, Kuzgi semestr" */
   name: string
+  type: 'autumn' | 'spring' | null
+  academic_year: { id: number; name: string; status: AcademicYearStatus } | null
   starts_on: string
   ends_on: string
   current?: boolean
+}
+
+export interface AcademicYear {
+  id: number
+  name: string
+  status: AcademicYearStatus
+  semesters: { id: number; type: 'autumn' | 'spring'; name: string; starts_on: string; ends_on: string; lessons_count: number; current: boolean }[]
 }
 
 export type AssessmentLevel = 'past' | 'sust' | 'qoniqarli' | 'ortacha' | 'yaxshi' | 'alo'

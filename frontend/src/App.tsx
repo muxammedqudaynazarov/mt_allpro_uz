@@ -21,6 +21,7 @@ const ZoomAccountsPage = lazy(() => import('@/pages/ZoomAccountsPage'))
 const SlotsPage = lazy(() => import('@/pages/SlotsPage'))
 const AuditPage = lazy(() => import('@/pages/AuditPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const AcademicYearsPage = lazy(() => import('@/pages/AcademicYearsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -53,14 +54,15 @@ export default function App() {
               </Route>
               <Route path="lessons/:id" element={<LessonDetailPage />} />
               <Route path="calendar" element={<CalendarPage />} />
+              <Route path="recordings" element={<RecordingsPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route element={<RequireRole roles={['education', 'super_admin']} />}>
                 <Route path="monitor" element={<MonitorPage />} />
-                <Route path="recordings" element={<RecordingsPage />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="groups" element={<GroupsPage />} />
                 <Route path="groups/:id/students" element={<GroupStudentsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
+                <Route path="academic-years" element={<AcademicYearsPage />} />
               </Route>
               <Route element={<RequireRole roles={['super_admin']} />}>
                 <Route path="zoom-accounts" element={<ZoomAccountsPage />} />

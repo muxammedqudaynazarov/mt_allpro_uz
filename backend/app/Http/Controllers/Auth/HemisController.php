@@ -91,13 +91,8 @@ class HemisController extends Controller
                 'last_name' => User::normalizeName($profile->lastName) ?? $user->last_name,
                 'middle_name' => User::normalizeName($profile->middleName) ?? $user->middle_name,
                 'hemis_id' => $profile->id,
-                'hemis_uuid' => $profile->uuid ?? $user->hemis_uuid,
-                'hemis_login' => $profile->login ?? $user->hemis_login,
-                // So'ralmagan maydonlar keladigan bo'lsa ham saqlanmaydi; eskilari tozalanadi.
-                'picture_url' => in_array('picture', $this->hemis->fields(), true) ? $profile->picture : null,
-                'email' => in_array('email', $this->hemis->fields(), true) ? $profile->email : null,
-                'phone' => in_array('phone', $this->hemis->fields(), true) ? $profile->phone : null,
-                'department' => $profile->department ?? $user->department,
+                // Shaxsga doir ma'lumotlardan faqat F.I.Sh., HEMIS ID va rasm saqlanadi.
+                'picture_url' => $profile->picture,
                 'last_login_at' => now(),
             ])->save();
         });
@@ -123,14 +118,10 @@ class HemisController extends Controller
     {
         $user = User::withTrashed()->where('hemis_id', $profile->id)->first();
 
-        if (! $user && $profile->uuid) {
-            $user = User::withTrashed()->where('hemis_uuid', $profile->uuid)->first();
-        }
-
+        // Eski tizimdan ko'chirilgan va hali kirmagan hisob HEMIS login bo'yicha topiladi (login saqlanmaydi).
         if (! $user && $profile->login) {
             $user = User::withTrashed()
                 ->where('hemis_id', $profile->login)
-                ->whereNull('hemis_uuid')
                 ->whereNull('last_login_at')
                 ->first();
         }

@@ -19,7 +19,7 @@ class LessonSeriesResource extends JsonResource
             'weekday' => $this->weekday,
             'topic' => $this->topic,
             'group' => ['id' => $this->group->id, 'name' => $this->group->name, 'course' => $this->group->course],
-            'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->name],
+            'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->displayName()],
             'slot' => ['id' => $this->slot->id, 'name' => $this->slot->label(), 'starts_at' => $this->slot->starts_at, 'ends_at' => $this->slot->endsAtLabel()],
             'host' => $this->host ? ['id' => $this->host->id, 'name' => $this->host->name, 'email' => $this->host->email] : null,
             'starts_on' => $this->starts_on->toDateString(),

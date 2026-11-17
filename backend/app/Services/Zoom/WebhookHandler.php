@@ -94,7 +94,6 @@ class WebhookHandler
             'lesson_id' => $lesson->id,
             'participant_key' => $key,
             'name' => mb_substr(trim((string) ($participant['user_name'] ?? '')) ?: '—', 0, 120),
-            'email' => ($participant['email'] ?? '') !== '' ? mb_substr((string) $participant['email'], 0, 191) : null,
             'is_host' => $hostId !== '' && (string) ($participant['id'] ?? '') === $hostId,
             'joined_at' => $joinedAt,
         ]);

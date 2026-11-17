@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { UsersRound } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { StaffName } from '@/components/ui/StaffName'
 import { buttonClass } from '@/components/ui/Button'
 import { useT } from '@/i18n/I18nProvider'
 import { formatDayMonth, formatTime, isSameDay } from '@/lib/format'
@@ -33,8 +34,7 @@ export function LessonRow({ lesson, showDate = true }: { lesson: Lesson; showDat
           </Link>
           <LessonStatusBadge status={lesson.status} />
         </div>
-        <p className="mt-0.5 truncate text-sm text-steel-600">{lesson.topic || t('Mavzu koʻrsatilmagan')}</p>
-        {!own && <p className="truncate text-sm text-steel-500">{lesson.teacher.name}</p>}
+        {!own && <p className="truncate text-sm text-steel-500"><StaffName name={lesson.teacher.name} /></p>}
         <ZoomTrackingLine lesson={lesson} className="mt-1.5" />
       </div>
       <LessonActions lesson={lesson} compact />

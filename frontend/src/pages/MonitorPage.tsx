@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage } from '@/lib/api'
 import { formatDuration, formatLongToday, formatTime } from '@/lib/format'
 import type { Lesson, MonitorData } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { OnAirDot } from '@/components/ui/Badge'
 import { buttonClass } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
@@ -36,7 +37,7 @@ function LiveLessonButton({ lesson, active, onSelect }: { lesson: Lesson; active
             {!waiting && <OnAirDot className="size-2" />}
             <span className="truncate">{lesson.group.name}</span>
           </p>
-          <p className="truncate text-sm text-steel-600">{lesson.teacher.name}</p>
+          <p className="truncate text-sm text-steel-600"><StaffName name={lesson.teacher.name} /></p>
           <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-steel-500 tabular-nums">
             {waiting ? (
               <span className="text-amber-600">{t('Host hali boshlamagan, jadval: {time}', { time: formatTime(lesson.starts_at) })}</span>
@@ -132,7 +133,7 @@ export default function MonitorPage() {
                     <span className="w-11 shrink-0 font-medium tabular-nums">{formatTime(lesson.starts_at)}</span>
                     <span className="min-w-0 flex-1 truncate">
                       {lesson.group.name}
-                      <span className="text-steel-500">, {lesson.teacher.name}</span>
+                      <span className="text-steel-500">, <StaffName name={lesson.teacher.name} /></span>
                     </span>
                   </li>
                 ))}
@@ -147,7 +148,7 @@ export default function MonitorPage() {
               <div>
                 <h2 className="font-display text-xl font-semibold text-ink-900">{selected.group.name}</h2>
                 <p className="mt-1 text-sm text-steel-600">
-                  {selected.teacher.name}
+                  <StaffName name={selected.teacher.name} />
                   {selected.topic && selected.topic !== selected.group.name && `. ${selected.topic}`}
                 </p>
                 <p className="mt-0.5 text-sm text-steel-500 tabular-nums">
@@ -176,7 +177,7 @@ export default function MonitorPage() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="font-medium text-ink-900">{lesson.group.name}</span>
-                        <span className="text-steel-500">, {lesson.teacher.name}</span>
+                        <span className="text-steel-500">, <StaffName name={lesson.teacher.name} /></span>
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4 sm:justify-end">

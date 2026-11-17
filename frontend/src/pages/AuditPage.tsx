@@ -4,6 +4,7 @@ import { ScrollText } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import type { AuditLog, Paginated } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { Pagination } from '@/components/ui/Pagination'
@@ -36,7 +37,7 @@ export default function AuditPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-[0.9375rem] text-ink-900">{log.description}</p>
                     <p className="text-sm text-steel-600">
-                      {log.user?.name ?? t('Tizim')}
+                      {log.user ? <StaffName name={log.user.name} /> : t('Tizim')}
                       {log.ip && <span className="text-steel-400">, IP {log.ip}</span>}
                     </p>
                   </div>

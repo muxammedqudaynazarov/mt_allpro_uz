@@ -1,12 +1,13 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Combine, EyeOff, Eye, Pencil, Search, UsersRound } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, Combine, EyeOff, Eye, Pencil, RefreshCw, Search, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, errorMessage, fieldErrors, isStatus } from '@/lib/api'
 import { addDays, formatDayMonth, formatDuration, isoDate } from '@/lib/format'
 import type { GroupStudentRow, GroupStudents } from '@/lib/types'
 import { ActionMenu } from '@/components/ui/ActionMenu'
+import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
@@ -123,6 +124,54 @@ function MergeModal({ groupId, students, onClose, onDone }: { groupId: number; s
   )
 }
 
+/** Talabaning HEMIS ID raqami: maydondan chiqqanda (yoki Enter) saqlanadi. */
+function HemisIdField({ row }: { row: GroupStudentRow }) {
+  const t = useT()
+  const queryClient = useQueryClient()
+  const [value, setValue] = useState(row.hemis_id ?? '')
+  const save = useMutation({
+    mutationFn: (hemisId: string) => api.patch(`/api/students/${row.id}`, { hemis_id: hemisId || null }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['group-students'] }),
+    onError: (error) => {
+      toast.error(fieldErrors(error).hemis_id ?? errorMessage(error))
+      setValue(row.hemis_id ?? '')
+    },
+  })
+  const commit = () => {
+    const next = value.trim()
+    if (next !== (row.hemis_id ?? '')) save.mutate(next)
+  }
+  const status =
+    row.hemis_status === 'synced' ? (
+      <CheckCircle2 className="size-4 shrink-0 text-leaf-500" aria-label={t('HEMIS’dan olingan')} />
+    ) : row.hemis_status === 'not_found' ? (
+      <AlertTriangle className="size-4 shrink-0 text-amber-600" aria-label={row.hemis_error ?? t('HEMIS’da topilmadi')} />
+    ) : row.hemis_status === 'pending' ? (
+      <span className="size-2 shrink-0 rounded-full bg-azure-500" aria-label={t('Sinxronlash kutilmoqda')} />
+    ) : (
+      <span className="size-4 shrink-0" />
+    )
+  return (
+    <div className="flex items-center gap-2" title={row.hemis_status === 'not_found' ? (row.hemis_error ?? undefined) : undefined}>
+      <input
+        value={value}
+        inputMode="numeric"
+        maxLength={32}
+        placeholder={t('HEMIS ID')}
+        aria-label={t('{name}: HEMIS ID', { name: row.name })}
+        disabled={save.isPending}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+        }}
+        className="h-9 w-36 rounded-[0.5rem] bg-white px-2.5 text-sm tabular-nums ring-1 ring-steel-200 ring-inset placeholder:text-steel-400 focus:ring-2 focus:ring-azure-500 focus:outline-none disabled:bg-steel-50"
+      />
+      {status}
+    </div>
+  )
+}
+
 export default function GroupStudentsPage() {
   const t = useT()
   const { id } = useParams()
@@ -143,6 +192,15 @@ export default function GroupStudentsPage() {
         })
       ).data.data,
     enabled: !!from && !!to,
+  })
+
+  const hemisSync = useMutation({
+    mutationFn: async () => (await api.post<{ data: { synced: number; not_found: number; failed: number } }>(`/api/groups/${id}/students/hemis-sync`)).data.data,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['group-students'] })
+      toast.success(t('HEMIS: {synced} ta yangilandi, {not_found} ta topilmadi, {failed} ta xato', result))
+    },
+    onError: (error) => toast.error(fieldErrors(error).hemis ?? errorMessage(error)),
   })
 
   const toggleIgnored = useMutation({
@@ -232,13 +290,14 @@ export default function GroupStudentsPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-sm">
+            <table className="w-full min-w-[56rem] text-sm">
               <thead className="border-b border-steel-100 text-left text-xs font-medium text-steel-500">
                 <tr>
                   <th className="w-10 py-3 pl-5">
                     <span className="sr-only">{t('Tanlash')}</span>
                   </th>
                   <th className="px-3 py-3 font-medium">{t('Talaba')}</th>
+                  <th className="px-3 py-3 font-medium">{t('HEMIS ID')}</th>
                   <th className="px-3 py-3 text-right font-medium">{t('Darslar')}</th>
                   <th className="w-48 px-3 py-3 font-medium">{t('Qatnashuv')}</th>
                   <th className="px-3 py-3 text-right font-medium">{t('Oʻrtacha kechikish')}</th>
@@ -263,17 +322,25 @@ export default function GroupStudentsPage() {
                         />
                       </td>
                       <td className="max-w-80 px-3 py-3">
-                        <p className="flex items-center gap-2 font-medium text-ink-900">
-                          <span className="truncate">{row.name}</span>
-                          {row.ignored && <Badge>{t('Talaba emas')}</Badge>}
-                        </p>
-                        {otherNames.length > 0 && (
-                          <p className="truncate text-steel-500" title={otherNames.join(', ')}>
-                            {t('Zoom’da: {names}', {
-                              names: otherNames.join(', '),
-                            })}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {row.picture_url && <Avatar name={row.name} src={row.picture_url} className="size-8" />}
+                          <div className="min-w-0">
+                            <p className="flex items-center gap-2 font-medium text-ink-900">
+                              <span className="truncate">{row.name}</span>
+                              {row.ignored && <Badge>{t('Talaba emas')}</Badge>}
+                            </p>
+                            {otherNames.length > 0 && (
+                              <p className="truncate text-steel-500" title={otherNames.join(', ')}>
+                                {t('Zoom’da: {names}', {
+                                  names: otherNames.join(', '),
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <HemisIdField key={`${row.id}-${row.hemis_id ?? ''}`} row={row} />
                       </td>
                       <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
                         <span className="font-semibold text-ink-900">{row.lessons_attended}</span>
@@ -318,6 +385,20 @@ export default function GroupStudentsPage() {
               </tbody>
             </table>
             {rows.length === 0 && <p className="px-5 py-8 text-center text-sm text-steel-600">{t('Qidiruv boʻyicha talaba topilmadi.')}</p>}
+          </div>
+        )}
+        {data && data.students.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-steel-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-steel-600">
+              {!data.hemis.enabled
+                ? t('HEMIS_API_TOKEN .env faylida sozlanmagan — HEMIS’dan maʼlumot olib boʻlmaydi.')
+                : data.hemis.pending
+                  ? t('{count} ta talabaning HEMIS ID si yangi yoki oʻzgargan. Haqiqiy F.I.Sh. va rasm faqat ular uchun yuklanadi.', { count: data.hemis.pending })
+                  : t('Talabaga HEMIS ID kiriting — HEMIS SYNC haqiqiy F.I.Sh. va rasmni yuklaydi. Avval olinganlar qayta soʻralmaydi.')}
+            </p>
+            <Button icon={<RefreshCw className="size-4" />} disabled={!data.hemis.enabled || !data.hemis.pending} loading={hemisSync.isPending} onClick={() => hemisSync.mutate()}>
+              HEMIS SYNC
+            </Button>
           </div>
         )}
       </Panel>

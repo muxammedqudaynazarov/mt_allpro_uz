@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage } from '@/lib/api'
 import { addDays, dayDate, formatDayMonth, formatTime, formatWeekday, isoDate, weekStart } from '@/lib/format'
 import type { CalendarData, Group, Lesson, PlannedLesson } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { OnAirDot } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
@@ -47,7 +48,7 @@ function LessonCard({ lesson, showTeacher, showTime }: { lesson: Lesson; showTea
         {lesson.series_id && <Repeat className="size-3 shrink-0 text-steel-500" aria-label={t('Haftalik dars')} />}
         <span className="truncate">{lesson.group.name}</span>
       </span>
-      {showTeacher && <span className="block truncate text-steel-600">{lesson.teacher.name}</span>}
+      {showTeacher && <StaffName name={lesson.teacher.name} className="block truncate text-steel-600" />}
       <span className="block text-steel-500 tabular-nums">
         {showTime && `${formatTime(lesson.starts_at)}–${formatTime(lesson.ends_at)}. `}
         {lesson.status === 'cancelled'
@@ -80,7 +81,7 @@ function PlannedCard({ item, showTeacher, showTime, onOpen }: { item: PlannedLes
         <Repeat className="size-3 shrink-0 text-steel-500" />
         <span className="truncate">{item.group.name}</span>
       </span>
-      {showTeacher && <span className="block truncate text-steel-600">{item.teacher.name}</span>}
+      {showTeacher && <StaffName name={item.teacher.name} className="block truncate text-steel-600" />}
       <span className={cn('block tabular-nums', item.error ? 'text-onair-600' : 'text-steel-500')}>
         {showTime && `${formatTime(item.starts_at)}–${formatTime(item.ends_at)}. `}
         {item.skipped ? t('Bu kun bekor qilingan') : item.error ? t('Yaratilmadi') : t('Rejada')}

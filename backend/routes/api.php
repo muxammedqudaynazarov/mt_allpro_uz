@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AcademicYearController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ConfigController;
@@ -51,9 +52,11 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::post('/lessons/{lesson}/end', [LessonController::class, 'end']);
         Route::get('/lessons/{lesson}/live', [MonitorController::class, 'participants']);
         Route::get('/lessons/{lesson}/recordings', [RecordingController::class, 'lesson']);
+        Route::get('/recordings', [RecordingController::class, 'index']);
         Route::get('/recordings/{recording}/file', [RecordingController::class, 'file']);
 
         Route::get('/calendar', CalendarController::class);
+        Route::get('/semesters', [SemesterController::class, 'index']);
         Route::get('/series', [LessonSeriesController::class, 'index']);
         Route::post('/series', [LessonSeriesController::class, 'store']);
         Route::patch('/series/{series}', [LessonSeriesController::class, 'update']);
@@ -79,14 +82,14 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
 
             Route::get('/groups/{group}/students', [StudentController::class, 'index']);
             Route::post('/groups/{group}/students/merge', [StudentController::class, 'merge']);
+            Route::post('/groups/{group}/students/hemis-sync', [StudentController::class, 'hemisSync'])->middleware('throttle:10,1');
             Route::patch('/students/{student}', [StudentController::class, 'update']);
 
             Route::get('/reports/summary', [ReportController::class, 'summary']);
             Route::get('/reports/semester', [ReportController::class, 'semester']);
             Route::get('/reports/semester/export', [ReportController::class, 'semesterExport']);
-            Route::get('/semesters', [SemesterController::class, 'index']);
+            Route::get('/academic-years', [AcademicYearController::class, 'index']);
             Route::get('/monitor', [MonitorController::class, 'index']);
-            Route::get('/recordings', [RecordingController::class, 'index']);
         });
 
         Route::middleware('role:super_admin')->group(function () {
@@ -107,9 +110,10 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
 
             Route::get('/audit-logs', AuditLogController::class);
 
-            Route::post('/semesters', [SemesterController::class, 'store']);
-            Route::put('/semesters/{semester}', [SemesterController::class, 'update']);
-            Route::delete('/semesters/{semester}', [SemesterController::class, 'destroy']);
+            Route::post('/academic-years', [AcademicYearController::class, 'store']);
+            Route::put('/academic-years/{academicYear}', [AcademicYearController::class, 'update']);
+            Route::patch('/academic-years/{academicYear}/status', [AcademicYearController::class, 'status']);
+            Route::delete('/academic-years/{academicYear}', [AcademicYearController::class, 'destroy']);
             Route::get('/settings', [SettingsController::class, 'show']);
             Route::put('/settings', [SettingsController::class, 'update']);
             Route::post('/recordings/{recording}/retry', [RecordingController::class, 'retry']);

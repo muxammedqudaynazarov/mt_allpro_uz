@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\LessonSlot;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Http;
@@ -65,6 +66,12 @@ abstract class TestCase extends BaseTestCase
         $reader->close();
 
         return $sheets;
+    }
+
+    /** Hozir davom etayotgan juftlik (5 daqiqa oldin boshlangan, 80 daqiqa). */
+    protected function slotNow(): LessonSlot
+    {
+        return LessonSlot::factory()->create(['starts_at' => now()->subMinutes(5)->format('H:i'), 'duration_minutes' => 80]);
     }
 
     /** Zoom API uchun standart soxta javoblar. */

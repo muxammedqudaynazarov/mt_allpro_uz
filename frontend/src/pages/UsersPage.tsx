@@ -9,6 +9,7 @@ import { formatDateTime } from '@/lib/format'
 import { ROLE_LABELS, USER_STATUS_LABELS } from '@/lib/labels'
 import type { Paginated, Role, UserListItem, UserStatus } from '@/lib/types'
 import { useDebounced } from '@/hooks/useDebounced'
+import { StaffName } from '@/components/ui/StaffName'
 import { ActionMenu } from '@/components/ui/ActionMenu'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
@@ -87,7 +88,7 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
       open
       onClose={onClose}
       title={t('Foydalanuvchi sozlamalari')}
-      description={user.name}
+      description={<StaffName name={user.name} />}
       size="lg"
       footer={
         <>
@@ -266,11 +267,11 @@ export default function UsersPage() {
                             <Avatar name={user.name} src={user.picture_url} />
                             <div className="max-w-72 min-w-0">
                               <p className="flex items-center gap-1.5 font-medium text-ink-900">
-                                <span className="truncate">{user.name}</span>
+                                <StaffName name={user.name} className="truncate" />
                                 {user.telegram_linked && <Send className="size-3.5 shrink-0 text-azure-500" aria-label={t('Telegram ulangan')} />}
                               </p>
                               <p className="truncate text-steel-600">
-                                {[user.hemis_id && `HEMIS ${user.hemis_id}`, user.department].filter(Boolean).join(', ') || '—'}
+                                {user.hemis_id ? `HEMIS ${user.hemis_id}` : '—'}
                               </p>
                             </div>
                           </div>

@@ -222,12 +222,12 @@ export function SemesterReportSection() {
         icon={<GraduationCap className="size-5" />}
         title={t('Semestrlar belgilanmagan')}
         description={
-          isSuperAdmin ? t('Semestr sanalarini Sozlamalar sahifasida kiriting — hisobot shu sanalar boʻyicha tuziladi.') : t('Administrator semestr sanalarini belgilashi kerak.')
+          isSuperAdmin ? t('Oʻquv yilini va uning semestrlari sanalarini kiriting — hisobot shu sanalar boʻyicha tuziladi.') : t('Administrator oʻquv yilini qoʻshishi kerak.')
         }
         action={
           isSuperAdmin ? (
-            <Link to="/settings" className={buttonClass()}>
-              {t('Sozlamalarga oʻtish')}
+            <Link to="/academic-years" className={buttonClass()}>
+              {t('Oʻquv yillari')}
             </Link>
           ) : undefined
         }

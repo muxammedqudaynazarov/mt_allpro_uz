@@ -5,6 +5,7 @@ import { BarChart3, Download } from 'lucide-react'
 import { api } from '@/lib/api'
 import { addDays, formatDate, formatDuration, isoDate } from '@/lib/format'
 import type { ReportSummary } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { buttonClass } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Input } from '@/components/ui/Field'
@@ -152,7 +153,7 @@ function PeriodReport() {
                     return (
                       <tr key={row.teacher.id}>
                         <td className="w-1/2 px-5 py-3">
-                          <p className="font-medium">{row.teacher.name}</p>
+                          <p className="font-medium"><StaffName name={row.teacher.name} /></p>
                           <div className="mt-2">
                             <Bar value={row.lessons} max={maxTeacher} />
                           </div>

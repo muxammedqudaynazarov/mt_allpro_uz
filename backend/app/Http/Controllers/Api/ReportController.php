@@ -42,7 +42,7 @@ class ReportController extends Controller
             ->get();
 
         $byTeacher = $lessons->groupBy('user_id')->map(fn ($items) => [
-            'teacher' => ['id' => $items->first()->teacher->id, 'name' => $items->first()->teacher->name],
+            'teacher' => ['id' => $items->first()->teacher->id, 'name' => $items->first()->teacher->displayName()],
             'lessons' => $items->count(),
             'minutes' => $items->sum(fn (Lesson $lesson) => $lesson->durationMinutes()),
             ...self::zoomStats($items),
@@ -92,7 +92,7 @@ class ReportController extends Controller
         [$semester, $group] = $this->semesterScope($request);
         abort_unless($semester, 404, __('Semestr topilmadi.'));
 
-        $name = Str::slug(($group?->name ?? __('semestr')).' '.$semester->name).'.xlsx';
+        $name = Str::slug(($group?->name ?? __('semestr')).' '.$semester->fullLabel()).'.xlsx';
 
         return Xlsx::download($name, function (Xlsx $xlsx) use ($semester, $group) {
             if ($group) {
@@ -105,7 +105,7 @@ class ReportController extends Controller
 
             $overview = SemesterReport::overview($semester);
             $xlsx->sheet(__('Guruhlar'), [30, 7, 12, 14, 14, 16, 9, 9, 11, 10, 9, 9], freezeRow: 4)
-                ->title(__('Semestr yakuni').': '.$semester->name)
+                ->title(__('Semestr yakuni').': '.$semester->fullLabel())
                 ->note($semester->starts_on->format('d.m.Y').' – '.$semester->ends_on->format('d.m.Y'))
                 ->blank()
                 ->header([

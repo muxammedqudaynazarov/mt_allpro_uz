@@ -22,7 +22,6 @@ class UserFactory extends Factory
             'first_name' => $first,
             'last_name' => $last,
             'hemis_id' => (string) fake()->unique()->numberBetween(1000, 999999),
-            'phone' => '998'.fake()->numerify('#########'),
             'roles' => [Role::Teacher->value],
             'status' => UserStatus::Active,
         ];

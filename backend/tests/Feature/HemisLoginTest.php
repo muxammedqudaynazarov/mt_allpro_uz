@@ -71,14 +71,16 @@ class HemisLoginTest extends TestCase
 
     public function test_existing_active_user_logs_in_and_profile_is_refreshed(): void
     {
-        $user = User::factory()->create(['hemis_id' => '7777', 'name' => 'Eski Ism', 'phone' => '998900000000']);
+        $user = User::factory()->create(['hemis_id' => '7777', 'name' => 'Eski Ism']);
         $this->fakeHemis();
 
         $this->hemisCallback()->assertRedirect('http://localhost/');
 
         $user->refresh();
         $this->assertSame('Jumabaev Rustem Kenesbaevich', $user->name);
-        $this->assertNull($user->phone, 'HEMIS’dan telefon so‘ralmaydi, eskisi ham saqlanmaydi');
+        // Faqat F.I.Sh., HEMIS ID va rasm saqlanadi — telefon, email, bo'lim, login yo'q.
+        $this->assertSame('https://hemis.test/static/p.jpg', $user->picture_url);
+        $this->assertSame(['email', 'phone', 'department', 'hemis_login', 'hemis_uuid'], array_values(array_filter(['email', 'phone', 'department', 'hemis_login', 'hemis_uuid'], fn ($column) => ! array_key_exists($column, $user->getAttributes()))));
         $this->assertNotNull($user->last_login_at);
         $this->assertAuthenticatedAs($user);
     }
@@ -97,7 +99,7 @@ class HemisLoginTest extends TestCase
     public function test_login_match_cannot_take_over_an_already_linked_account(): void
     {
         // HEMIS orqali allaqachon kirgan xodimning hemis_id si boshqa birovning logini bilan mos kelsa ham, uni egallab bo'lmaydi.
-        $linked = User::factory()->create(['hemis_id' => '3011911000', 'hemis_uuid' => 'other-uuid', 'last_login_at' => now()]);
+        $linked = User::factory()->create(['hemis_id' => '3011911000', 'last_login_at' => now()]);
         $this->fakeHemis();
 
         $this->hemisCallback()->assertRedirect('http://localhost/pending');

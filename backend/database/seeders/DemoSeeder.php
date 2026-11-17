@@ -27,12 +27,12 @@ class DemoSeeder extends Seeder
         $super = User::updateOrCreate(['login' => 'admin'], [
             'name' => 'Qudaynazarov Muxammed', 'first_name' => 'Muxammed', 'last_name' => 'Qudaynazarov',
             'password' => 'demo-password-2026', 'status' => UserStatus::Active,
-            'roles' => [Role::SuperAdmin->value, Role::Teacher->value], 'department' => 'Masofaviy taʼlim boʻlimi',
-            'hemis_id' => '1568', 'phone' => '998901234567',
+            'roles' => [Role::SuperAdmin->value, Role::Teacher->value],
+            'hemis_id' => '1568',
         ]);
         $admin = User::updateOrCreate(['hemis_id' => '2001'], [
             'name' => 'Aytmuratova Gulnara Baxitovna', 'first_name' => 'Gulnara', 'last_name' => 'Aytmuratova',
-            'status' => UserStatus::Active, 'roles' => [Role::Education->value], 'department' => 'Oʻquv-uslubiy boshqarma',
+            'status' => UserStatus::Active, 'roles' => [Role::Education->value],
         ]);
 
         $teachers = collect([
@@ -41,18 +41,16 @@ class DemoSeeder extends Seeder
             ['Kurbaniyazov Timur Asanovich', 'Timur', 'Kurbaniyazov', 'Axborot texnologiyalari kafedrasi'],
             ['Nurlibaeva Dilfuza Ermekovna', 'Dilfuza', 'Nurlibaeva', 'Iqtisodiyot kafedrasi'],
         ])->map(fn ($t, $i) => User::updateOrCreate(['hemis_id' => (string) (3001 + $i)], [
-            'name' => $t[0], 'first_name' => $t[1], 'last_name' => $t[2], 'department' => $t[3],
+            'name' => $t[0], 'first_name' => $t[1], 'last_name' => $t[2],
             'status' => UserStatus::Active, 'roles' => [Role::Teacher->value],
             'telegram_chat_id' => $i % 2 ? (string) (900000 + $i) : null,
         ]));
 
         User::updateOrCreate(['hemis_id' => '4001'], [
-            'name' => 'Abdiraxmanov Bekzat Oralovich', 'first_name' => 'Bekzat', 'last_name' => 'Abdiraxmanov',
-            'department' => 'Tarix kafedrasi', 'status' => UserStatus::Pending, 'roles' => [Role::Teacher->value],
+            'name' => 'Abdiraxmanov Bekzat Oralovich', 'first_name' => 'Bekzat', 'last_name' => 'Abdiraxmanov', 'status' => UserStatus::Pending, 'roles' => [Role::Teacher->value],
         ]);
         User::updateOrCreate(['hemis_id' => '4002'], [
-            'name' => 'Ismailova Zuhra Maratovna', 'first_name' => 'Zuhra', 'last_name' => 'Ismailova',
-            'department' => 'Pedagogika kafedrasi', 'status' => UserStatus::Pending, 'roles' => [Role::Teacher->value],
+            'name' => 'Ismailova Zuhra Maratovna', 'first_name' => 'Zuhra', 'last_name' => 'Ismailova', 'status' => UserStatus::Pending, 'roles' => [Role::Teacher->value],
         ]);
 
         $account = ZoomAccount::firstOrCreate(['account_id' => 'demo-account'], [

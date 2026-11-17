@@ -31,7 +31,7 @@ class RecordingResource extends JsonResource
                 'id' => $this->lesson->id,
                 'starts_at' => $this->lesson->starts_at->toIso8601String(),
                 'group' => $this->lesson->group?->name,
-                'teacher' => $this->lesson->teacher?->name,
+                'teacher' => $this->lesson->teacher?->displayName(),
             ] : null),
         ];
     }

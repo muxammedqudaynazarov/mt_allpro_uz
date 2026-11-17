@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { dayDate, formatDayMonth, formatTime, formatWeekday, isoDate, weekdayName } from '@/lib/format'
 import type { LessonOptions, LessonSeries, PlannedLesson } from '@/lib/types'
+import { StaffName } from '@/components/ui/StaffName'
 import { ActionMenu } from '@/components/ui/ActionMenu'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -289,7 +290,7 @@ export function PlannedModal({ item, onClose, leadMinutes }: { item: PlannedLess
           {canViewAll && (
             <>
               <dt className="text-steel-600">{t('Oʻqituvchi')}</dt>
-              <dd className="text-ink-900">{item.teacher.name}</dd>
+              <dd className="text-ink-900"><StaffName name={item.teacher.name} /></dd>
             </>
           )}
           <dt className="text-steel-600">{t('Mavzu')}</dt>
@@ -380,7 +381,11 @@ export function SeriesList({ params, onAdd }: { params: Record<string, string>; 
               <div className="min-w-0 flex-1 text-sm">
                 <p className="font-medium text-ink-900">{item.group.name}</p>
                 <p className="text-steel-600">
-                  {canViewAll && `${item.teacher.name}. `}
+                  {canViewAll && (
+                    <>
+                      <StaffName name={item.teacher.name} />.{' '}
+                    </>
+                  )}
                   {item.host ? t('Host: {email}', { email: item.host.email }) : t('Host avtomatik tanlanadi')}
                 </p>
                 {item.last_error && (

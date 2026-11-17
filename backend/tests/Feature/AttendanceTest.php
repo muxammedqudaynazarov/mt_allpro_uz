@@ -8,7 +8,9 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\Student;
+use App\Models\StudentAlias;
 use App\Models\User;
+use App\Models\ZoomParticipation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
@@ -200,6 +202,11 @@ class AttendanceTest extends TestCase
         $vali = Student::where('name', 'Vali')->firstOrFail();
         $this->assertSame(3, LessonAttendance::where('student_id', $vali->id)->count());
         $this->assertSame(2, LessonAttendance::where('student_id', Student::where('name', 'Ali Valiyev')->value('id'))->count());
+
+        // Talabaning emaili ochiq saqlanmaydi: faqat tanish uchun xesh.
+        $this->assertSame(0, ZoomParticipation::whereNotNull('email')->count());
+        $this->assertSame(StudentAlias::emailKey('vali@mail.uz'), StudentAlias::where('type', StudentAlias::EMAIL)->value('value'));
+        $this->assertDatabaseMissing('student_aliases', ['value' => 'vali@mail.uz']);
     }
 
     public function test_missing_report_scope_falls_back_to_past_meeting_participants(): void

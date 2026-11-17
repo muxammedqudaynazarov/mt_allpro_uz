@@ -27,8 +27,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'first_name', 'last_name', 'middle_name',
-        'hemis_id', 'hemis_uuid', 'hemis_login', 'department', 'picture_url',
-        'email', 'phone', 'login', 'password',
+        'hemis_id', 'picture_url', 'login', 'password',
         'roles', 'status', 'locale', 'can_manage_calendar',
         'telegram_chat_id', 'telegram_username', 'last_login_at',
     ];
@@ -129,6 +128,19 @@ class User extends Authenticatable
     public function firstName(): string
     {
         return $this->first_name ?: (Str::of($this->name)->explode(' ')->get(1) ?? $this->name);
+    }
+
+    /**
+     * Ko'rsatiladigan ism: "Familiya Ism" (otasining ismi ko'rsatilmaydi). Qismlar
+     * bo'lmasa — saqlangan to'liq ismning birinchi ikki so'zi.
+     */
+    public function displayName(): string
+    {
+        if (filled($this->last_name) || filled($this->first_name)) {
+            return trim(($this->last_name ?? '').' '.($this->first_name ?? ''));
+        }
+
+        return implode(' ', array_slice(preg_split('/\s+/u', trim((string) $this->name)) ?: [], 0, 2));
     }
 
     /** Foydalanuvchilar ro'yxati: Administrator va O'quv bo'limi hammani ko'radi. */

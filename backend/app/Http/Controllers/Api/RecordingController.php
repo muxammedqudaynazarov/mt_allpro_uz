@@ -26,18 +26,23 @@ class RecordingController extends Controller
         return RecordingResource::collection($lesson->recordings()->where('status', '!=', Recording::SKIPPED)->orderBy('recording_start')->orderBy('id')->get());
     }
 
-    /** Barcha yozuvlar va xotira holati (O'quv bo'limi, Administrator). */
+    /**
+     * Yozuvlar ro'yxati: o'qituvchi — o'z darslariniki, O'quv bo'limi va Administrator — hammasi
+     * (ular uchun server xotirasi holati ham).
+     */
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate(['status' => ['nullable', 'in:pending,downloaded,failed']]);
+        $user = $request->user();
         $items = Recording::query()
             ->where('status', '!=', Recording::SKIPPED)
+            ->when(! $user->canViewAll(), fn ($q) => $q->whereHas('lesson', fn ($lesson) => $lesson->where('user_id', $user->id)))
             ->when($data['status'] ?? null, fn ($q, $status) => $status === 'pending' ? $q->whereIn('status', [Recording::PENDING]) : $q->where('status', $status))
             ->with(['lesson.group', 'lesson.teacher'])
             ->latest('id')
             ->paginate(30);
 
-        return RecordingResource::collection($items)->additional(['meta' => ['storage' => self::storage()]])->response();
+        return RecordingResource::collection($items)->additional(['meta' => ['storage' => $user->canViewAll() ? self::storage() : null]])->response();
     }
 
     /**

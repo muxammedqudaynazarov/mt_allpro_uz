@@ -62,7 +62,7 @@ class LocaleTest extends TestCase
         $group = Group::factory()->create();
 
         // Sayt o'zbekchada ochilgan bo'lsa ham, Telegram xabari xodimning tilida keladi.
-        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id], ['X-Locale' => 'uz'])->assertCreated();
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id], ['X-Locale' => 'uz'])->assertCreated();
 
         Queue::assertPushed(SendTelegramMessage::class, fn ($job) => str_contains($job->html, 'Sabaq jaratıldı')
             && $job->buttons[0][0]['text'] === 'Sabaqtı baslaw');

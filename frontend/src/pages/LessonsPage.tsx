@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { CalendarPlus, CalendarX2, Download } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, cleanParams } from '@/lib/api'
-import type { Group, Lesson, Paginated } from '@/lib/types'
+import type { Group, Lesson, Paginated, Semester } from '@/lib/types'
 import { buttonClass } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Input, Select } from '@/components/ui/Field'
@@ -29,6 +29,7 @@ export default function LessonsPage() {
     from: params.get('from') ?? '',
     to: params.get('to') ?? '',
     mine: params.get('mine') ?? '',
+    semester_id: params.get('semester_id') ?? '',
   }
 
   function update(key: string, value: string) {
@@ -51,6 +52,19 @@ export default function LessonsPage() {
     queryFn: async () => (await api.get<{ data: Group[] }>('/api/groups')).data.data,
     enabled: canViewAll,
   })
+
+  // O'quv yillari arxivi: semestrlar o'quv yili bo'yicha guruhlanadi.
+  const semesters = useQuery({
+    queryKey: ['semesters'],
+    queryFn: async () => (await api.get<{ data: Semester[] }>('/api/semesters')).data.data,
+  })
+  const years = Object.entries(
+    (semesters.data ?? []).reduce<Record<string, Semester[]>>((acc, semester) => {
+      const key = semester.academic_year?.name ?? t('Boshqa')
+      ;(acc[key] ??= []).push(semester)
+      return acc
+    }, {}),
+  )
 
   const exportUrl = `/api/lessons/export?${new URLSearchParams(cleanParams({ ...filters }) as Record<string, string>).toString()}`
 
@@ -89,7 +103,7 @@ export default function LessonsPage() {
             { value: 'finished', label: t('Yakunlangan') },
           ]}
         />
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_10.5rem_10.5rem]">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_15rem_10.5rem_10.5rem]">
           {canViewAll && (
             <Select aria-label={t('Guruh')} wrapperClassName="col-span-2 lg:col-span-1" value={filters.group_id} onChange={(event) => update('group_id', event.target.value)}>
               <option value="">{t('Barcha guruhlar')}</option>
@@ -106,6 +120,18 @@ export default function LessonsPage() {
               <option value="1">{t('Faqat meniki')}</option>
             </Select>
           )}
+          <Select aria-label={t('Semestr')} wrapperClassName="col-span-2 lg:col-span-1" value={filters.semester_id} onChange={(event) => update('semester_id', event.target.value)}>
+            <option value="">{t('Barcha semestrlar')}</option>
+            {years.map(([year, items]) => (
+              <optgroup key={year} label={items[0]?.academic_year?.status === 'archived' ? `${year} (${t('arxiv')})` : year}>
+                {items.map((semester) => (
+                  <option key={semester.id} value={semester.id}>
+                    {semester.type === 'autumn' ? t('Kuzgi semestr') : semester.type === 'spring' ? t('Bahorgi semestr') : semester.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
           <Input type="date" aria-label={t('Sanadan')} title={t('Sanadan')} value={filters.from} max={filters.to || undefined} onChange={(event) => update('from', event.target.value)} />
           <Input type="date" aria-label={t('Sanagacha')} title={t('Sanagacha')} value={filters.to} min={filters.from || undefined} onChange={(event) => update('to', event.target.value)} />
         </div>

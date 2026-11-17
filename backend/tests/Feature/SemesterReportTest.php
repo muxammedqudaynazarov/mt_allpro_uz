@@ -126,16 +126,17 @@ class SemesterReportTest extends TestCase
         $this->assertSame(['Guruhlar', '3-B1 Iqtisodiyot'], array_keys($all));
     }
 
-    public function test_semesters_are_managed_by_admin_without_overlaps(): void
+    public function test_lessons_are_bound_to_semester_and_filtered_as_archive(): void
     {
-        $admin = User::factory()->superAdmin()->create();
-        $this->actingAsUser($admin)->postJson('/api/semesters', ['name' => 'Kesishgan', 'starts_on' => today()->toDateString(), 'ends_on' => today()->addMonth()->toDateString()])
-            ->assertStatus(422)->assertJsonValidationErrors('starts_on');
-        $this->actingAsUser($admin)->postJson('/api/semesters', ['name' => '2-semestr', 'starts_on' => today()->addMonths(3)->toDateString(), 'ends_on' => today()->addMonths(7)->toDateString()])
-            ->assertCreated();
+        $lesson = Lesson::factory()->for($this->group)->create();
+        $this->assertSame($this->semester->id, $lesson->semester_id);
 
-        $this->actingAsUser(User::factory()->education()->create())->getJson('/api/semesters')
-            ->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.1.current', true);
-        $this->actingAsUser(User::factory()->education()->create())->postJson('/api/semesters', ['name' => 'x', 'starts_on' => '2030-01-01', 'ends_on' => '2030-05-01'])->assertForbidden();
+        $old = Lesson::factory()->for($this->group)->finished()->create(['starts_at' => now()->subYear(), 'ends_at' => now()->subYear()->addMinutes(80)]);
+        $this->assertNull($old->semester_id);
+
+        $ids = collect($this->actingAsUser(User::factory()->education()->create())
+            ->getJson("/api/lessons?semester_id={$this->semester->id}&per_page=100")->assertOk()->json('data'))->pluck('id');
+        $this->assertTrue($ids->contains($lesson->id));
+        $this->assertFalse($ids->contains($old->id));
     }
 }

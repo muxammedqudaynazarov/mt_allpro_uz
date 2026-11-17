@@ -80,7 +80,10 @@ class AdministrationTest extends TestCase
 
         $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['last_name' => 'Qudaynazarov', 'first_name' => 'Muhammad', 'middle_name' => 'Aliyevich'])
             ->assertOk()
-            ->assertJsonPath('data.name', 'Qudaynazarov Muhammad Aliyevich');
+            // Ko'rsatishda otasining ismi chiqmaydi, bazada to'liq saqlanadi.
+            ->assertJsonPath('data.name', 'Qudaynazarov Muhammad')
+            ->assertJsonPath('data.middle_name', 'Aliyevich');
+        $this->assertSame('Qudaynazarov Muhammad Aliyevich', $teacher->fresh()->name);
     }
 
     public function test_administrator_controls_teacher_calendar_permission(): void

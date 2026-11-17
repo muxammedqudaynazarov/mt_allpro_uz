@@ -1,18 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { GraduationCap, HardDrive, Pencil, Plus, Trash2 } from 'lucide-react'
+import { HardDrive } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
-import { dayDate, formatBytes, formatDate } from '@/lib/format'
-import type { AssessmentCriteria, AssessmentLevel, RecordingSettings, Semester, SystemSettings } from '@/lib/types'
-import { ActionMenu } from '@/components/ui/ActionMenu'
-import { Badge } from '@/components/ui/Badge'
+import { formatBytes } from '@/lib/format'
+import type { AssessmentCriteria, AssessmentLevel, RecordingSettings, SystemSettings } from '@/lib/types'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { EmptyState } from '@/components/ui/EmptyState'
 import { Input } from '@/components/ui/Field'
-import { Modal } from '@/components/ui/Modal'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { Switch } from '@/components/ui/Switch'
@@ -21,158 +16,6 @@ import { useT } from '@/i18n/I18nProvider'
 
 type Threshold = Exclude<AssessmentLevel, 'past'>
 const THRESHOLDS: Threshold[] = ['sust', 'qoniqarli', 'ortacha', 'yaxshi', 'alo']
-
-function SemesterModal({ semester, onClose }: { semester: Semester | 'new'; onClose: () => void }) {
-  const t = useT()
-  const queryClient = useQueryClient()
-  const editing = semester !== 'new'
-  const [form, setForm] = useState({
-    name: editing ? semester.name : '',
-    starts_on: editing ? semester.starts_on : '',
-    ends_on: editing ? semester.ends_on : '',
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const save = useMutation({
-    mutationFn: async () => (editing ? api.put(`/api/semesters/${semester.id}`, form) : api.post('/api/semesters', form)),
-    onSuccess: () => {
-      toast.success(t('Semestr saqlandi'))
-      queryClient.invalidateQueries({ queryKey: ['semesters'] })
-      onClose()
-    },
-    onError: (error) => {
-      const fields = fieldErrors(error)
-      setErrors(fields)
-      if (!Object.keys(fields).length) toast.error(errorMessage(error))
-    },
-  })
-  function submit(event: FormEvent) {
-    event.preventDefault()
-    setErrors({})
-    save.mutate()
-  }
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title={editing ? t('Semestrni tahrirlash') : t('Semestr qoʻshish')}
-      description={t('Semestr hisoboti shu sanalar oraligʻidagi darslar boʻyicha tuziladi.')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {t('Bekor qilish')}
-          </Button>
-          <Button type="submit" form="semester-form" loading={save.isPending}>
-            {t('Saqlash')}
-          </Button>
-        </>
-      }
-    >
-      <form id="semester-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-        <Input
-          wrapperClassName="sm:col-span-2"
-          label={t('Nomi')}
-          placeholder={t('Masalan: 2026–2027, 1-semestr')}
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          error={errors.name}
-          required
-        />
-        <Input
-          label={t('Boshlanish sanasi')}
-          type="date"
-          value={form.starts_on}
-          onChange={(e) => setForm({ ...form, starts_on: e.target.value })}
-          error={errors.starts_on}
-          required
-        />
-        <Input
-          label={t('Tugash sanasi')}
-          type="date"
-          min={form.starts_on}
-          value={form.ends_on}
-          onChange={(e) => setForm({ ...form, ends_on: e.target.value })}
-          error={errors.ends_on}
-          required
-        />
-      </form>
-    </Modal>
-  )
-}
-
-function SemestersPanel() {
-  const t = useT()
-  const queryClient = useQueryClient()
-  const [editing, setEditing] = useState<Semester | 'new' | null>(null)
-  const [deleting, setDeleting] = useState<Semester | null>(null)
-  const semesters = useQuery({
-    queryKey: ['semesters'],
-    queryFn: async () => (await api.get<{ data: Semester[] }>('/api/semesters')).data.data,
-  })
-  const remove = useMutation({
-    mutationFn: async (id: number) => api.delete(`/api/semesters/${id}`),
-    onSuccess: () => {
-      toast.success(t('Semestr oʻchirildi'))
-      setDeleting(null)
-      queryClient.invalidateQueries({ queryKey: ['semesters'] })
-    },
-    onError: (error) => toast.error(errorMessage(error)),
-  })
-
-  return (
-    <Panel
-      padded={false}
-      title={t('Semestrlar')}
-      actions={
-        <Button size="sm" variant="secondary" icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
-          {t('Qoʻshish')}
-        </Button>
-      }
-    >
-      {semesters.isPending ? (
-        <SectionLoader />
-      ) : !semesters.data?.length ? (
-        <EmptyState
-          icon={<GraduationCap className="size-5" />}
-          title={t('Semestrlar yoʻq')}
-          description={t('Semestr sanalarini kiriting — semestr yakuni hisoboti shu sanalar boʻyicha tuziladi.')}
-        />
-      ) : (
-        <ul className="divide-y divide-steel-100">
-          {semesters.data.map((item) => (
-            <li key={item.id} className="flex items-center gap-4 px-5 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 font-medium text-ink-900">
-                  {item.name}
-                  {item.current && <Badge tone="leaf">{t('Joriy')}</Badge>}
-                </p>
-                <p className="text-sm text-steel-600 tabular-nums">
-                  {formatDate(dayDate(item.starts_on))} – {formatDate(dayDate(item.ends_on))}
-                </p>
-              </div>
-              <ActionMenu
-                items={[
-                  { label: t('Tahrirlash'), icon: <Pencil className="size-4" />, onClick: () => setEditing(item) },
-                  { label: t('Oʻchirish'), icon: <Trash2 className="size-4" />, danger: true, onClick: () => setDeleting(item) },
-                ]}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-      {editing && <SemesterModal semester={editing} onClose={() => setEditing(null)} />}
-      <ConfirmDialog
-        open={!!deleting}
-        title={t('Semestrni oʻchirasizmi?')}
-        description={t('Darslar va davomat oʻchirilmaydi, faqat semestr sanalari oʻchadi.')}
-        confirmLabel={t('Oʻchirish')}
-        tone="danger"
-        loading={remove.isPending}
-        onClose={() => setDeleting(null)}
-        onConfirm={() => deleting && remove.mutate(deleting.id)}
-      />
-    </Panel>
-  )
-}
 
 const SCALE: Record<AssessmentLevel, string> = {
   past: 'bg-onair-500',
@@ -479,11 +322,8 @@ export default function SettingsPage() {
   const t = useT()
   return (
     <>
-      <PageHeader title={t('Umumiy sozlamalar')} description={t('Semestr sanalari, oʻzlashtirish taxmini mezoni va darslarning video yozuvlari.')} />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] xl:items-start">
-        <SemestersPanel />
-        <AssessmentPanel />
-      </div>
+      <PageHeader title={t('Umumiy sozlamalar')} description={t('Oʻzlashtirish taxmini mezoni va darslarning video yozuvlari. Oʻquv yillari va semestrlar — alohida sahifada.')} />
+      <AssessmentPanel />
       <div className="mt-6">
         <RecordingPanel />
       </div>

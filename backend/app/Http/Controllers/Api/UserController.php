@@ -40,7 +40,7 @@ class UserController extends Controller
         }
         if (! empty($data['search'])) {
             $term = '%'.str_replace(['%', '_'], ['\%', '\_'], $data['search']).'%';
-            $query->where(fn (Builder $q) => $q->where('name', 'like', $term)->orWhere('phone', 'like', $term)->orWhere('hemis_id', 'like', $term));
+            $query->where(fn (Builder $q) => $q->where('name', 'like', $term)->orWhere('hemis_id', 'like', $term));
         }
 
         return UserResource::collection(

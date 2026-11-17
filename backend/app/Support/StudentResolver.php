@@ -20,7 +20,8 @@ class StudentResolver
     {
         $keys = array_filter([
             StudentAlias::ZOOM_ID => $zoomId ? substr($zoomId, 0, 191) : null,
-            StudentAlias::EMAIL => $email ? substr(mb_strtolower(trim($email)), 0, 191) : null,
+            // Email ochiq holda saqlanmaydi — faqat bir tomonlama xesh (tanish uchun yetarli).
+            StudentAlias::EMAIL => $email ? StudentAlias::emailKey($email) : null,
             StudentAlias::NAME => StudentName::key($name),
         ]);
 

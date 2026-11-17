@@ -16,6 +16,12 @@ class StudentAlias extends Model
 
     protected $fillable = ['student_id', 'group_id', 'type', 'value'];
 
+    /** Zoom email'i ochiq saqlanmaydi: tanish kaliti — uning SHA-256 xeshi. */
+    public static function emailKey(string $email): string
+    {
+        return 'sha256:'.hash('sha256', mb_strtolower(trim($email)));
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
