@@ -9,6 +9,7 @@ use App\Models\ZoomAccount;
 use App\Models\ZoomHost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -56,6 +57,25 @@ class ZoomWebhookTest extends TestCase
         // Secret Token kiritilmagan akkaunt webhook qabul qilmaydi.
         $other = ZoomAccount::factory()->create();
         $this->webhook($other, $validation)->assertNotFound();
+    }
+
+    /** Soxta so'rovlar oqimi: IP bloklanadi, log esa faqat ikki marta yoziladi (disk to'lmaydi). */
+    public function test_repeated_invalid_signatures_block_the_ip_and_do_not_flood_the_log(): void
+    {
+        Log::spy();
+        $account = ZoomAccount::factory()->create(['webhook_secret' => self::SECRET]);
+        $validation = ['event' => 'endpoint.url_validation', 'payload' => ['plainToken' => 'abc']];
+
+        for ($i = 0; $i < 30; $i++) {
+            $this->webhook($account, $validation, secret: 'guess-'.$i)->assertStatus(401);
+        }
+        // 30 ta noto'g'ri urinishdan keyin shu IP'dan hech narsa qabul qilinmaydi.
+        $this->webhook($account, $validation)->assertStatus(429);
+        Log::shouldHaveReceived('warning')->twice();
+
+        // Boshqa IP (Zoom) ishlashda davom etadi.
+        $this->withServerVariables(['REMOTE_ADDR' => '10.20.30.40']);
+        $this->webhook($account, $validation)->assertOk();
     }
 
     public function test_participants_are_tracked_live_and_closed_when_meeting_ends(): void

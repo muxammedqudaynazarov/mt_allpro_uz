@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Zoom Event Subscriptions qabul qiluvchi manzil: /api/zoom/webhook/{akkaunt}.
@@ -22,11 +23,24 @@ class ZoomWebhookController extends Controller
     /** Eski so'rovni qayta yuborish (replay) hujumidan himoya. */
     private const MAX_AGE_SECONDS = 300;
 
+    /**
+     * Bir IP'dan shuncha noto'g'ri imzoli so'rov kelsa — u 10 daqiqaga bloklanadi.
+     * Zoom so'rovlari doim to'g'ri imzolangan; soxta so'rovlar esa logni to'ldira olmaydi.
+     */
+    private const MAX_BAD_ATTEMPTS = 30;
+
+    private const BAD_ATTEMPTS_WINDOW = 600;
+
     public function __invoke(Request $request, ZoomAccount $zoomAccount, WebhookHandler $handler): JsonResponse|Response
     {
         $secret = (string) $zoomAccount->webhook_secret;
         if ($secret === '') {
             abort(404);
+        }
+
+        $badKey = 'zoom-webhook-bad:'.$request->ip();
+        if (RateLimiter::tooManyAttempts($badKey, self::MAX_BAD_ATTEMPTS)) {
+            return response()->json(['message' => 'Too many invalid requests'], 429);
         }
 
         $body = $request->getContent();
@@ -35,7 +49,11 @@ class ZoomWebhookController extends Controller
         $expected = 'v0='.hash_hmac('sha256', 'v0:'.$timestamp.':'.$body, $secret);
 
         if ($timestamp === '' || ! ctype_digit($timestamp) || abs(time() - (int) $timestamp) > self::MAX_AGE_SECONDS || ! hash_equals($expected, $signature)) {
-            Log::warning('Zoom webhook: imzo notoʻgʻri', ['account' => $zoomAccount->id, 'ip' => $request->ip()]);
+            $attempts = RateLimiter::hit($badKey, self::BAD_ATTEMPTS_WINDOW);
+            // Logga faqat birinchi urinish va bloklash yoziladi — soxta so'rovlar oqimi diskni to'ldirmaydi.
+            if ($attempts === 1 || $attempts === self::MAX_BAD_ATTEMPTS) {
+                Log::warning($attempts === 1 ? 'Zoom webhook: imzo notoʻgʻri' : 'Zoom webhook: IP 10 daqiqaga bloklandi', ['account' => $zoomAccount->id, 'ip' => $request->ip()]);
+            }
 
             return response()->json(['message' => 'Invalid signature'], 401);
         }
