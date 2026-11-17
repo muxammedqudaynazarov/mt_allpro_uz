@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LessonSlotResource;
+use App\Models\LessonSeries;
 use App\Models\LessonSlot;
 use App\Support\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 
 class LessonSlotController extends Controller
 {
@@ -35,6 +37,9 @@ class LessonSlotController extends Controller
 
     public function destroy(LessonSlot $lessonSlot): Response
     {
+        if (LessonSeries::query()->where('lesson_slot_id', $lessonSlot->id)->exists()) {
+            throw ValidationException::withMessages(['slot' => __('Bu juftlikda haftalik darslar bor. Oʻchirish oʻrniga juftlikni nofaol qiling.')]);
+        }
         $lessonSlot->delete();
         Audit::log('slot.deleted', 'Dars vaqti oʻchirildi: :name', $lessonSlot, replace: ['name' => $lessonSlot->name]);
 

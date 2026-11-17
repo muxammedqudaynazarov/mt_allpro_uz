@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\CreateLesson;
+use App\Actions\CreateSeries;
 use App\Actions\EndLesson;
 use App\Enums\LessonStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LessonResource;
 use App\Models\Group;
 use App\Models\Lesson;
+use App\Models\LessonSeries;
 use App\Models\LessonSlot;
 use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
-use App\Support\Xlsx;
 use App\Support\HostAvailability;
+use App\Support\Xlsx;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -94,7 +96,7 @@ class LessonController extends Controller
         ]]);
     }
 
-    public function store(Request $request, CreateLesson $action): JsonResponse
+    public function store(Request $request, CreateLesson $action, CreateSeries $createSeries): JsonResponse
     {
         Gate::authorize('create', Lesson::class);
 
@@ -104,6 +106,8 @@ class LessonController extends Controller
             'host_id' => ['nullable', 'integer', Rule::exists('zoom_hosts', 'id')],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'topic' => ['nullable', 'string', 'max:200'],
+            // Har hafta shu kuni, shu juftlikda takrorlash.
+            'repeat_weekly' => ['nullable', 'boolean'],
         ], [
             'group_id.required' => __('Guruhni tanlang.'),
             'group_id.exists' => __('Tanlangan guruh topilmadi.'),
@@ -117,14 +121,27 @@ class LessonController extends Controller
             abort(403, __('Sizga kalendarni boshqarish (boshqa kunlarga dars rejalashtirish) taqiqlangan.'));
         }
 
-        $lesson = $action->handle(
-            $request->user(),
-            Group::findOrFail($data['group_id']),
-            isset($data['slot_id']) ? LessonSlot::findOrFail($data['slot_id']) : null,
-            $data['topic'] ?? null,
-            isset($data['host_id']) ? ZoomHost::with('zoomAccount')->findOrFail($data['host_id']) : null,
-            $date,
-        );
+        $group = Group::findOrFail($data['group_id']);
+        $slot = isset($data['slot_id']) ? LessonSlot::findOrFail($data['slot_id']) : null;
+        $host = isset($data['host_id']) ? ZoomHost::with('zoomAccount')->findOrFail($data['host_id']) : null;
+
+        $series = null;
+        if ($request->boolean('repeat_weekly')) {
+            Gate::authorize('create', LessonSeries::class);
+            if (! $slot) {
+                throw ValidationException::withMessages(['slot_id' => __('Har haftalik dars uchun juftlikni tanlang.')]);
+            }
+            $day = $date ?? today();
+            $series = $createSeries->handle($request->user(), $group, $slot, $day->isoWeekday(), $host, $data['topic'] ?? null, $day, null, $request->user());
+        }
+
+        try {
+            $lesson = $action->handle($request->user(), $group, $slot, $data['topic'] ?? null, $host, $date, $series?->id);
+        } catch (\Throwable $e) {
+            // Birinchi dars yaratilmasa, jadval ham saqlanmaydi.
+            $series?->delete();
+            throw $e;
+        }
 
         return (new LessonResource($lesson->load(['group', 'teacher', 'slot'])))->response()->setStatusCode(201);
     }

@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/Page'
 import { Segmented } from '@/components/ui/Segmented'
+import { Switch } from '@/components/ui/Switch'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { cn } from '@/components/ui/cn'
 import { copyText, telegramShareUrl, useLessonActions } from '@/features/lessons/useLessonActions'
@@ -115,6 +116,7 @@ export default function CreateLessonPage() {
   const [groupId, setGroupId] = useState<number | null>(null)
   const [host, setHost] = useState<HostChoice>('auto')
   const [topic, setTopic] = useState('')
+  const [repeat, setRepeat] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [created, setCreated] = useState<Lesson | null>(null)
   const isToday = date === today
@@ -168,6 +170,7 @@ export default function CreateLessonPage() {
           host_id: host === 'auto' ? null : host,
           date: isToday ? null : date,
           topic: topic.trim() || null,
+          repeat_weekly: canPlan && slot !== 'now' && repeat,
         })
       ).data.data,
     onSuccess: (lesson) => {
@@ -175,6 +178,7 @@ export default function CreateLessonPage() {
       setTopic('')
       setGroupId(null)
       setHost('auto')
+      setRepeat(false)
       options.refetch()
     },
     onError: (error) => {
@@ -330,6 +334,22 @@ export default function CreateLessonPage() {
                 placeholder={t('Masalan: Chiziqli algebra, 5-mavzu')}
                 error={errors.topic}
               />
+              {canPlan && (
+                <label className={cn('mt-5 flex items-start gap-3', slot === 'now' && 'opacity-60')}>
+                  <Switch checked={repeat && slot !== 'now'} disabled={slot === 'now'} onChange={setRepeat} label={t('Har hafta takrorlash')} />
+                  <span className="text-sm">
+                    <span className="block font-medium text-ink-900">
+                      {t('Har hafta takrorlash')}
+                      {selectedSlot && `: ${formatWeekday(new Date(`${date}T12:00:00+05:00`))}, ${selectedSlot.starts_at}`}
+                    </span>
+                    <span className="block text-steel-600">
+                      {slot === 'now'
+                        ? t('Takrorlash uchun juftlikni tanlang.')
+                        : t('Keyingi haftalarda Zoom uchrashuvi dars kuni, 1 soat oldin avtomatik yaratiladi va Telegram’ga yuboriladi.')}
+                    </span>
+                  </span>
+                </label>
+              )}
             </Step>
           </div>
 
@@ -359,6 +379,12 @@ export default function CreateLessonPage() {
                     {host === 'auto' && shownHost && <span className="block text-xs font-normal text-steel-500">{t('avtomatik tanlanadi')}</span>}
                   </dd>
                 </div>
+                {repeat && slot !== 'now' && canPlan && (
+                  <div>
+                    <dt className="text-steel-600">{t('Takrorlanadi')}</dt>
+                    <dd className="mt-0.5 font-medium text-ink-900">{t('Har hafta, bekor qilinguncha')}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-steel-600">{t('Davomiyligi')}</dt>
                   <dd className="mt-0.5 font-medium text-ink-900">{formatDuration(duration)}</dd>

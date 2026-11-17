@@ -100,6 +100,27 @@ export function formatWeekday(value: string | Date): string {
   return names().weekdays[parts(value).weekday]
 }
 
+/** ISO hafta kuni nomi: 1 — dushanba ... 7 — yakshanba. */
+export function weekdayName(iso: number): string {
+  return names().weekdays[iso % 7]
+}
+
+/** ISO hafta kuni (Toshkent bo'yicha): 1 — dushanba ... 7 — yakshanba. */
+export function isoWeekday(value: string | Date): number {
+  return parts(value).weekday || 7
+}
+
+/** YYYY-MM-DD sanasini Toshkent kunining o'rtasi sifatida (sana hisoblari uchun). */
+export function dayDate(iso: string): Date {
+  return new Date(`${iso}T12:00:00+05:00`)
+}
+
+/** Berilgan kun joylashgan haftaning dushanbasi (YYYY-MM-DD). */
+export function weekStart(iso: string): string {
+  const date = dayDate(iso)
+  return isoDate(addDays(date, 1 - isoWeekday(date)))
+}
+
 export function isSameDay(a: string | Date, b: string | Date): boolean {
   const pa = parts(a)
   const pb = parts(b)

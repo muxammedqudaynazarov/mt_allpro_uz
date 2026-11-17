@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\LessonAttendanceController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\LessonSeriesController;
 use App\Http\Controllers\Api\LessonSlotController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\MonitorController;
@@ -45,6 +47,15 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::post('/lessons/{lesson}/start', [LessonController::class, 'start']);
         Route::post('/lessons/{lesson}/end', [LessonController::class, 'end']);
         Route::get('/lessons/{lesson}/live', [MonitorController::class, 'participants']);
+
+        Route::get('/calendar', CalendarController::class);
+        Route::get('/series', [LessonSeriesController::class, 'index']);
+        Route::post('/series', [LessonSeriesController::class, 'store']);
+        Route::patch('/series/{series}', [LessonSeriesController::class, 'update']);
+        Route::post('/series/{series}/cancel', [LessonSeriesController::class, 'cancel']);
+        Route::delete('/series/{series}', [LessonSeriesController::class, 'destroy']);
+        Route::post('/series/{series}/skips', [LessonSeriesController::class, 'skip']);
+        Route::delete('/series/{series}/skips', [LessonSeriesController::class, 'unskip']);
         Route::get('/lessons/{lesson}/attendance', [LessonAttendanceController::class, 'show']);
         Route::get('/lessons/{lesson}/attendance/export', [LessonAttendanceController::class, 'export']);
         Route::post('/lessons/{lesson}/attendance/sync', [LessonAttendanceController::class, 'sync'])->middleware('throttle:10,1');

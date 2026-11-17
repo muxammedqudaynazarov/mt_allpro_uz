@@ -11,6 +11,7 @@ const CreateLessonPage = lazy(() => import('@/pages/CreateLessonPage'))
 const LessonsPage = lazy(() => import('@/pages/LessonsPage'))
 const LessonDetailPage = lazy(() => import('@/pages/LessonDetailPage'))
 const MonitorPage = lazy(() => import('@/pages/MonitorPage'))
+const CalendarPage = lazy(() => import('@/pages/CalendarPage'))
 const GroupStudentsPage = lazy(() => import('@/pages/GroupStudentsPage'))
 const UsersPage = lazy(() => import('@/pages/UsersPage'))
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'))
@@ -49,6 +50,7 @@ export default function App() {
                 <Route path="lessons/new" element={<CreateLessonPage />} />
               </Route>
               <Route path="lessons/:id" element={<LessonDetailPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route element={<RequireRole roles={['education', 'super_admin']} />}>
                 <Route path="monitor" element={<MonitorPage />} />

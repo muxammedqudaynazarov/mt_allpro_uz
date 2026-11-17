@@ -82,6 +82,8 @@ export interface Lesson {
   teacher: UserRef
   /** Dars o'tkazilayotgan Zoom host (email). */
   host: string | null
+  /** Har haftalik jadvaldan yaratilgan bo'lsa — jadval ID. */
+  series_id: number | null
   slot: SlotRef | null
   tracking: LessonTracking
   can: { start: boolean; end: boolean }
@@ -169,6 +171,51 @@ export interface MonitorData {
   live: Lesson[]
   upcoming: Lesson[]
   finished: Lesson[]
+}
+
+export interface LessonSeries {
+  id: number
+  /** ISO hafta kuni: 1 — dushanba ... 7 — yakshanba. */
+  weekday: number
+  topic: string | null
+  group: GroupRef
+  teacher: UserRef
+  slot: { id: number; name: string; starts_at: string; ends_at: string }
+  host: { id: number; name: string; email: string } | null
+  starts_on: string
+  ends_on: string | null
+  is_active: boolean
+  cancelled_at: string | null
+  next_date: string | null
+  skips: string[]
+  /** Bugungi uchrashuv yaratilmagan bo'lsa — sababi. */
+  last_error: string | null
+  can: { update: boolean; cancel: boolean; delete: boolean }
+}
+
+/** Haftalik darsning hali Zoom uchrashuvi yaratilmagan sanasi. */
+export interface PlannedLesson {
+  series_id: number
+  date: string
+  starts_at: string
+  ends_at: string
+  group: GroupRef
+  teacher: UserRef
+  slot: { id: number; name: string }
+  topic: string | null
+  skipped: boolean
+  error: string | null
+  can_cancel: boolean
+}
+
+export interface CalendarData {
+  from: string
+  to: string
+  lead_minutes: number
+  can_manage: boolean
+  slots: { id: number; name: string; starts_at: string; ends_at: string }[]
+  lessons: Lesson[]
+  planned: PlannedLesson[]
 }
 
 export interface ZoomHost {

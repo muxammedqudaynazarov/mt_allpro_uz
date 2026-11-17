@@ -6,8 +6,10 @@ use App\Enums\Role;
 use App\Enums\UserStatus;
 use App\Jobs\SendTelegramMessage;
 use App\Models\Lesson;
+use App\Models\LessonSeries;
 use App\Models\User;
 use App\Services\Telegram\TelegramBot;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 
 /** Telegram orqali yuboriladigan xabarlar matni bir joyda. */
@@ -26,7 +28,7 @@ class Notifier
         $time = $lesson->starts_at->format('H:i').'–'.$lesson->ends_at->format('H:i');
         $day = $lesson->starts_at->isToday() ? __('bugun', [], $l) : $lesson->starts_at->format('d.m.Y');
         $lines = [
-            '<b>'.__('Dars yaratildi', [], $l).'</b>',
+            '<b>'.($lesson->lesson_series_id ? __('Haftalik dars: Zoom uchrashuvi tayyor', [], $l) : __('Dars yaratildi', [], $l)).'</b>',
             '',
             '<b>'.__('Guruh:', [], $l).'</b> '.e($lesson->group->name),
             '<b>'.__('Vaqt:', [], $l).'</b> '.$day.', '.$time,
@@ -40,6 +42,9 @@ class Notifier
         $lines[] = '<code>'.e((string) $lesson->join_url).'</code>';
         $lines[] = '';
         $lines[] = __('«Guruhga yuborish» tugmasi orqali havolani guruh chatiga joʻnating.', [], $l);
+        if ($lesson->lesson_series_id) {
+            $lines[] = __('Bu dars har hafta avtomatik yaratiladi. Bekor qilish uchun tizimdagi kalendarni oching.', [], $l);
+        }
 
         // Darsni boshlash havolasi imzolangan va dars tugashi bilan eskiradi.
         // Zoom'ning start_url (ZAK) havolasi 2 soatda eskiradi, shuning uchun
@@ -51,6 +56,28 @@ class Notifier
             [['text' => __('Darsni boshlash', [], $l), 'url' => $launch]],
             [['text' => __('Guruhga yuborish', [], $l), 'url' => $share]],
         ]);
+    }
+
+    /** Takroriy dars uchun uchrashuv yaratilmadi (masalan, bo'sh host yo'q). */
+    public function seriesFailed(LessonSeries $series, Carbon $day, string $reason): void
+    {
+        $teacher = $series->teacher;
+        if (! $this->bot->enabled() || ! $teacher?->telegram_chat_id) {
+            return;
+        }
+        $l = $teacher->preferredLocale();
+        $time = $series->slot->startOn($day)->format('H:i').'–'.$series->slot->endOn($day)->format('H:i');
+        $text = implode("\n", [
+            '<b>'.__('Haftalik dars yaratilmadi', [], $l).'</b>',
+            '',
+            '<b>'.__('Guruh:', [], $l).'</b> '.e($series->group->name),
+            '<b>'.__('Vaqt:', [], $l).'</b> '.__('bugun', [], $l).', '.$time,
+            '<b>'.__('Sabab:', [], $l).'</b> '.e($reason),
+            '',
+            __('Tizim dars tugashiga 10 daqiqa qolguncha qayta urinadi. Darsni qoʻlda ham yaratishingiz mumkin.', [], $l),
+        ]);
+        $url = rtrim((string) config('app.frontend_url'), '/').'/lessons/new';
+        SendTelegramMessage::dispatch((string) $teacher->telegram_chat_id, $text, [[['text' => __('Dars yaratish', [], $l), 'url' => $url]]]);
     }
 
     public function userPending(User $user): void

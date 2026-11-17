@@ -4,6 +4,7 @@ import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
 import {
   BarChart3,
   CalendarClock,
+  CalendarDays,
   Clock3,
   LayoutDashboard,
   LogOut,
@@ -60,6 +61,7 @@ function useNav(): NavSection[] {
         { to: '/', label: t('Bosh sahifa'), icon: <LayoutDashboard />, end: true },
         { to: '/lessons/new', label: t('Dars yaratish'), icon: <PlusCircle />, permission: 'lessons.create' },
         { to: '/lessons', label: t('Darslar'), icon: <CalendarClock />, end: true },
+        { to: '/calendar', label: t('Kalendar'), icon: <CalendarDays /> },
         { to: '/monitor', label: t('Monitoring'), icon: <RadioTower />, permission: 'lessons.monitor' },
       ],
     },

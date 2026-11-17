@@ -87,6 +87,11 @@ class Lesson extends Model
         return $this->belongsTo(User::class, 'ended_by_id')->withTrashed();
     }
 
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(LessonSeries::class, 'lesson_series_id');
+    }
+
     public function liveParticipants(): HasMany
     {
         return $this->hasMany(LiveParticipant::class);
