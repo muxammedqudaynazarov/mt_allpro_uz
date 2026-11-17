@@ -97,10 +97,10 @@ Eng muhim qiymatlar:
 |---|---|
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` (**hech qachon `true` qilmang** — xato sahifasida maxfiy ma'lumot chiqadi) |
-| `APP_URL`, `FRONTEND_URL` | `https://mt.allpro.uz` |
+| `APP_URL`, `FRONTEND_URL` | Sayt ochiladigan manzil, ikkalasi bir xil: `https://mt.allpro.uz` |
 | `APP_LOCALE` | `kaa` (qoraqalpoqcha, asosiy til) yoki `uz` |
 | `DB_*` | 3-bosqichdagi baza ma'lumotlari |
-| `SANCTUM_STATEFUL_DOMAINS` | `mt.allpro.uz` |
+| `SANCTUM_STATEFUL_DOMAINS` | Shart emas: sayt ochilgan domen avtomatik qabul qilinadi. Faqat qo'shimcha domenlar uchun |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `HEMIS_*` | [10-bo'lim](#10-hemis-oauth-ulash) |
 | `TELEGRAM_*` | [12-bo'lim](#12-telegram-bot) |
@@ -115,6 +115,14 @@ php artisan optimize
 sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R ug+rwX storage bootstrap/cache
 ```
+
+Sozlamalarni tekshirish (domen, HTTPS, baza, papka huquqlari, HEMIS, Zoom, Telegram). `--url` ga sayt ochiladigan manzilni yozing:
+
+```bash
+sudo -u www-data php artisan app:check --url=https://mt.allpro.uz
+```
+
+Buyruq har bir muammo uchun nima qilish kerakligini yozadi. `.env` o'zgartirilgandan keyin har safar `sudo -u www-data php artisan optimize` ishga tushiring — aks holda eski sozlamalar keshda qoladi.
 
 ## 6. Frontendni yig'ish
 
@@ -282,9 +290,13 @@ Kunlik baza nusxasi (cron), masalan `/etc/cron.d/mt-allpro-backup`:
 
 ## 16. Muammolarni hal qilish
 
+Avval `sudo -u www-data php artisan app:check --url=https://SAYT-MANZILI` ni ishga tushiring — ko'p muammolarni o'zi topadi.
+
 | Belgisi | Sabab va yechim |
 |---|---|
-| Kirgandan keyin yana login sahifasiga qaytadi | `SANCTUM_STATEFUL_DOMAINS` domen bilan mos emas yoki `SESSION_SECURE_COOKIE=true`, lekin sayt HTTP'da ochilgan. HTTPS ishlating |
+| Kirishda "Server Error" yoki "Serverda xatolik" | Oxirgi xato: `tail -n 60 storage/logs/laravel-$(date +%F).log`. Ko'pincha `storage` papkasiga yozish huquqi yo'q (artisan `root` nomidan ishga tushirilgan): `sudo chown -R www-data:www-data storage bootstrap/cache` |
+| "HEMIS orqali kirish hali sozlanmagan" | `.env`da `HEMIS_CLIENT_ID` va `HEMIS_CLIENT_SECRET` bo'sh yoki `.env` o'zgargandan keyin `php artisan optimize` ishga tushirilmagan |
+| Kirgandan keyin yana login sahifasiga qaytadi | `SESSION_SECURE_COOKIE=true`, lekin sayt HTTP'da ochilgan. HTTPS ishlating |
 | "CSRF token mismatch" (419) | `SESSION_DOMAIN=null` va `APP_URL` haqiqiy domen bo'lishi kerak. `php artisan optimize` |
 | "HEMIS bilan bog'lanib bo'lmadi" | `HEMIS_BASE_URL`, Client ID/Secret va Redirect URI'ni tekshiring. Log: `storage/logs` |
 | "Zoom akkauntining kalitlari noto'g'ri" | Zoom Marketplace'da ilova faolligi va scope'larni tekshiring, Client Secret'ni qayta kiriting |

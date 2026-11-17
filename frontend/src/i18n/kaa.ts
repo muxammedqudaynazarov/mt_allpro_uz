@@ -55,6 +55,7 @@ export const kaa: Record<string, string> = {
   "Darsni yakunlab boʻlmadi.": "Sabaqtı juwmaqlaw múmkin bolmadı.",
   "{count} ta dars": "{count} sabaq",
   "Masofaviy taʼlim tizimi": "Aralıqtan oqıtıw sisteması",
+  "Serverda xatolik yuz berdi. Birozdan soʻng qayta urinib koʻring yoki administratorga xabar bering.": "Serverde qátelik júz berdi. Biraz waqıttan soń qayta urınıp kóriń yamasa administratorǵa xabar beriń.",
   "Server bilan aloqa yoʻq. Internet ulanishini tekshiring.": "Server menen baylanıs joq. Internet baylanısın tekseriń.",
   "Bu amal uchun ruxsatingiz yoʻq.": "Bul háreket ushın ruqsatıńız joq.",
   "Juda koʻp urinish. Birozdan soʻng qayta urinib koʻring.": "Júdá kóp urınıs. Biraz waqıttan soń qayta urınıp kóriń.",

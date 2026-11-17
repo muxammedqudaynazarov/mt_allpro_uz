@@ -72,6 +72,11 @@ export function errorMessage(error: unknown, fallback?: string): string {
       const first = Object.values(body.errors)[0]?.[0]
       if (first) return first
     }
+    const status = error.response?.status ?? 0
+    // Production'da Laravel 500 xatoni faqat "Server Error" deb qaytaradi — foydalanuvchiga tushunarli matn.
+    if (status >= 500 && (!body?.message || body.message === 'Server Error')) {
+      return tGlobal('Serverda xatolik yuz berdi. Birozdan soʻng qayta urinib koʻring yoki administratorga xabar bering.')
+    }
     if (body?.message) return body.message
     if (!error.response) return tGlobal('Server bilan aloqa yoʻq. Internet ulanishini tekshiring.')
     if (error.response.status === 403) return tGlobal('Bu amal uchun ruxsatingiz yoʻq.')

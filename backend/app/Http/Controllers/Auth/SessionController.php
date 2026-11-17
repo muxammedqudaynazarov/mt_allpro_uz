@@ -23,6 +23,11 @@ class SessionController extends Controller
      */
     public function store(Request $request): MeResource
     {
+        // Sanctum sessiyani faqat sayt o'z domenidan ochilganda yoqadi (config/sanctum.php).
+        if (! $request->hasSession()) {
+            abort(400, __('Sessiya ochilmadi. Tizimni brauzerda oʻz manzili orqali oching.'));
+        }
+
         $data = $request->validate([
             'login' => ['required', 'string', 'max:64'],
             'password' => ['required', 'string', 'max:255'],
