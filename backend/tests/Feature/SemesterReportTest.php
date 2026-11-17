@@ -72,11 +72,11 @@ class SemesterReportTest extends TestCase
         $rows = collect($data['students'])->keyBy('name');
 
         $this->assertSame(['held' => 3, 'missed' => 1, 'pending' => 0, 'zoom_minutes' => 240, 'avg_lesson_minutes' => 80, 'students' => 3, 'avg_students_per_lesson' => 1.7, 'avg_attendance_percent' => 56], $data['totals']);
-        $this->assertSame([240, 100, 100, 'alo', 3], [$rows['Ali Valiyev']['minutes'], $rows['Ali Valiyev']['percent_time'], $rows['Ali Valiyev']['percent_lessons'], $rows['Ali Valiyev']['level'], $rows['Ali Valiyev']['attended']]);
+        $this->assertSame([240, 100, 100, 'alo', 3], [$rows['ALI VALIYEV']['minutes'], $rows['ALI VALIYEV']['percent_time'], $rows['ALI VALIYEV']['percent_lessons'], $rows['ALI VALIYEV']['level'], $rows['ALI VALIYEV']['attended']]);
         // 80 / 240 = 33% → Sust (≥30). Darsning yarmida bo'lgan — qatnashgan hisoblanadi.
-        $this->assertSame([80, 33, 67, 'sust', 2, 10], [$rows['Vali Karimov']['minutes'], $rows['Vali Karimov']['percent_time'], $rows['Vali Karimov']['percent_lessons'], $rows['Vali Karimov']['level'], $rows['Vali Karimov']['attended'], $rows['Vali Karimov']['avg_late_minutes']]);
+        $this->assertSame([80, 33, 67, 'sust', 2, 10], [$rows['VALI KARIMOV']['minutes'], $rows['VALI KARIMOV']['percent_time'], $rows['VALI KARIMOV']['percent_lessons'], $rows['VALI KARIMOV']['level'], $rows['VALI KARIMOV']['attended'], $rows['VALI KARIMOV']['avg_late_minutes']]);
         // 20 daqiqa (25%) — kirgan, lekin qatnashgan hisoblanmaydi.
-        $this->assertSame([0, 1, 8, 'past', [0, 0, 20]], [$rows['Guli Saidova']['attended'], $rows['Guli Saidova']['joined'], $rows['Guli Saidova']['percent_time'], $rows['Guli Saidova']['level'], $rows['Guli Saidova']['per_lesson']]);
+        $this->assertSame([0, 1, 8, 'past', [0, 0, 20]], [$rows['GULI SAIDOVA']['attended'], $rows['GULI SAIDOVA']['joined'], $rows['GULI SAIDOVA']['percent_time'], $rows['GULI SAIDOVA']['level'], $rows['GULI SAIDOVA']['per_lesson']]);
         $this->assertArrayNotHasKey('iPhone', $rows->all());
         $this->assertSame(['past' => 1, 'sust' => 1, 'qoniqarli' => 0, 'ortacha' => 0, 'yaxshi' => 0, 'alo' => 1], $data['levels']);
         $this->assertSame([2, 2, 1], array_column($data['lessons'], 'present'));
@@ -89,7 +89,7 @@ class SemesterReportTest extends TestCase
 
         $this->actingAsUser($admin)->putJson('/api/settings', $payload)->assertOk()->assertJsonPath('data.assessment.basis', 'lessons');
         // Darslar foizi: Vali 67% → O'rtacha (≥60).
-        $this->assertSame('ortacha', collect($this->report()['students'])->firstWhere('name', 'Vali Karimov')['level']);
+        $this->assertSame('ortacha', collect($this->report()['students'])->firstWhere('name', 'VALI KARIMOV')['level']);
 
         // Chegaralar o'sib borishi shart; O'quv bo'limi sozlamani o'zgartira olmaydi.
         $bad = $payload;
@@ -116,11 +116,11 @@ class SemesterReportTest extends TestCase
         $sheets = $this->xlsx($this->actingAsUser($user)->get("/api/reports/semester/export?group_id={$this->group->id}"));
         $this->assertSame(['Yakuniy', 'Darslar boʻyicha'], array_keys($sheets));
         $summary = collect($sheets['Yakuniy']);
-        $ali = $summary->first(fn (array $row) => ($row[1] ?? null) === 'Ali Valiyev');
-        $this->assertSame([1, 'Ali Valiyev', '3 / 3', 4, 100, 100], array_slice($ali, 0, 6));
+        $ali = $summary->first(fn (array $row) => ($row[1] ?? null) === 'ALI VALIYEV');
+        $this->assertSame([1, 'ALI VALIYEV', '3 / 3', 4, 100, 100], array_slice($ali, 0, 6));
         $this->assertSame('Aʼlo', end($ali));
-        $matrix = collect($sheets['Darslar boʻyicha'])->first(fn (array $row) => $row[0] === 'Guli Saidova');
-        $this->assertSame(['Guli Saidova', 0, 0, 20], $matrix);
+        $matrix = collect($sheets['Darslar boʻyicha'])->first(fn (array $row) => $row[0] === 'GULI SAIDOVA');
+        $this->assertSame(['GULI SAIDOVA', 0, 0, 20], $matrix);
 
         $all = $this->xlsx($this->actingAsUser($user)->get('/api/reports/semester/export'));
         $this->assertSame(['Guruhlar', '3-B1 Iqtisodiyot'], array_keys($all));

@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { QRCodeSVG } from 'qrcode.react'
 import { ArrowLeft, KeyRound, Pencil, Send, Unlink } from 'lucide-react'
 import { toast } from 'sonner'
+import { upperName, upperNameInput } from '@/lib/name'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
@@ -21,7 +22,7 @@ import { useT } from '@/i18n/I18nProvider'
 function NameModal({ onClose }: { onClose: () => void }) {
   const t = useT()
   const { user, refresh } = useAuth()
-  const [form, setForm] = useState({ last_name: user?.last_name ?? '', first_name: user?.first_name ?? '', middle_name: user?.middle_name ?? '' })
+  const [form, setForm] = useState({ last_name: upperName(user?.last_name ?? ''), first_name: upperName(user?.first_name ?? ''), middle_name: upperName(user?.middle_name ?? '') })
   const save = useMutation({
     mutationFn: () => api.patch('/api/me', { ...form, middle_name: form.middle_name.trim() || null }),
     onSuccess: async () => {
@@ -54,9 +55,9 @@ function NameModal({ onClose }: { onClose: () => void }) {
       }
     >
       <form id="name-form" onSubmit={submit} className="grid gap-4">
-        <Input label={t('Familiya')} value={form.last_name} maxLength={80} required onChange={(e) => setForm({ ...form, last_name: e.target.value })} error={errors.last_name} />
-        <Input label={t('Ism')} value={form.first_name} maxLength={80} required onChange={(e) => setForm({ ...form, first_name: e.target.value })} error={errors.first_name} />
-        <Input label={t('Otasining ismi')} value={form.middle_name} maxLength={80} onChange={(e) => setForm({ ...form, middle_name: e.target.value })} error={errors.middle_name} />
+        <Input label={t('Familiya')} value={form.last_name} maxLength={80} required onChange={upperNameInput((last_name) => setForm({ ...form, last_name }))} error={errors.last_name} />
+        <Input label={t('Ism')} value={form.first_name} maxLength={80} required onChange={upperNameInput((first_name) => setForm({ ...form, first_name }))} error={errors.first_name} />
+        <Input label={t('Otasining ismi')} value={form.middle_name} maxLength={80} onChange={upperNameInput((middle_name) => setForm({ ...form, middle_name }))} error={errors.middle_name} />
       </form>
     </Modal>
   )

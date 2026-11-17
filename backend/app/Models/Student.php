@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PersonName;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,12 @@ class Student extends Model
     }
 
     /** HEMIS holati: synced — ma'lumot olingan, pending — ID kiritilgan/o'zgargan, not_found — HEMIS'da yo'q. */
+    /** Ekranda, Excel'da va jurnalda ko'rinadigan nom — katta harflarda. */
+    public function displayName(): string
+    {
+        return (string) PersonName::upper($this->name);
+    }
+
     public function hemisStatus(): ?string
     {
         if (! $this->hemis_id) {

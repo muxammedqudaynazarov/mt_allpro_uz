@@ -78,11 +78,11 @@ class ZoomWebhookTest extends TestCase
         $education = User::factory()->education()->create();
         $live = $this->actingAsUser($education)->getJson("/api/lessons/{$lesson->id}/live")->assertOk();
         $live->assertJsonPath('data.source', 'webhook')
-            ->assertJsonPath('data.participants.0.name', 'Teacher')
+            ->assertJsonPath('data.participants.0.name', 'TEACHER')
             ->assertJsonPath('data.participants.0.is_host', true)
-            ->assertJsonPath('data.participants.1.name', 'Ali Valiyev')
+            ->assertJsonPath('data.participants.1.name', 'ALI VALIYEV')
             ->assertJsonPath('data.participants.1.present', true)
-            ->assertJsonPath('data.participants.2.name', 'Vali')
+            ->assertJsonPath('data.participants.2.name', 'VALI')
             ->assertJsonPath('data.participants.2.present', false)
             ->assertJsonPath('data.participants.2.minutes', 3)
             ->assertJsonCount(3, 'data.participants');

@@ -266,23 +266,23 @@ class AttendanceTest extends TestCase
             ->assertJsonPath('data.lesson.tracking.start_delay_minutes', 3)
             ->assertJsonPath('data.lesson.tracking.minutes', 75)
             ->assertJsonPath('data.lesson.tracking.participants', 2)
-            ->assertJsonPath('data.students.0.name', 'Ali Valiyev')
+            ->assertJsonPath('data.students.0.name', 'ALI VALIYEV')
             ->assertJsonPath('data.students.0.minutes', 75)
             ->assertJsonPath('data.students.0.percent', 100)
-            ->assertJsonPath('data.students.0.names', ['Ali Valiyev', 'ali valiev (iPhone)'])
+            ->assertJsonPath('data.students.0.names', ['ALI VALIYEV', 'ALI VALIEV (IPHONE)'])
             ->assertJsonPath('data.students.0.segments', [['2026-11-17T14:33:00+05:00', '2026-11-17T15:48:00+05:00']])
             ->assertJsonPath('data.students.1.segments', [['2026-11-17T14:45:00+05:00', '2026-11-17T15:30:00+05:00']])
-            ->assertJsonPath('data.students.1.name', 'Vali')
+            ->assertJsonPath('data.students.1.name', 'VALI')
             ->assertJsonPath('data.students.1.late_minutes', 12)
             ->assertJsonPath('data.students.1.percent', 60)
-            ->assertJsonPath('data.host.names', ['Zoom 1'])
+            ->assertJsonPath('data.host.names', ['ZOOM 1'])
             ->assertJsonPath('data.can_manage_students', false);
 
         $this->actingAsUser(User::factory()->create())->getJson("/api/lessons/{$lesson->id}/attendance")->assertForbidden();
 
         $rows = collect($this->xlsx($this->actingAsUser($teacher)->get("/api/lessons/{$lesson->id}/attendance/export")))->first();
         $rows = collect($rows);
-        $ali = $rows->first(fn (array $row) => $row[0] === 'Ali Valiyev');
+        $ali = $rows->first(fn (array $row) => $row[0] === 'ALI VALIYEV');
         $this->assertSame([75, 100], [$ali[5], $ali[6]]);
     }
 

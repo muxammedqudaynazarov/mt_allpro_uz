@@ -49,7 +49,7 @@ class MeController extends Controller
         $changes = array_keys($user->getDirty());
         $user->save();
         if (array_diff($changes, ['locale'])) {
-            Audit::log('profile.updated', 'Profil oʻzgartirildi: :name', $user, replace: ['name' => $user->name]);
+            Audit::log('profile.updated', 'Profil oʻzgartirildi: :name', $user, replace: ['name' => $user->displayName()]);
         }
 
         return new MeResource($user);
@@ -70,7 +70,7 @@ class MeController extends Controller
             throw ValidationException::withMessages(['current_password' => __('Joriy parol notoʻgʻri.')]);
         }
         $user->forceFill(['password' => $data['password']])->save();
-        Audit::log('profile.password', 'Parol almashtirildi: :name', $user, replace: ['name' => $user->name]);
+        Audit::log('profile.password', 'Parol almashtirildi: :name', $user, replace: ['name' => $user->displayName()]);
 
         return response()->noContent();
     }

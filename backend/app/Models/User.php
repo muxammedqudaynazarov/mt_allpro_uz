@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Role;
 use App\Enums\UserStatus;
+use App\Support\PersonName;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -137,10 +138,10 @@ class User extends Authenticatable
     public function displayName(): string
     {
         if (filled($this->last_name) || filled($this->first_name)) {
-            return trim(($this->last_name ?? '').' '.($this->first_name ?? ''));
+            return PersonName::upper(trim(($this->last_name ?? '').' '.($this->first_name ?? '')));
         }
 
-        return implode(' ', array_slice(preg_split('/\s+/u', trim((string) $this->name)) ?: [], 0, 2));
+        return PersonName::upper(implode(' ', array_slice(preg_split('/\s+/u', trim((string) $this->name)) ?: [], 0, 2)));
     }
 
     /** Foydalanuvchilar ro'yxati: Administrator va O'quv bo'limi hammani ko'radi. */

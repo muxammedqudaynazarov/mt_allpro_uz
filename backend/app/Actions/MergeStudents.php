@@ -50,8 +50,8 @@ class MergeStudents
         });
 
         Audit::log('student.merged', 'Talabalar birlashtirildi: :names → :name', $target, actor: $actor, replace: [
-            'names' => $sources->reject(fn (Student $s) => $s->id === $target->id)->pluck('name')->implode(', '),
-            'name' => $target->name,
+            'names' => $sources->reject(fn (Student $s) => $s->id === $target->id)->map(fn (Student $s) => $s->displayName())->implode(', '),
+            'name' => $target->displayName(),
         ]);
 
         return $target->refresh();

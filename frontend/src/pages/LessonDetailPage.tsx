@@ -44,7 +44,9 @@ function StudentRow({ row, from, to, muted = false }: { row: AttendanceRow; from
       className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-5 py-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_5.5rem_8.5rem]', muted && 'opacity-60')}
     >
       <div className="min-w-0">
-        <p className="truncate font-medium text-ink-900">{row.name}</p>
+        <p className="font-medium break-words text-ink-900 md:truncate" title={row.name}>
+          {row.name}
+        </p>
         {otherNames.length > 0 && (
           <p className="truncate text-sm text-steel-500" title={otherNames.join(', ')}>
             {t('Zoom’da: {names}', { names: otherNames.join(', ') })}
@@ -286,7 +288,9 @@ export default function LessonDetailPage() {
                 {host && (
                   <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 bg-mist/60 px-5 py-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_5.5rem_8.5rem]">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-ink-900"><StaffName name={lesson.teacher.name} /></p>
+                      <p className="font-medium break-words text-ink-900 md:truncate" title={lesson.teacher.name}>
+                        <StaffName name={lesson.teacher.name} />
+                      </p>
                       <p className="text-sm text-steel-500">{t('Oʻqituvchi (host)')}</p>
                     </div>
                     <PresenceStrip

@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Combine, EyeOff, Eye, Pencil, R
 import { toast } from 'sonner'
 import { api, errorMessage, fieldErrors, isStatus } from '@/lib/api'
 import { addDays, formatDayMonth, formatDuration, isoDate } from '@/lib/format'
+import { upperName, upperNameInput } from '@/lib/name'
 import type { GroupStudentRow, GroupStudents } from '@/lib/types'
 import { ActionMenu } from '@/components/ui/ActionMenu'
 import { Avatar } from '@/components/ui/Avatar'
@@ -22,7 +23,7 @@ import NotFoundPage from './NotFoundPage'
 function RenameModal({ student, onClose }: { student: GroupStudentRow; onClose: () => void }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const [name, setName] = useState(student.name)
+  const [name, setName] = useState(upperName(student.name))
   const save = useMutation({
     mutationFn: () => api.patch(`/api/students/${student.id}`, { name: name.trim() }),
     onSuccess: () => {
@@ -55,7 +56,7 @@ function RenameModal({ student, onClose }: { student: GroupStudentRow; onClose: 
       }
     >
       <form id="rename-form" onSubmit={submit}>
-        <Input label={t('Familiya va ism')} value={name} maxLength={120} autoFocus onChange={(e) => setName(e.target.value)} error={fieldErrors(save.error).name} required />
+        <Input label={t('Familiya va ism')} value={name} maxLength={120} autoFocus onChange={upperNameInput(setName)} error={fieldErrors(save.error).name} required />
       </form>
     </Modal>
   )

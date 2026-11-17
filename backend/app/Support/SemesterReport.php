@@ -50,7 +50,7 @@ final class SemesterReport
 
             return [
                 'id' => $student->id,
-                'name' => $student->name,
+                'name' => $student->displayName(),
                 'attended' => $present->count(),
                 'joined' => $items->count(),
                 'minutes' => intdiv($seconds, 60),

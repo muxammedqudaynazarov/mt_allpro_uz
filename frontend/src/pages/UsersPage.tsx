@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, CheckCircle2, Search, Send, ShieldCheck, Trash2, UserRoundCheck, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
+import { upperName, upperNameInput } from '@/lib/name'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, cleanParams, errorMessage } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
@@ -63,13 +64,13 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
   const t = useT()
   const [roles, setRoles] = useState<Role[]>(user.roles)
   const [hemisId, setHemisId] = useState<string>(user.hemis_id ?? '')
-  const [lastName, setLastName] = useState(user.last_name ?? '')
-  const [firstName, setFirstName] = useState(user.first_name ?? '')
-  const [middleName, setMiddleName] = useState(user.middle_name ?? '')
+  const [lastName, setLastName] = useState(upperName(user.last_name ?? ''))
+  const [firstName, setFirstName] = useState(upperName(user.first_name ?? ''))
+  const [middleName, setMiddleName] = useState(upperName(user.middle_name ?? ''))
   const [calendar, setCalendar] = useState(user.can_manage_calendar)
   const update = useUpdateUser()
   const toggle = (role: Role) => setRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]))
-  const nameChanged = lastName.trim() !== (user.last_name ?? '') || firstName.trim() !== (user.first_name ?? '') || middleName.trim() !== (user.middle_name ?? '')
+  const nameChanged = lastName.trim() !== upperName(user.last_name ?? '') || firstName.trim() !== upperName(user.first_name ?? '') || middleName.trim() !== upperName(user.middle_name ?? '')
 
   function save() {
     const payload: UserPatch = { id: user.id, can_manage_calendar: calendar }
@@ -122,9 +123,9 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
         <legend className="text-sm font-medium text-ink-800">{t('Ism-sharif')}</legend>
         <p className="mt-1 text-sm text-steel-600">{t('Vaqtincha tuzatish: foydalanuvchi keyingi safar HEMIS orqali kirganda ism HEMIS’dagi bilan yangilanadi.')}</p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input label={t('Familiya')} value={lastName} maxLength={80} onChange={(event) => setLastName(event.target.value)} />
-          <Input label={t('Ism')} value={firstName} maxLength={80} onChange={(event) => setFirstName(event.target.value)} />
-          <Input label={t('Otasining ismi')} value={middleName} maxLength={80} onChange={(event) => setMiddleName(event.target.value)} />
+          <Input label={t('Familiya')} value={lastName} maxLength={80} onChange={upperNameInput(setLastName)} />
+          <Input label={t('Ism')} value={firstName} maxLength={80} onChange={upperNameInput(setFirstName)} />
+          <Input label={t('Otasining ismi')} value={middleName} maxLength={80} onChange={upperNameInput(setMiddleName)} />
         </div>
       </fieldset>
 

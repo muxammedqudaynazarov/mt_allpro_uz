@@ -120,19 +120,42 @@ export function PresenceStrip({
   }[tone]
 
   return (
-    <div className={cn('relative h-2.5 w-full rounded-full bg-steel-100', className)} role="img" aria-label={label}>
+    <div className={cn('relative h-2.5 w-full rounded-full bg-steel-100', className)} role="group" aria-label={label}>
       {segments.map(([start, end]) => {
-        const left = Math.min(100, Math.max(0, ((new Date(start).getTime() - from) / span) * 100))
-        const right = Math.min(100, Math.max(0, ((new Date(end).getTime() - from) / span) * 100))
+        const startMs = new Date(start).getTime()
+        const endMs = new Date(end).getTime()
+        const left = Math.min(100, Math.max(0, ((startMs - from) / span) * 100))
+        const right = Math.min(100, Math.max(0, ((endMs - from) / span) * 100))
+        const range = `${formatTime(start)}–${formatTime(end)}`
+        const duration = formatDuration((endMs - startMs) / 60_000)
+        // Chetdagi bo'lak tooltipi chiziq chegarasidan chiqib ketmasin.
+        const align = left < 12 ? 'left-0' : right > 88 ? 'right-0' : 'left-1/2 -translate-x-1/2'
         return (
-          <span
+          <button
             key={start}
-            className={cn('absolute inset-y-0 rounded-full', color)}
-            style={{
-              left: `${left}%`,
-              width: `${Math.max(0.8, right - left)}%`,
-            }}
-          />
+            type="button"
+            aria-label={`${range}, ${duration}`}
+            className={cn(
+              'group absolute inset-y-0 cursor-default rounded-full outline-none',
+              // Ingichka bo'lakni ham sichqoncha/barmoq bilan topish oson bo'lsin: ko'rinmas kengroq maydon.
+              "before:absolute before:-inset-x-1 before:-inset-y-2 before:content-['']",
+              'focus-visible:ring-2 focus-visible:ring-azure-500 focus-visible:ring-offset-2',
+              color,
+            )}
+            style={{ left: `${left}%`, width: `${Math.max(0.8, right - left)}%` }}
+          >
+            <span
+              role="tooltip"
+              className={cn(
+                'pointer-events-none absolute bottom-full z-20 mb-2 hidden whitespace-nowrap rounded-md bg-ink-900 px-2.5 py-1.5 text-left text-xs leading-tight text-white shadow-lg',
+                'group-hover:block group-focus:block',
+                align,
+              )}
+            >
+              <span className="block font-medium tabular-nums">{range}</span>
+              <span className="block text-steel-300">{duration}</span>
+            </span>
+          </button>
         )
       })}
     </div>

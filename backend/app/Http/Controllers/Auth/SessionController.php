@@ -54,7 +54,7 @@ class SessionController extends Controller
         Auth::guard('web')->login($user, (bool) ($data['remember'] ?? false));
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
-        Audit::log('auth.login_password', 'Login/parol orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->name]);
+        Audit::log('auth.login_password', 'Login/parol orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
 
         return new MeResource($user);
     }

@@ -4,6 +4,7 @@ namespace App\Services\Zoom;
 
 use App\Models\Lesson;
 use App\Models\LiveParticipant;
+use App\Support\PersonName;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -98,7 +99,7 @@ class LiveMonitor
     private static function row(string $name, ?string $email, bool $isHost, Carbon $joined, ?Carbon $left, int $seconds): array
     {
         return [
-            'name' => $name,
+            'name' => PersonName::upper($name),
             'email' => $email,
             'is_host' => $isHost,
             'present' => $left === null,

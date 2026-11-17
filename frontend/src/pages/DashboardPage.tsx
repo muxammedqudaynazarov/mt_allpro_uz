@@ -14,6 +14,7 @@ import { useNow } from '@/hooks/useNow'
 import { LessonRow } from '@/features/lessons/LessonRow'
 import { OnAirPanel } from '@/features/lessons/OnAirPanel'
 import { useT } from '@/i18n/I18nProvider'
+import { upperName } from '@/lib/name'
 
 function minutesOfDay(time: string): number {
   const [h, m] = time.split(':').map(Number)
@@ -97,7 +98,7 @@ export default function DashboardPage() {
     refetchInterval: 30_000,
   })
 
-  const firstName = user?.first_name ?? ''
+  const firstName = upperName(user?.first_name ?? '')
 
   return (
     <>

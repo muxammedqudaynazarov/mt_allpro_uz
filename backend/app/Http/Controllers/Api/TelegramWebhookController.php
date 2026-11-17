@@ -58,7 +58,7 @@ class TelegramWebhookController extends Controller
             ])->save();
         });
 
-        Audit::log('telegram.linked', 'Telegram ulandi: :name', $user, actor: $user, replace: ['name' => $user->name]);
+        Audit::log('telegram.linked', 'Telegram ulandi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
         $l = $user->preferredLocale();
         $bot->send($chatId, '<b>'.__('Hisobingiz ulandi', [], $l).'</b>, '.e($user->firstName()).".\n\n".__('Endi yaratgan darslaringiz havolalari shu yerga keladi.', [], $l));
 

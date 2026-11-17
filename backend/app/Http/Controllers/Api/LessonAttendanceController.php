@@ -10,6 +10,7 @@ use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\ZoomParticipation;
 use App\Support\AttendanceCalculator;
+use App\Support\PersonName;
 use App\Support\Xlsx;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -106,7 +107,7 @@ class LessonAttendanceController extends Controller
             'lesson' => (new LessonResource($lesson))->resolve($request),
             'host' => $host->isEmpty() ? null : [
                 'first_joined_at' => $host->min('joined_at')?->toIso8601String(),
-                'names' => $host->pluck('name')->unique()->values(),
+                'names' => $host->pluck('name')->map(fn (string $name) => PersonName::upper($name))->unique()->values(),
                 'segments' => $timeline($host),
             ],
             'students' => $this->students($lesson)->map(fn (array $row) => [
@@ -137,9 +138,9 @@ class LessonAttendanceController extends Controller
             ->get()
             ->map(fn (LessonAttendance $row) => [
                 'student_id' => $row->student_id,
-                'name' => $row->student->name,
+                'name' => $row->student->displayName(),
                 'ignored' => $row->student->is_ignored,
-                'names' => $names->get($row->student_id, collect())->pluck('name')->unique()->values()->all(),
+                'names' => $names->get($row->student_id, collect())->pluck('name')->map(fn (string $name) => PersonName::upper($name))->unique()->values()->all(),
                 'first_joined_at' => $row->first_joined_at,
                 'last_left_at' => $row->last_left_at,
                 'late_minutes' => (int) floor($row->late_seconds / 60),

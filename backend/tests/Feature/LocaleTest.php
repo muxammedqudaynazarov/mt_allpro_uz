@@ -71,15 +71,15 @@ class LocaleTest extends TestCase
     public function test_audit_log_is_shown_in_viewer_language(): void
     {
         $super = User::factory()->superAdmin()->create();
-        $teacher = User::factory()->pending()->create(['name' => 'Test Xodim']);
+        $teacher = User::factory()->pending()->create(['name' => 'Xodimov Test Ota', 'last_name' => 'Xodimov', 'first_name' => 'Test', 'middle_name' => 'Ota']);
 
         $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['status' => 'active'])->assertOk();
 
         $this->actingAsUser($super)->getJson('/api/audit-logs', ['X-Locale' => 'kaa'])
-            ->assertJsonPath('data.0.description', 'Paydalanıwshı maǵlıwmatları ózgertildi: Test Xodim (status)')
+            ->assertJsonPath('data.0.description', 'Paydalanıwshı maǵlıwmatları ózgertildi: XODIMOV TEST (status)')
             ->assertJsonMissingPath('data.0.properties._t');
         $this->actingAsUser($super)->getJson('/api/audit-logs', ['X-Locale' => 'uz'])
-            ->assertJsonPath('data.0.description', 'Foydalanuvchi maʼlumotlari oʻzgartirildi: Test Xodim (status)');
+            ->assertJsonPath('data.0.description', 'Foydalanuvchi maʼlumotlari oʻzgartirildi: XODIMOV TEST (status)');
     }
 
     public function test_old_audit_entries_use_new_wording(): void

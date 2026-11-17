@@ -106,7 +106,7 @@ class UserController extends Controller
         $user->save();
 
         if ($changes) {
-            Audit::log('user.updated', 'Foydalanuvchi maʼlumotlari oʻzgartirildi: :name (:fields)', $user, replace: ['name' => $user->name, 'fields' => implode(', ', $changes)], properties: [
+            Audit::log('user.updated', 'Foydalanuvchi maʼlumotlari oʻzgartirildi: :name (:fields)', $user, replace: ['name' => $user->displayName(), 'fields' => implode(', ', $changes)], properties: [
                 'status' => $user->status->value,
                 'roles' => $user->roles,
             ]);
@@ -123,7 +123,7 @@ class UserController extends Controller
         Gate::authorize('delete', $user);
         $user->forceFill(['status' => UserStatus::Blocked, 'telegram_chat_id' => null])->save();
         $user->delete();
-        Audit::log('user.deleted', 'Foydalanuvchi oʻchirildi: :name', $user, replace: ['name' => $user->name]);
+        Audit::log('user.deleted', 'Foydalanuvchi oʻchirildi: :name', $user, replace: ['name' => $user->displayName()]);
 
         return response()->noContent();
     }

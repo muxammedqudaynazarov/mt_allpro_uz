@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\ZoomParticipation;
 use App\Services\Hemis\HemisStudentApi;
 use App\Support\Audit;
+use App\Support\PersonName;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,13 +73,13 @@ class StudentController extends Controller
             'students' => $students
                 ->map(fn (Student $student) => [
                     'id' => $student->id,
-                    'name' => $student->name,
+                    'name' => $student->displayName(),
                     'hemis_id' => $student->hemis_id,
                     'hemis_status' => $student->hemisStatus(),
                     'hemis_error' => $student->hemis_error,
                     'picture_url' => $student->picture_url,
                     'ignored' => $student->is_ignored,
-                    'names' => $names->get($student->id, collect())->pluck('name')->unique()->values()->all(),
+                    'names' => $names->get($student->id, collect())->pluck('name')->map(fn (string $name) => PersonName::upper($name))->unique()->values()->all(),
                     'lessons_attended' => (int) $student->lessons_attended,
                     'minutes' => (int) round(((int) $student->seconds) / 60),
                     'percent' => $heldSeconds > 0 ? min(100, (int) round(((int) $student->seconds) * 100 / $heldSeconds)) : null,
@@ -126,12 +127,12 @@ class StudentController extends Controller
         }
         if ($changes) {
             $student->save();
-            Audit::log('student.updated', 'Talaba maʼlumotlari oʻzgartirildi: :name (:fields)', $student, replace: ['name' => $student->name, 'fields' => implode(', ', $changes)]);
+            Audit::log('student.updated', 'Talaba maʼlumotlari oʻzgartirildi: :name (:fields)', $student, replace: ['name' => $student->displayName(), 'fields' => implode(', ', $changes)]);
         }
 
         return response()->json(['data' => [
             'id' => $student->id,
-            'name' => $student->name,
+            'name' => $student->displayName(),
             'ignored' => $student->is_ignored,
             'hemis_id' => $student->hemis_id,
             'hemis_status' => $student->hemisStatus(),
@@ -162,6 +163,6 @@ class StudentController extends Controller
 
         $merge->handle($target, $sources, $request->user());
 
-        return response()->json(['data' => ['id' => $target->id, 'name' => $target->name, 'merged' => $sources->count()]]);
+        return response()->json(['data' => ['id' => $target->id, 'name' => $target->displayName(), 'merged' => $sources->count()]]);
     }
 }

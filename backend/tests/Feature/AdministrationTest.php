@@ -81,7 +81,7 @@ class AdministrationTest extends TestCase
         $this->actingAsUser($super)->patchJson("/api/users/{$teacher->id}", ['last_name' => 'Qudaynazarov', 'first_name' => 'Muhammad', 'middle_name' => 'Aliyevich'])
             ->assertOk()
             // Ko'rsatishda otasining ismi chiqmaydi, bazada to'liq saqlanadi.
-            ->assertJsonPath('data.name', 'Qudaynazarov Muhammad')
+            ->assertJsonPath('data.name', 'QUDAYNAZAROV MUHAMMAD')
             ->assertJsonPath('data.middle_name', 'Aliyevich');
         $this->assertSame('Qudaynazarov Muhammad Aliyevich', $teacher->fresh()->name);
     }
@@ -103,7 +103,7 @@ class AdministrationTest extends TestCase
         $super = User::factory()->superAdmin()->withPassword('admin')->create();
         $teacher = User::factory()->create();
 
-        $this->actingAsUser($super)->patchJson('/api/me', ['last_name' => 'Aliyev', 'first_name' => 'Vali'])->assertOk()->assertJsonPath('data.name', 'Aliyev Vali');
+        $this->actingAsUser($super)->patchJson('/api/me', ['last_name' => 'Aliyev', 'first_name' => 'Vali'])->assertOk()->assertJsonPath('data.name', 'ALIYEV VALI');
         $this->actingAsUser($teacher)->patchJson('/api/me', ['last_name' => 'Boshqa'])->assertForbidden();
 
         $this->actingAsUser($super)->putJson('/api/me/password', ['current_password' => 'wrong', 'password' => 'new-password-2026', 'password_confirmation' => 'new-password-2026'])
@@ -136,7 +136,7 @@ class AdministrationTest extends TestCase
 
         $this->assertSoftDeleted($teacher);
         $this->assertSame(1, Lesson::count());
-        $this->actingAsUser($super)->getJson('/api/lessons')->assertJsonPath('data.0.teacher.name', $teacher->name);
+        $this->actingAsUser($super)->getJson('/api/lessons')->assertJsonPath('data.0.teacher.name', $teacher->displayName());
     }
 
     public function test_zoom_secret_is_encrypted_and_never_returned(): void
