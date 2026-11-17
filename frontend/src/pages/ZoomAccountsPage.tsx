@@ -140,7 +140,7 @@ export default function ZoomAccountsPage() {
           action={<Button onClick={() => setEditing('new')}>Akkaunt qoʻshish</Button>}
         />
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {accounts.data.map((account) => (
             <li key={account.id} className="rounded-panel bg-white p-5 ring-1 ring-steel-200/70">
               <div className="flex items-start justify-between gap-3">

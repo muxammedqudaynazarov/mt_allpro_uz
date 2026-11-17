@@ -226,7 +226,7 @@ export function AppShell() {
           <span className="font-display text-sm font-semibold">Masofaviy taʼlim</span>
         </header>
 
-        <main id="content" className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
+        <main id="content" className="w-full px-4 py-7 sm:px-6 lg:px-10 lg:py-10 2xl:px-14">
           <Outlet />
         </main>
       </div>

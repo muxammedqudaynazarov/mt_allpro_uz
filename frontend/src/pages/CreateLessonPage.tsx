@@ -199,7 +199,7 @@ export default function CreateLessonPage() {
                   options={courses.map((value) => ({ value: String(value), label: `${value}-kurs` }))}
                 />
               )}
-              <div className="grid gap-2.5 sm:grid-cols-2" role="radiogroup" aria-label="Guruh">
+              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" role="radiogroup" aria-label="Guruh">
                 {groups.map((group) => {
                   const active = group.id === groupId
                   return (

@@ -138,7 +138,7 @@ export default function DashboardPage() {
       ) : data ? (
         <>
           <OnAirPanel lessons={data.live} />
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]">
             <Panel title="Bugungi jadval" padded={false}>
               <TodaySchedule slots={data.slots} lessons={data.today} />
             </Panel>
