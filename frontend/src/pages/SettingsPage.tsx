@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { GraduationCap, Pencil, Plus, Trash2 } from 'lucide-react'
+import { GraduationCap, HardDrive, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
-import { dayDate, formatDate } from '@/lib/format'
-import type { AssessmentCriteria, AssessmentLevel, Semester, SystemSettings } from '@/lib/types'
+import { dayDate, formatBytes, formatDate } from '@/lib/format'
+import type { AssessmentCriteria, AssessmentLevel, RecordingSettings, Semester, SystemSettings } from '@/lib/types'
 import { ActionMenu } from '@/components/ui/ActionMenu'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { Switch } from '@/components/ui/Switch'
 import { LEVEL_LABELS, LEVELS, LevelBadge } from '@/features/reports/SemesterReport'
 import { useT } from '@/i18n/I18nProvider'
 
@@ -349,14 +350,142 @@ function AssessmentPanel() {
   )
 }
 
+/** Sozlama qatori: nomi, izohi va almashtirgich (komponent tashqarida — fokus saqlanadi). */
+function SettingRow({ title, hint, checked, onChange, disabled }: { title: string; hint: string; checked: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
+  return (
+    <div className={cn('flex items-start justify-between gap-6 py-4', disabled && 'opacity-55')}>
+      <div>
+        <p className="text-sm font-medium text-ink-900">{title}</p>
+        <p className="mt-0.5 max-w-xl text-sm text-steel-600">{hint}</p>
+      </div>
+      <Switch checked={checked} disabled={disabled} onChange={onChange} label={title} />
+    </div>
+  )
+}
+
+function RecordingPanel() {
+  const t = useT()
+  const queryClient = useQueryClient()
+  const settings = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => (await api.get<{ data: SystemSettings }>('/api/settings')).data.data,
+  })
+  const save = useMutation({
+    mutationFn: async (value: RecordingSettings) => (await api.put<{ data: SystemSettings }>('/api/settings', { recording: value })).data.data,
+    onSuccess: (data) => {
+      toast.success(t('Sozlama saqlandi'))
+      queryClient.setQueryData(['settings'], data)
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+  if (!settings.data) return <SectionLoader />
+  const value = settings.data.recording
+  const storage = settings.data.storage
+  const update = (patch: Partial<RecordingSettings>) => save.mutate({ ...value, ...patch })
+  const lowSpace = storage.free_bytes !== null && storage.free_bytes < storage.min_free_gb * 1024 ** 3
+
+  return (
+    <Panel title={t('Video yozuvlar')}>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="divide-y divide-steel-100">
+          <SettingRow
+            title={t('Darslarni avtomatik yozib olish')}
+            hint={t('Yangi yaratiladigan darslar Zoom bulutiga yoziladi. Zoom akkauntida bulutga yozish yoqilgan boʻlishi kerak.')}
+            checked={value.enabled}
+            disabled={save.isPending}
+            onChange={(enabled) => update({ enabled })}
+          />
+          <SettingRow
+            title={t('Serverga koʻchirgach Zoom’dan oʻchirish')}
+            hint={t('Yozuv serverga toʻliq yuklanib, hajmi tekshirilgach Zoom bulutidan oʻchiriladi — bulut xotirasi yangi darslar uchun boʻshaydi.')}
+            checked={value.delete_from_zoom}
+            disabled={save.isPending}
+            onChange={(delete_from_zoom) => update({ delete_from_zoom })}
+          />
+          <fieldset className={cn('py-4', !value.delete_from_zoom && 'opacity-55')} disabled={!value.delete_from_zoom || save.isPending}>
+            <legend className="text-sm font-medium text-ink-900">{t('Zoom’dan qanday oʻchirilsin')}</legend>
+            <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+              {(
+                [
+                  { value: 'trash', title: t('Savatga (tavsiya etiladi)'), hint: t('30 kun ichida Zoom’da tiklash mumkin. Savatdagi fayllar bulut hajmiga hisoblanmaydi.') },
+                  { value: 'delete', title: t('Butunlay oʻchirish'), hint: t('Zoom’da tiklab boʻlmaydi — yagona nusxa serverda qoladi.') },
+                ] as const
+              ).map((option) => (
+                <label
+                  key={option.value}
+                  className={cn(
+                    'flex cursor-pointer gap-3 rounded-field p-3.5 ring-1 ring-inset',
+                    value.delete_action === option.value ? 'bg-azure-50 ring-2 ring-azure-500' : 'bg-white ring-steel-200 hover:ring-steel-300',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="delete_action"
+                    className="mt-1 accent-azure-500"
+                    checked={value.delete_action === option.value}
+                    onChange={() => update({ delete_action: option.value })}
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-ink-900">{option.title}</span>
+                    <span className="block text-sm text-steel-600">{option.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <SettingRow
+            title={t('Alohida audio faylni ham saqlash')}
+            hint={t('Video faylda ovoz bor. Alohida M4A fayl faqat kerak boʻlsa saqlansin — oʻchiq boʻlsa, Zoom’dan oʻchirilganda u ham oʻchadi.')}
+            checked={value.include_audio}
+            disabled={save.isPending}
+            onChange={(include_audio) => update({ include_audio })}
+          />
+        </div>
+
+        <aside className="rounded-field bg-mist/70 p-4 text-sm">
+          <p className="flex items-center gap-2 font-medium text-ink-900">
+            <HardDrive className="size-4 text-steel-500" />
+            {t('Server xotirasi')}
+          </p>
+          <dl className="mt-3 space-y-2">
+            <div className="flex justify-between gap-3">
+              <dt className="text-steel-600">{t('Saqlangan')}</dt>
+              <dd className="tabular-nums">{t('{size}, {count} ta fayl', { size: formatBytes(storage.used_bytes), count: storage.files })}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-steel-600">{t('Boʻsh joy')}</dt>
+              <dd className={cn('tabular-nums', lowSpace && 'font-medium text-onair-600')}>{storage.free_bytes !== null ? formatBytes(storage.free_bytes) : '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-steel-600">{t('Zoom bulutida')}</dt>
+              <dd className="tabular-nums">{formatBytes(storage.zoom_bytes)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-steel-600">{t('Navbatda / xato')}</dt>
+              <dd className="tabular-nums">
+                {storage.pending} / <span className={cn(storage.failed > 0 && 'text-amber-600')}>{storage.failed}</span>
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-3 border-t border-steel-200 pt-3 text-xs break-all text-steel-500">{storage.path}</p>
+          {lowSpace && <p className="mt-2 text-xs text-onair-600">{t('Joy {gb} GB dan kam — yangi yozuvlar yuklanmaydi.', { gb: storage.min_free_gb })}</p>}
+        </aside>
+      </div>
+    </Panel>
+  )
+}
+
 export default function SettingsPage() {
   const t = useT()
   return (
     <>
-      <PageHeader title={t('Umumiy sozlamalar')} description={t('Semestr sanalari va semestr hisobotidagi oʻzlashtirish taxmini mezoni.')} />
+      <PageHeader title={t('Umumiy sozlamalar')} description={t('Semestr sanalari, oʻzlashtirish taxmini mezoni va darslarning video yozuvlari.')} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] xl:items-start">
         <SemestersPanel />
         <AssessmentPanel />
+      </div>
+      <div className="mt-6">
+        <RecordingPanel />
       </div>
     </>
   )

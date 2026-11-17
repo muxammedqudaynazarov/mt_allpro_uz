@@ -34,6 +34,8 @@ class LessonResource extends JsonResource
             'host' => $this->zoom_host_email,
             // Har haftalik jadvaldan yaratilgan bo'lsa.
             'series_id' => $this->lesson_series_id,
+            // Uchrashuv Zoom bulutiga yozish bilan yaratilganmi.
+            'record' => (bool) $this->record_cloud,
             'slot' => $this->slot ? ['id' => $this->slot->id, 'name' => $this->slot->label(), 'starts_at' => $this->slot->starts_at] : null,
             // Zoom'dagi haqiqiy holat: host qachon boshlagan/tugatgan, nechta talaba qatnashgan.
             'tracking' => [

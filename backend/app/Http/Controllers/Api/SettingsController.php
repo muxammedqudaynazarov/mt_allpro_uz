@@ -6,6 +6,7 @@ use App\Enums\Assessment;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Support\Audit;
+use App\Support\RecordingSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,25 @@ class SettingsController extends Controller
             'assessment.presence_percent' => ['required_with:assessment', 'integer', 'between:1,100'],
             'assessment.thresholds' => ['required_with:assessment', 'array'],
             'assessment.thresholds.*' => ['integer', 'between:0,100'],
+            'recording' => ['sometimes', 'array'],
+            'recording.enabled' => ['required_with:recording', 'boolean'],
+            'recording.delete_from_zoom' => ['required_with:recording', 'boolean'],
+            'recording.delete_action' => ['required_with:recording', Rule::in(['trash', 'delete'])],
+            'recording.include_audio' => ['required_with:recording', 'boolean'],
         ]);
+
+        if (isset($data['recording'])) {
+            $before = RecordingSettings::get();
+            Setting::put('recording', [
+                'enabled' => (bool) $data['recording']['enabled'],
+                'delete_from_zoom' => (bool) $data['recording']['delete_from_zoom'],
+                'delete_action' => $data['recording']['delete_action'],
+                'include_audio' => (bool) $data['recording']['include_audio'],
+            ]);
+            if ($before['enabled'] !== (bool) $data['recording']['enabled']) {
+                Audit::log('settings.recording', $data['recording']['enabled'] ? 'Darslarni avtomatik yozib olish yoqildi' : 'Darslarni avtomatik yozib olish oʻchirildi');
+            }
+        }
 
         if (isset($data['assessment'])) {
             $thresholds = [];
@@ -57,6 +76,8 @@ class SettingsController extends Controller
         return [
             'assessment' => Assessment::criteria(),
             'assessment_defaults' => Assessment::DEFAULTS,
+            'recording' => RecordingSettings::get(),
+            'storage' => RecordingController::storage(),
         ];
     }
 }

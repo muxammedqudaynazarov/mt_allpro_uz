@@ -7,6 +7,7 @@ use App\Exceptions\ExternalServiceException;
 use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\LessonSlot;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
@@ -85,7 +86,8 @@ class CreateLesson
                 $passcode = (string) random_int(100000, 999999);
                 $duration = max(10, (int) ceil($startsAt->diffInMinutes($endsAt)));
 
-                $meeting = $this->zoom->createMeeting($account, $host->email, $title, $startsAt, $duration, $passcode);
+                $record = (bool) (Setting::get('recording', [])['enabled'] ?? false);
+                $meeting = $this->zoom->createMeeting($account, $host->email, $title, $startsAt, $duration, $passcode, $record);
 
                 $lesson = Lesson::create([
                     'user_id' => $teacher->id,
@@ -99,6 +101,7 @@ class CreateLesson
                     'join_url' => $meeting['join_url'],
                     'start_url' => $meeting['start_url'],
                     'passcode' => $meeting['password'] ?: $passcode,
+                    'record_cloud' => $record,
                     'status' => $startsAt->isFuture() ? LessonStatus::Scheduled : LessonStatus::Live,
                     'starts_at' => $startsAt,
                     'ends_at' => $endsAt,

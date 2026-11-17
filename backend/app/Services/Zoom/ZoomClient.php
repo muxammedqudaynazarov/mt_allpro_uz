@@ -78,7 +78,7 @@ class ZoomClient
     /**
      * @return array{id: string, join_url: string, start_url: string, password: string|null}
      */
-    public function createMeeting(ZoomAccount $account, string $hostEmail, string $topic, Carbon $startsAt, int $duration, string $passcode): array
+    public function createMeeting(ZoomAccount $account, string $hostEmail, string $topic, Carbon $startsAt, int $duration, string $passcode, bool $record = false): array
     {
         $response = $this->send($account, 'post', '/users/'.rawurlencode($hostEmail).'/meetings', [
             'topic' => mb_substr($topic, 0, 200),
@@ -95,7 +95,8 @@ class ZoomClient
                 'waiting_room' => false,
                 'approval_type' => 2,
                 'audio' => 'both',
-                'auto_recording' => 'none',
+                // Administrator yoqqan bo'lsa — dars avtomatik Zoom bulutiga yoziladi.
+                'auto_recording' => $record ? 'cloud' : 'none',
                 'meeting_authentication' => false,
                 'email_notification' => false,
             ],
@@ -304,6 +305,74 @@ class ZoomClient
         }
 
         return $participants;
+    }
+
+    /**
+     * Uchrashuv (yoki uning nusxasi — UUID) bulutdagi yozuv fayllari. Yozuv yo'q bo'lsa — null.
+     *
+     * @return array{uuid: string, id: string, files: list<array<string, mixed>>}|null
+     */
+    public function meetingRecordings(ZoomAccount $account, string $meetingIdOrUuid): ?array
+    {
+        $key = ctype_digit($meetingIdOrUuid) ? $meetingIdOrUuid : $this->encodeUuid($meetingIdOrUuid);
+        $response = $this->send($account, 'get', '/meetings/'.$key.'/recordings');
+        if ($response->status() === 404) {
+            return null;
+        }
+        if ($response->failed()) {
+            throw $this->error(__('Zoom’dan video yozuvlar roʻyxatini olib boʻlmadi'), $response);
+        }
+
+        return [
+            'uuid' => (string) $response->json('uuid'),
+            'id' => (string) $response->json('id'),
+            'recording_files' => (array) $response->json('recording_files', []),
+        ];
+    }
+
+    /**
+     * Uchrashuv nusxasining barcha yozuvlarini o'chiradi. "trash" — Zoom savatiga
+     * (30 kun tiklash mumkin, bulut hajmiga hisoblanmaydi), "delete" — butunlay.
+     */
+    public function deleteMeetingRecordings(ZoomAccount $account, string $uuid, string $action): void
+    {
+        $response = $this->send($account, 'delete', '/meetings/'.$this->encodeUuid($uuid).'/recordings?action='.($action === 'delete' ? 'delete' : 'trash'));
+        if ($response->failed() && $response->status() !== 404) {
+            throw $this->error(__('Zoom’dagi video yozuvni oʻchirib boʻlmadi'), $response);
+        }
+    }
+
+    /**
+     * Yozuv faylini diskka oqim bilan yuklaydi (xotiraga sig'dirilmaydi). Zoom havolasi
+     * imzolangan CDN manziliga yo'naltiradi — yo'naltirishlar kuzatiladi.
+     *
+     * @return int yuklangan baytlar soni
+     */
+    public function downloadRecording(ZoomAccount $account, string $url, string $path): int
+    {
+        $attempt = function (bool $fresh) use ($account, $url, $path): Response {
+            try {
+                return Http::withToken($this->token($account, $fresh))
+                    ->timeout(3 * 3600)
+                    ->connectTimeout(30)
+                    ->withOptions(['sink' => $path, 'allow_redirects' => ['max' => 10]])
+                    ->get($url);
+            } catch (ConnectionException $e) {
+                throw new ExternalServiceException(__('Zoom serveriga ulanib boʻlmadi. Birozdan soʻng qayta urinib koʻring.'), ['error' => $e->getMessage()]);
+            }
+        };
+
+        $response = $attempt(false);
+        if ($response->status() === 401) {
+            $response = $attempt(true);
+        }
+        if ($response->failed()) {
+            @unlink($path);
+            throw new ExternalServiceException(__('Video yozuvni yuklab boʻlmadi (HTTP :status).', ['status' => $response->status()]), status: $response->status() === 404 ? 404 : 502);
+        }
+        clearstatcache(true, $path);
+
+        return (int) @filesize($path);
     }
 
     /**

@@ -17,6 +17,7 @@ import {
   Users,
   UsersRound,
   Video,
+  Clapperboard,
   X,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -72,6 +73,7 @@ function useNav(): NavSection[] {
         { to: '/users', label: t('Foydalanuvchilar'), icon: <Users />, roles: ['education', 'super_admin'], badge: isSuperAdmin ? pending.data : null },
         { to: '/groups', label: t('Guruhlar'), icon: <UsersRound />, roles: ['education', 'super_admin'] },
         { to: '/reports', label: t('Hisobotlar'), icon: <BarChart3 />, roles: ['education', 'super_admin'] },
+        { to: '/recordings', label: t('Video yozuvlar'), icon: <Clapperboard />, roles: ['education', 'super_admin'] },
       ],
     },
     {

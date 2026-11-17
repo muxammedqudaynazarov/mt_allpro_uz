@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\LessonSeriesController;
 use App\Http\Controllers\Api\LessonSlotController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\MonitorController;
+use App\Http\Controllers\Api\RecordingController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SemesterController;
 use App\Http\Controllers\Api\SettingsController;
@@ -49,6 +50,8 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::post('/lessons/{lesson}/start', [LessonController::class, 'start']);
         Route::post('/lessons/{lesson}/end', [LessonController::class, 'end']);
         Route::get('/lessons/{lesson}/live', [MonitorController::class, 'participants']);
+        Route::get('/lessons/{lesson}/recordings', [RecordingController::class, 'lesson']);
+        Route::get('/recordings/{recording}/file', [RecordingController::class, 'file']);
 
         Route::get('/calendar', CalendarController::class);
         Route::get('/series', [LessonSeriesController::class, 'index']);
@@ -83,6 +86,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::get('/reports/semester/export', [ReportController::class, 'semesterExport']);
             Route::get('/semesters', [SemesterController::class, 'index']);
             Route::get('/monitor', [MonitorController::class, 'index']);
+            Route::get('/recordings', [RecordingController::class, 'index']);
         });
 
         Route::middleware('role:super_admin')->group(function () {
@@ -108,6 +112,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::delete('/semesters/{semester}', [SemesterController::class, 'destroy']);
             Route::get('/settings', [SettingsController::class, 'show']);
             Route::put('/settings', [SettingsController::class, 'update']);
+            Route::post('/recordings/{recording}/retry', [RecordingController::class, 'retry']);
         });
     });
 });

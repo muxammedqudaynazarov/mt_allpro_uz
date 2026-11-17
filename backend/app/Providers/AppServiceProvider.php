@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\ZoomAccount;
 use App\Services\Hemis\HemisOAuth;
 use App\Services\Telegram\TelegramBot;
+use App\Services\Zoom\RecordingSync;
 use App\Services\Zoom\ZoomClient;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +27,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Zoom "recording.completed" webhook'i: fayllar ro'yxatga olinadi, yuklash — scheduler'da (recordings:process).
+        Event::listen('zoom.recording', function (ZoomAccount $account, string $event, array $object): void {
+            if ($event === 'recording.completed') {
+                app(RecordingSync::class)->register($account, $object);
+            }
+        });
+
         // Ishlab chiqishda $fillable'da yo'q maydonni yozishga urinish darhol xato beradi.
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
 

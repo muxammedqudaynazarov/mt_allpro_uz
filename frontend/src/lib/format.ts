@@ -171,6 +171,13 @@ export function plural(count: number, word: string): string {
   return `${count.toLocaleString('ru-RU')} ${word}`
 }
 
+/** 1,4 GB / 350 MB */
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} GB`
+  if (bytes >= 1024 ** 2) return `${Math.round(bytes / 1024 ** 2).toLocaleString('ru-RU')} MB`
+  return `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('ru-RU')} KB`
+}
+
 /** Ism-familiyadan bosh harflar (avatar uchun). */
 export function initials(name: string): string {
   return name

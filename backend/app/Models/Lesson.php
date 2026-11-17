@@ -35,7 +35,7 @@ class Lesson extends Model
     public const ZOOM_MISSED = 'missed';
 
     protected $fillable = [
-        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'zoom_account_id',
+        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'zoom_account_id', 'record_cloud',
         'zoom_meeting_id', 'zoom_host_email', 'topic', 'join_url', 'start_url', 'passcode',
         'status', 'starts_at', 'ends_at', 'ended_at', 'ended_by_id',
         'zoom_state', 'zoom_started_at', 'zoom_ended_at', 'zoom_minutes', 'zoom_checked_at',
@@ -56,6 +56,8 @@ class Lesson extends Model
             'zoom_ended_at' => 'datetime',
             'zoom_minutes' => 'integer',
             'zoom_checked_at' => 'datetime',
+            'record_cloud' => 'boolean',
+            'recordings_checked_at' => 'datetime',
             'attendance_due_at' => 'datetime',
             'attendance_synced_at' => 'datetime',
             'attendance_attempts' => 'integer',
@@ -90,6 +92,11 @@ class Lesson extends Model
     public function series(): BelongsTo
     {
         return $this->belongsTo(LessonSeries::class, 'lesson_series_id');
+    }
+
+    public function recordings(): HasMany
+    {
+        return $this->hasMany(Recording::class);
     }
 
     public function liveParticipants(): HasMany

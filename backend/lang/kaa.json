@@ -231,5 +231,18 @@
     "Zoom’dagi umumiy vaqt (soat)": "Zoom’daǵı ulıwma waqıt (saat)",
     "qatnashgan darslar foizi": "qatnasqan sabaqlar procenti",
     "qatnashgan vaqt foizi": "qatnasqan waqıt procenti",
-    "semestr": "semestr"
+    "semestr": "semestr",
+    "Faqat xato bilan qolgan yozuvni qayta yuklash mumkin.": "Tek qátelik penen qalǵan jazbanı qaytadan júklew múmkin.",
+    "Fayl serverda topilmadi.": "Fayl serverde tabılmadı.",
+    "Fayl toʻliq yuklanmadi: :got / :expected bayt.": "Fayl tolıq júklenbedi: :got / :expected bayt.",
+    "Serverda joy yetarli emas.": "Serverde orın jetkiliksiz.",
+    "Video yozuv Zoom bulutidan oʻchirildi: :size MB": "Video jazba Zoom bultınan óshirildi: :size MB",
+    "Video yozuv qayta navbatga qoʻyildi": "Video jazba qaytadan gezekke qoyıldı",
+    "Video yozuvni yuklab boʻlmadi (HTTP :status).": "Video jazbanı júklep bolmadı (HTTP :status).",
+    "Zoom akkaunt topilmadi.": "Zoom akkaunt tabılmadı.",
+    "Zoom’da bu yozuv topilmadi (oʻchirilgan boʻlishi mumkin).": "Zoom’da bul jazba tabılmadı (óshirilgen bolıwı múmkin).",
+    "Zoom’dagi video yozuvni oʻchirib boʻlmadi": "Zoom’daǵı video jazbanı óshirip bolmadı",
+    "Zoom’dan video yozuvlar roʻyxatini olib boʻlmadi": "Zoom’nan video jazbalar dizimin alıp bolmadı",
+    "Darslarni avtomatik yozib olish yoqildi": "Sabaqlardı avtomatikalıq jazıp alıw qosıldı",
+    "Darslarni avtomatik yozib olish oʻchirildi": "Sabaqlardı avtomatikalıq jazıp alıw óshirildi"
 }

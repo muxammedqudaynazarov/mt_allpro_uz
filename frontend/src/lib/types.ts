@@ -84,6 +84,8 @@ export interface Lesson {
   host: string | null
   /** Har haftalik jadvaldan yaratilgan bo'lsa — jadval ID. */
   series_id: number | null
+  /** Zoom bulutiga avtomatik yozilmoqda. */
+  record: boolean
   slot: SlotRef | null
   tracking: LessonTracking
   can: { start: boolean; end: boolean }
@@ -429,7 +431,46 @@ export interface SemesterOverview {
   groups?: { group: GroupRef; totals: SemesterTotals; levels: Record<AssessmentLevel, number> }[]
 }
 
+export interface RecordingSettings {
+  enabled: boolean
+  delete_from_zoom: boolean
+  /** trash — Zoom savatiga (30 kun tiklash mumkin), delete — butunlay. */
+  delete_action: 'trash' | 'delete'
+  include_audio: boolean
+}
+
+export interface RecordingStorage {
+  path: string
+  used_bytes: number
+  files: number
+  pending: number
+  failed: number
+  /** Hali Zoom bulutida turgan (o'chirilmagan) yozuvlar hajmi. */
+  zoom_bytes: number
+  free_bytes: number | null
+  min_free_gb: number
+}
+
+export interface Recording {
+  id: number
+  file_type: string
+  recording_type: string | null
+  extension: string | null
+  size: number
+  status: 'pending' | 'downloaded' | 'failed' | 'skipped'
+  error: string | null
+  attempts: number
+  recording_start: string | null
+  recording_end: string | null
+  downloaded_at: string | null
+  zoom_deleted_at: string | null
+  url: string | null
+  lesson?: { id: number; starts_at: string; group: string | null; teacher: string | null } | null
+}
+
 export interface SystemSettings {
   assessment: AssessmentCriteria
   assessment_defaults: AssessmentCriteria
+  recording: RecordingSettings
+  storage: RecordingStorage
 }
