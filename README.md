@@ -1,10 +1,10 @@
-# Masofaviy taʼlim tizimi — mt.allpro.uz
+# Masofaviy taʼlim tizimi — dist.karsu.uz/zoom
 
 Berdaq nomidagi Qoraqalpoq davlat universitetining sirtqi va masofaviy guruhlari uchun Zoom darslarini boshqarish tizimi.
 
-O'qituvchi HEMIS hisobi bilan kiradi, guruh va juftlikni tanlaydi. Tizim shu guruhga biriktirilgan Zoom hisobida uchrashuv yaratadi. "Darsni boshlash" va "Guruhga yuborish" tugmalari o'qituvchiga saytda va Telegram'da beriladi. Administratorlar foydalanuvchilarni tasdiqlaydi, guruhlarni boshqaradi va hisobotlarni ko'radi.
+O'qituvchi HEMIS hisobi bilan kiradi, kun, juftlik, guruh va bo'sh Zoom hostni tanlaydi yoki haftalik dars jadvalini qo'shadi — tizim har hafta dars kuni, 1 soat oldin uchrashuvni o'zi yaratadi. "Darsni boshlash" va "Guruhga yuborish" tugmalari saytda va Telegram'da beriladi.
 
-Tizim har daqiqada Zoom'dan dars holatini so'raydi: host darsni necha daqiqa kechikib boshlagani, dars qancha davom etgani va host tugatganini aniqlaydi. Dars tugagach Zoom hisobotidan har bir talabaning qatnashgan vaqti olinadi. Talabalar tizimga kirmaydi — ular Zoom'dagi ismi bo'yicha aniqlanadi, administrator bir talabaning turli yozuvlarini birlashtiradi.
+O'quv bo'limi efirdagi darslarni va ulardagi qatnashchilarni jonli kuzatadi (Zoom webhook'lari). Dars tugagach Zoom hisobotidan har bir talabaning qatnashgan vaqti olinadi; semestr yakunida guruh va talaba bo'yicha jami vaqt, foiz va o'zlashtirish taxmini Excel'da yuklanadi. Talabalar tizimga kirmaydi — ular Zoom'dagi ismi bo'yicha aniqlanadi, haqiqiy F.I.Sh. HEMIS'dan olinadi. Darslar o'quv yili va semestr bo'yicha arxivlanadi, video yozuvlar Zoom bulutidan serverga ko'chiriladi.
 
 ## Tarkib
 
@@ -12,25 +12,26 @@ Tizim har daqiqada Zoom'dan dars holatini so'raydi: host darsni necha daqiqa kec
 |---|---|
 | [`backend/`](backend) | **Laravel 13** (PHP 8.3+). Faqat JSON API, HEMIS OAuth, Zoom va Telegram integratsiyasi |
 | [`frontend/`](frontend) | **React 19 + TypeScript + Tailwind CSS 4** (Vite). Bitta sahifali ilova (SPA) |
-| [`deploy/`](deploy) | nginx, supervisor, cron sozlamalari va `deploy.sh` yangilash skripti |
+| [`deploy/`](deploy) | nginx (`/zoom` yo'li, proksi, alohida domen), supervisor, cron va `deploy.sh` yangilash skripti |
 | [`docs/`](docs) | O'rnatish, foydalanish va ishlab chiqish qo'llanmalari |
 
 ## Qo'llanmalar
 
-- **[Serverga o'rnatish](docs/ORNATISH.md)** — Ubuntu serverni noldan sozlash, HEMIS/Zoom/Telegram ulash, eski bazadan ko'chirish
-- **[Foydalanish qo'llanmasi](docs/FOYDALANISH.md)** — o'qituvchi, administrator va bosh administrator uchun
+- **[Serverga o'rnatish](docs/ORNATISH.md)** — Ubuntu serverni noldan sozlash, dist.karsu.uz/zoom ga ko'chirish, HEMIS/Zoom/Telegram ulash, video yozuvlar
+- **[Foydalanish qo'llanmasi](docs/FOYDALANISH.md)** — o'qituvchi, O'quv bo'limi va administrator uchun
 - **[Ishlab chiqish](docs/ISHLAB_CHIQISH.md)** — lokal muhit, testlar, API ro'yxati, arxitektura
 
 ## Qanday ishlaydi
 
 ```
- Brauzer ──► nginx (mt.allpro.uz)
-              ├─ /            → frontend/dist (React)
-              └─ /api /auth   → backend/public/index.php (Laravel)
-                                   ├─ HEMIS OAuth   (xodim kirishi)
-                                   ├─ Zoom API      (Server-to-Server OAuth)
-                                   ├─ Telegram Bot  (navbat orqali xabarlar)
-                                   └─ MySQL
+ Brauzer ──► nginx (dist.karsu.uz)
+              ├─ /zoom/              → frontend/dist (React)
+              └─ /zoom/api, /auth …  → backend/public/index.php (Laravel)
+                                         ├─ HEMIS OAuth + REST API (xodim kirishi, talabalar F.I.Sh.)
+                                         ├─ Zoom API + webhook'lar (Server-to-Server OAuth)
+                                         ├─ Telegram Bot          (navbat orqali xabarlar)
+                                         ├─ MySQL
+                                         └─ video yozuvlar papkasi (nginx X-Accel orqali beriladi)
 ```
 
 Interfeys **qoraqalpoq tilida** (lotin yozuvi), o'zbek tiliga bitta tugma bilan o'tiladi. Kirish sahifasi har doim qoraqalpoqcha ochiladi; kirgan foydalanuvchining tanlovi profilda saqlanadi, Telegram xabarlari ham shu tilda keladi.
@@ -46,16 +47,16 @@ Tizim Laravel 10 dan Laravel 13 ga boshidan qayta yozildi. Eski versiyadagi xato
 | Telegram bot tokeni, Zoom `client_secret`'lari kodda va seeder'da ochiq yozilgan | Barcha kalitlar `.env`da. Zoom kalitlari bazada **shifrlangan**, API ularni hech qachon qaytarmaydi |
 | Bloklangan o'qituvchi tizimga bemalol kira olardi | Bloklangan foydalanuvchining sessiyasi darhol tugatiladi |
 | Har bir o'qituvchi boshqalarning host-havolasini ko'rib, darsini boshlay olardi | Host havolasini faqat darsni yaratgan o'qituvchi oladi. Havola har safar Zoom'dan yangidan olinadi |
-| Istalgan foydalanuvchi istalgan darsni tugata olardi | Darsni o'qituvchining o'zi, guruh administratori yoki bosh administrator tugatadi (Policy) |
+| Istalgan foydalanuvchi istalgan darsni tugata olardi | Darsni o'qituvchining o'zi yoki Administrator tugatadi (Policy) |
 | `/generate_token` hammaga ochiq, tokenlar tashqi cron'ga bog'liq edi | Zoom tokeni kerak bo'lganda olinadi va keshlanadi, cron kerak emas |
 | Bloklash, parol tiklash va guruhni o'chirish GET so'rovlari bilan bajarilardi (CSRF) | Barcha o'zgartirishlar POST/PATCH/DELETE va CSRF himoyasi bilan |
 | Parollar `uniqid()` bilan yaratilib, Telegram'ga GET URL ichida yuborilardi | O'qituvchilarda parol yo'q, ular HEMIS orqali kiradi. Zaxira login faqat adminlar uchun |
 | Admin o'chirilsa, uning barcha o'qituvchilari, guruhlari va darslar tarixi o'chib ketardi (cascade) | Soft-delete qilinadi, tarix va hisobotlar saqlanadi |
 | Parol o'zgartirish 500 xato berardi, o'chirish tugmasi URL'ida `}` bor edi | Ular endi yo'q: tizim HEMIS kirishiga o'tdi |
-| Bir guruh/Zoom hisobida bir vaqtda ikkita dars yaratish mumkin edi | Guruh va Zoom host bandligi qulf ostida tekshiriladi |
+| Bir guruh/Zoom hisobida bir vaqtda ikkita dars yaratish mumkin edi | Guruh va Zoom host bandligi qulf ostida tekshiriladi, o'qituvchi bo'sh hostni tanlaydi |
 | Tanlangan juftlik ishlatilmasdi, dars hech qachon "tugadi" holatiga o'tmasdi | Dars juftlik vaqtiga rejalashtiriladi, holat avtomatik yangilanadi |
 | Telegram ID ni `@getmyid_bot` orqali qo'lda kiritish kerak edi | Xodim bitta tugma (yoki QR kod) bilan Telegram'ni ulaydi |
-| Test yo'q edi | Avtomatik testlar: ruxsatlar, HEMIS, Zoom, Telegram |
+| Test yo'q edi | 125 ta avtomatik test (ruxsatlar, HEMIS, Zoom, webhook, video, hisobotlar), GitHub Actions'da har push'da |
 
 Batafsil: [docs/ISHLAB_CHIQISH.md](docs/ISHLAB_CHIQISH.md#xavfsizlik).
 

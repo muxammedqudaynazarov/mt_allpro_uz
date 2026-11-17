@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\ZoomHost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -107,6 +108,28 @@ class LessonTest extends TestCase
 
         $this->assertSame(1, Lesson::count());
         Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/meetings'));
+    }
+
+    /** Ikki o'qituvchi bir guruhga turli hostlar bilan bir vaqtda yaratsa: guruh qulfi ikkinchisini to'xtatadi. */
+    public function test_group_lock_blocks_parallel_creation_for_same_group(): void
+    {
+        $this->fakeZoom();
+        config(['lessons.lock_wait' => 0]);
+        $group = Group::factory()->create();
+        $lock = Cache::lock('lesson-create:group:'.$group->id, 30);
+        $this->assertTrue($lock->get());
+
+        $this->actingAsUser(User::factory()->create())
+            ->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Bu guruhga hozir boshqa dars yaratilmoqda. Bir necha soniyadan soʻng qayta urinib koʻring.');
+        $this->assertSame(0, Lesson::count());
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/meetings'));
+
+        $lock->release();
+        $this->actingAsUser(User::factory()->create())
+            ->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $this->slotNow()->id])
+            ->assertCreated();
     }
 
     public function test_busy_host_is_skipped_and_free_host_is_chosen(): void

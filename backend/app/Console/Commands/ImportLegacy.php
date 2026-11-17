@@ -67,7 +67,7 @@ class ImportLegacy extends Command
 
         $this->newLine();
         $this->info('Import yakunlandi.');
-        $this->line('Keyingi qadam: `php artisan app:create-admin` bilan bosh administrator yarating va Zoom akkauntlar sahifasida “Ulanishni tekshirish”ni bosing.');
+        $this->line('Keyingi qadam: `php artisan app:create-admin` bilan administrator yarating va Zoom akkauntlar sahifasida “Ulanishni tekshirish”ni bosing.');
 
         return self::SUCCESS;
     }

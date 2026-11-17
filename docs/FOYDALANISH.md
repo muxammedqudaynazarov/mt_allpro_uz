@@ -1,45 +1,67 @@
 # Foydalanish qo'llanmasi
 
-Tizimda uch xil rol bor. Bir xodimda bir nechta rol bo'lishi mumkin: masalan, administrator o'zi ham dars o'tadi.
+Sayt: **https://dist.karsu.uz/zoom**. Interfeys qoraqalpoqcha ochiladi, o'zbekchaga yuqoridagi til tugmasi bilan o'tiladi.
+
+Tizimda uchta rol bor. Bir xodimda bir nechta rol bo'lishi mumkin: masalan, O'quv bo'limi xodimi o'zi ham dars o'tsa — unga O'qituvchi roli ham beriladi.
 
 | Rol | Nima qila oladi |
 |---|---|
-| **O'qituvchi** | Dars yaratadi, boshlaydi, yakunlaydi. Faqat o'z darslarini ko'radi |
-| **Administrator** | O'qituvchi imkoniyatlari, yangi xodimlarni tasdiqlash yoki bloklash, o'ziga biriktirilgan guruhlarni yoqish/o'chirish, guruhlari bo'yicha hisobot |
-| **Bosh administrator** | Hammasi: Zoom akkauntlar, guruhlar, dars vaqtlari, rollar, amallar tarixi |
+| **O'qituvchi** | Dars yaratadi, boshlaydi, yakunlaydi; haftalik darslar jadvalini yuritadi. Faqat o'z darslarini, ularning davomati va video yozuvlarini ko'radi |
+| **O'quv bo'limi** | Barcha guruhlar va darslarni ko'radi, efirdagi darslarni kuzatadi, hisobot va Excel fayllarini oladi, guruh talabalarini yuritadi (HEMIS ID, HEMIS SYNC). Dars yaratmaydi; Zoom, sozlamalar va o'quv yillarini o'zgartirmaydi |
+| **Administrator** | Hammasi: foydalanuvchilar va rollar, Zoom akkauntlar, guruhlar, dars vaqtlari, o'quv yillari, umumiy sozlamalar, amallar tarixi |
+
+---
+
+## Hamma uchun
+
+### Tizimga kirish
+
+1. **dist.karsu.uz/zoom** ni oching va **"HEMIS orqali kirish"** tugmasini bosing.
+2. HEMIS sahifasida odatdagi login va parolingizni kiriting.
+3. Birinchi marta kirsangiz, hisobingiz **"Tasdiq kutmoqda"** holatida bo'ladi. Administrator tasdiqlagach, ishlashingiz mumkin.
+
+Tizim HEMIS'dan faqat familiya, ism, otasining ismi, HEMIS ID va rasmingizni oladi va har kirishda yangilaydi. Saytda ismlar **FAMILIYA ISM** ko'rinishida chiqadi.
+
+### Telegram'ni ulash (bir marta)
+
+1. Chap menyuning pastidagi ismingizni bosing, **Profil** sahifasi ochiladi.
+2. **"Telegram'ni ulash"** → telefonda QR kodni skanerlang yoki kompyuterda **"Telegram'da ochish"** ni bosing.
+3. Botda **Start** tugmasini bosing. Sahifada "Telegram ulandi" xabari chiqadi.
+
+Har bir dars uchun Telegram'ga **"Darsni boshlash"** va **"Guruhga yuborish"** tugmalari keladi.
 
 ---
 
 ## O'qituvchi uchun
 
-### Tizimga kirish
-
-1. **mt.allpro.uz** saytini oching va **"HEMIS orqali kirish"** tugmasini bosing.
-2. HEMIS sahifasida odatdagi login va parolingizni kiriting.
-3. Birinchi marta kirsangiz, hisobingiz **"Tasdiq kutmoqda"** holatida bo'ladi. Masʼul administrator tasdiqlagach, dars yaratishingiz mumkin. Tasdiqlanganda Telegram'ga xabar keladi (Telegram ulangan bo'lsa).
-
-### Telegram'ni ulash (bir marta)
-
-1. Chap menyuning pastidagi ismingizni bosing, **Profil** sahifasi ochiladi.
-2. **"Telegram'ni ulash"** tugmasini bosing.
-3. Telefonda QR kodni skanerlang yoki kompyuterda **"Telegram'da ochish"** tugmasini bosing.
-4. Botda **Start** tugmasini bosing. Sahifada "Telegram ulandi" xabari chiqadi.
-
-Endi har bir yaratilgan dars uchun Telegram'ga **"Darsni boshlash"** va **"Guruhga yuborish"** tugmalari keladi.
-
 ### Dars yaratish
 
 1. **"Dars yaratish"** tugmasini bosing.
-2. **Qachon?** — **"Hozir"** (darhol, 80 daqiqa) yoki bugungi juftliklardan birini tanlang. Tugagan juftliklar tanlanmaydi. Boshlangan juftlik tanlansa, dars hozirdan juftlik oxirigacha davom etadi.
-3. **Qaysi guruh?** — kursni, keyin guruhni tanlang. Shu vaqtda boshqa darsi bor guruhlar **"Band"** deb ko'rsatiladi va tanlanmaydi.
-4. **Mavzu** — ixtiyoriy.
-5. **"Darsni yaratish"** tugmasini bosing.
+2. **Qachon?** — kunni (bugun yoki keyingi kunlar) va juftlikni tanlang. Dars faqat jadvaldagi juftlikka yaratiladi; tugagan juftliklar tanlanmaydi.
+3. **Qaysi guruh?** — kursni, keyin guruhni tanlang. Shu vaqtda boshqa darsi bor guruhlar **"Band"** deb ko'rsatiladi.
+4. **Zoom host** — dars o'tkaziladigan Zoom hisobi. **Avtomatik** qoldirilsa, birinchi bo'sh host olinadi. Band hostlar tanlanmaydi: bir host bir vaqtda faqat bitta dars o'tkaza oladi.
+5. **Mavzu** — ixtiyoriy.
+6. **Har hafta takrorlash** — belgilansa, dars har hafta shu kuni va shu juftlikda avtomatik yaratiladi (pastga qarang).
+7. **"Darsni yaratish"**.
 
 Dars yaratilgach, oynada talabalar havolasi va kirish kodi chiqadi:
 
-- **Darsni boshlash**: Zoom'ni host (boshlovchi) sifatida ochadi.
-- **Nusxalash**: havolani nusxalaydi.
-- **Guruhga Telegram orqali yuborish**: Telegram'ni ochadi, guruh chatini tanlab havolani yuborasiz.
+- **Darsni boshlash** — Zoom'ni host (boshlovchi) sifatida ochadi;
+- **Nusxalash** — havolani nusxalaydi;
+- **Guruhga Telegram orqali yuborish** — Telegram'ni ochadi, guruh chatini tanlab havolani yuborasiz.
+
+### Kalendar va haftalik darslar
+
+**Kalendar** sahifasi haftani kunlar bo'yicha ko'rsatadi: yaratilgan darslar va haftalik jadvaldan kelayotgan darslar. **Oldingi hafta / Bu hafta / Keyingi hafta** bilan o'tiladi.
+
+**Haftalik dars qo'shish**: hafta kuni, juftlik, guruh, Zoom host (yoki avtomatik), boshlanish va (ixtiyoriy) tugash sanasi. Tizim har hafta **dars kuni, boshlanishidan 1 soat oldin** Zoom uchrashuvini yaratadi va havolalarni Telegram'ingizga yuboradi. Tanlangan host o'sha kuni band bo'lsa, boshqa bo'sh host olinadi; bo'sh host bo'lmasa, dars yaratilmaydi va sababi Kalendar'da hamda Telegram'da yoziladi.
+
+Kalendar'dagi darsni bossangiz:
+
+- **Shu kunni bekor qilish** — faqat shu haftadagi dars o'tkazilmaydi (masalan, bayram). **Qayta rejaga qo'shish** bilan qaytariladi;
+- **Jadvalni to'xtatish** — keyingi haftalarda dars yaratilmaydi. O'tgan darslar va hisobotlar saqlanadi.
+
+Administrator kalendarni boshqarish huquqini o'chirib qo'ygan bo'lsa, siz jadvalni faqat ko'rasiz.
 
 ### Darsni boshlash va yakunlash
 
@@ -49,97 +71,151 @@ Bosh sahifadagi **"Efirda"** paneli hozir davom etayotgan darslarni ko'rsatadi: 
 
 > Host havolasi faqat sizga beriladi va har safar yangidan olinadi. Uni boshqalarga yubormang. Talabalarga faqat **talabalar havolasini** yuboring.
 
-### Darslar tarixi
+### Darslar ro'yxati
 
-**Darslar** sahifasida barcha darslaringiz bor. Holat (Efirda, Rejalashtirilgan, Yakunlangan) va sana bo'yicha filtrlash mumkin.
+**Darslar** sahifasida holat, guruh, **semestr** (o'tgan o'quv yillari — arxiv) va sana bo'yicha filtrlash mumkin. Har bir dars ostida Zoom'dagi haqiqiy holat belgilar bilan ko'rinadi: haqiqiy vaqt va davomiyligi, necha daqiqa kech boshlangani, nechta talaba qatnashgani.
 
-Har bir dars ostida Zoom'dagi haqiqiy holat ko'rinadi: dars qachon boshlangani va tugagani, host necha daqiqa kechikkani, nechta talaba qatnashgani. Host Zoom'da hali boshlamagan bo'lsa — sariq **"Host Zoom'da hali boshlamagan"** yozuvi chiqadi.
+### Dars sahifasi: qatnashish va video
 
-### Davomat
+Guruh nomini yoki **Davomat** (qoraqalpoqchada **Qatnastı biliw**) tugmasini bosing:
 
-Guruh nomini yoki **Davomat** tugmasini bosing. Dars sahifasida:
 - **Jadval bo'yicha / Zoom'da boshlandi / Davom etdi / Qatnashdi** — rejadagi va haqiqiy vaqt;
-- har bir talaba uchun vaqt chizig'i: u darsda qachon bo'lgan (uzilib, qayta kirgan bo'lsa — bo'laklar bilan), qachon kirgani va necha daqiqa kechikkani, jami qatnashgan vaqti va foizi;
-- **Excel (CSV)** — davomatni yuklab olish.
+- har bir talaba uchun vaqt chizig'i: darsda qachon bo'lgani (uzilib qayta kirgan bo'lsa — bo'laklar bilan), necha daqiqa kechikkani, jami vaqti va foizi;
+- **Excel (.xlsx)** — ro'yxatni yuklab olish;
+- **Video yozuv** — yozish yoqilgan bo'lsa, dars tugagach yozuv shu yerda paydo bo'ladi: sahifaning o'zida ko'riladi (istalgan joyiga o'tish mumkin) yoki **Yuklab olish**.
 
-Davomat dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Talabalar tizimga kirmaydi — ular Zoom'dagi ismi bo'yicha aniqlanadi, shuning uchun talabalarga Zoom'ga **to'liq familiya va ism** bilan kirishni ayting.
+Qatnashuv dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Talabalar tizimga kirmaydi — ular Zoom'dagi ismi bo'yicha aniqlanadi, shuning uchun talabalarga Zoom'ga **to'liq familiya va ism** bilan kirishni ayting.
+
+---
+
+## O'quv bo'limi uchun
+
+### Monitoring
+
+**Monitoring** sahifasi bugungi darslarni ko'rsatadi:
+
+- **Efirda** — hozir Zoom'da davom etayotgan darslar va har birida nechta talaba borligi. Darsni tanlasangiz, o'ng tomonda kim hozir darsda ekani va qachon kirgani chiqadi. Ro'yxat har **30 soniyada** yangilanadi.
+- **Zoom ochish** — darsga oddiy qatnashchi sifatida kirasiz (host emas). Ismingiz qatnashchilar ro'yxatiga tushadi; u talabalar orasida chiqsa, guruh talabalari sahifasida **"Talaba emas"** deb belgilang.
+- **Bugun kutilmoqda** — jadvaldagi, lekin host hali boshlamagan darslar.
+- **Bugun yakunlangan** — tugagan darslar, qatnashgan talabalar soni va **Hisobot** tugmasi (dars sahifasi, Excel).
+
+### Hisobotlar
+
+**Hisobotlar** sahifasida ikki tur bor.
+
+**Semestr yakuni** — o'quv yili va semestrni tanlang. Guruhlar kesimida: o'tkazilgan va o'tkazilmagan darslar, Zoom'dagi umumiy vaqt, dars boshiga o'rtacha qatnashuv. Guruhni bossangiz — talabalar bo'yicha: nechta darsda qatnashgani, jami vaqti, vaqt foizi, o'rtacha kechikishi va **O'zlashtirish taxmini** (Past, Sust, Qoniqarli, O'rtacha, Yaxshi, A'lo). Hisobot birinchi darsdan keyinoq ko'rinadi va har dars bilan yangilanadi. **Excel (.xlsx)** — bitta guruh yoki barcha guruhlar.
+
+> O'zlashtirish taxmini faqat Zoom'dagi qatnashuvdan hisoblanadi — bu baho emas. Mezonni Administrator **Umumiy sozlamalar** da belgilaydi.
+
+**Davr bo'yicha** — tanlangan sanalar oralig'idagi umumiy ko'rsatkichlar: o'qituvchilar va guruhlar kesimida darslar soni, o'tkazilmagan va kech boshlangan darslar, o'qituvchilarning o'rtacha kechikishi. **Darslar** sahifasidagi filtrlangan ro'yxat ham Excel'ga yuklanadi.
+
+### Guruh talabalari
+
+**Guruhlar** → guruh nomi. Tanlangan davr bo'yicha har bir talaba: qatnashgan darslar, jami vaqt va foiz, o'rtacha kechikish.
+
+- **HEMIS ID** — har bir talaba qatorida maydon bor. ID'larni kiriting va pastdagi **HEMIS SYNC** tugmasini bosing: HEMIS'dan haqiqiy F.I.Sh. va rasm olinadi. Faqat yangi kiritilgan yoki o'zgargan ID'lar so'raladi, oldin olinganlari qayta so'ralmaydi. Topilmagan ID qatorida **"HEMIS'da topilmadi"** yoziladi.
+- **Birlashtirish** — bir talaba turli ism bilan kirgan bo'lsa ("Madina T." va "Madina Tursınbaeva"), qatorlarni belgilang → **Birlashtirish** → qaysi nom qolishini tanlang. Davomat qayta hisoblanadi, keyingi darslarda bu ismlar avtomatik taniladi.
+- **Nomini o'zgartirish** (⋯) — hisobotlarda ko'rinadigan nom.
+- **Talaba emas** (⋯) — o'qituvchining shaxsiy hisobi, kuzatuvchi yoki "iPhone" kabi yozuvlar hisobotlarda hisobga olinmaydi.
+
+### O'quv yillari
+
+**O'quv yillari** sahifasida yillar va ularning **Kuzgi** va **Bahorgi** semestrlari ko'rinadi. Har bir dars sanasiga qarab semestrga biriktiriladi va o'quv yili arxivlangach ham hisobotlarda saqlanadi. O'zgartirish — Administrator vakolatida.
 
 ---
 
 ## Administrator uchun
 
-### Yangi xodimlarni tasdiqlash
-
-Yangi xodim HEMIS orqali kirganda bosh sahifada sariq xabar chiqadi, menyudagi **"Foydalanuvchilar"** yonida esa son ko'rinadi. Telegram ulangan bo'lsa, botdan ham xabar keladi.
-
-1. **Foydalanuvchilar → Tasdiq kutmoqda**.
-2. Xodimni aniqlang (ism, HEMIS ID, bo'lim) va **"Tasdiqlash"**ni bosing.
-
-Siz tasdiqlagan xodim avtomatik sizga biriktiriladi. Keyinchalik uni faqat siz (yoki bosh administrator) bloklay olasiz.
-
-### Bloklash
-
-**Foydalanuvchilar** jadvalida qator oxiridagi **⋯** tugmasi → **Bloklash**. Bloklangan xodimning ochiq sessiyasi darhol tugaydi va u qayta kira olmaydi. **Faollashtirish** bilan qaytariladi.
-
-### Guruhlar
-
-**Guruhlar** sahifasida sizga biriktirilgan guruhlar ko'rinadi. **"Faol"** kalitini o'chirsangiz, o'qituvchilar bu guruhga dars yarata olmaydi (masalan, ta'til yoki amaliyot paytida).
-
-### Guruh talabalari
-
-**Guruhlar** sahifasida guruh nomini bosing. Tanlangan davr bo'yicha har bir talaba: nechta darsda qatnashgani (o'tkazilgan darslardan), jami vaqti va foizi, o'rtacha kechikishi.
-
-- **Birlashtirish.** Bir talaba turli ism bilan kirgan bo'lsa ("Madina T." va "Madina Tursınbaeva"), ikkala qatorni belgilang → **Birlashtirish** → qaysi nom qolishini tanlang. Uning darslari qayta hisoblanadi, keyingi darslarda bu ismlar avtomatik tanib olinadi.
-- **Nomini o'zgartirish** (⋯) — hisobotlarda ko'rinadigan nom.
-- **Talaba emas** (⋯) — o'qituvchining shaxsiy hisobi, mehmon yoki "iPhone" kabi yozuvlar hisobotlarda hisobga olinmaydi.
-
-### Hisobotlar
-
-**Hisobotlar** sahifasi tanlangan davr bo'yicha natijalarni ko'rsatadi: darslar soni, umumiy vaqt, o'qituvchilar va guruhlar kesimida. Zoom kuzatuvi bo'yicha: nechta dars haqiqatda o'tkazilgani va o'tkazilmagani, nechta dars 5 daqiqadan ko'p kechikib boshlangani, o'qituvchilarning o'rtacha kechikishi va darsdagi o'rtacha talabalar soni. **"Batafsil ro'yxat (CSV)"** fayli Excel'da ochiladi. **Darslar** sahifasidagi filtrlangan ro'yxatni ham CSV qilib yuklab olish mumkin.
-
----
-
-## Bosh administrator uchun
-
 ### Birinchi sozlash tartibi
 
-1. **Zoom akkauntlar**: Server-to-Server OAuth ma'lumotlarini kiriting va "Ulanishni tekshirish"ni bosing ([O'rnatish, 11-bo'lim](ORNATISH.md#11-zoom-ulash)).
-2. **Dars vaqtlari**: juftliklarni tekshiring yoki o'zgartiring (standart: 13:00, 14:30, 16:00, 17:30, 19:00; 80 daqiqa).
-3. **Guruhlar → Guruh qo'shish**: nomi, kursi, Zoom akkaunt, host email va masʼul administrator.
-4. **Foydalanuvchilar**: administratorlarga rol bering (⋯ → **Rol va sozlamalar**).
+1. **Zoom akkauntlar**: Server-to-Server OAuth ma'lumotlarini kiriting → **Ulanishni tekshirish** → **Zoom hostlar → Zoom'dan yangilash** ([O'rnatish, 12-bo'lim](ORNATISH.md#12-zoom-ulash)).
+2. **Dars vaqtlari**: juftliklarni tekshiring (standart: 13:00, 14:30, 16:00, 17:30, 19:00; 80 daqiqa).
+3. **O'quv yillari**: joriy o'quv yili va ikki semestr sanalarini kiriting.
+4. **Guruhlar → Guruh qo'shish**: nomi, kursi, Zoom akkaunt, (ixtiyoriy) standart host.
+5. **Foydalanuvchilar**: O'quv bo'limi xodimlariga rol bering.
+6. **Umumiy sozlamalar**: o'zlashtirish taxmini mezoni, video yozuvlar.
 
-### Rollar va masʼul administrator
+### Foydalanuvchilar
 
-**⋯ → Rol va sozlamalar** oynasida:
+**Foydalanuvchilar** sahifasida xodimlarni holat bo'yicha (Tasdiq kutmoqda, Faol, Bloklangan) va ism yoki HEMIS ID bo'yicha topasiz. Yangi xodim kirganda menyuda son ko'rinadi va Telegram'ga xabar keladi.
 
-- **Rollar**: o'qituvchi / administrator / bosh administrator. O'z rolingizni o'zgartira olmaysiz: bu tasodifan tizimdan chiqib qolishdan himoya qiladi.
-- **HEMIS ID**: eski tizimdan ko'chirilgan xodimni uning HEMIS hisobiga bog'lash uchun.
-- **Masʼul administrator**: xodim qaysi administratorga tegishli.
+- **Tasdiqlash** — xodim ishlay boshlaydi.
+- **Bloklash / Faollashtirish** — bloklangan xodimning ochiq sessiyasi darhol tugaydi va u qayta kira olmaydi.
+- **⋯ → Rol va sozlamalar**:
+  - **Rollar** — O'qituvchi, O'quv bo'limi, Administrator. O'z rolingizni o'zgartira olmaysiz (tasodifan tizimdan chiqib qolmaslik uchun);
+  - **Ism-sharif** — vaqtincha tuzatish: xodim keyingi safar HEMIS orqali kirganda HEMIS'dagi ism bilan yangilanadi;
+  - **Kalendarni boshqarish** — haftalik darslarni rejalashtirish va bekor qilish huquqi (standart: yoqilgan);
+  - **HEMIS ID** — eski tizimdan ko'chirilgan xodimni HEMIS hisobiga bog'lash uchun.
+- **⋯ → O'chirish** — xodim kira olmaydi, uning darslari tarixi hisobotlarda qoladi.
 
-### Foydalanuvchini o'chirish
+### Guruhlar va hostlar
 
-**⋯ → O'chirish**. Foydalanuvchi tizimga kira olmaydi, lekin uning darslari tarixi hisobotlarda saqlanadi.
+**Guruhlar** sahifasida guruh qo'shiladi va tahrirlanadi. **"Faol"** kalitini o'chirsangiz, bu guruhga dars yaratilmaydi (masalan, ta'til yoki amaliyot paytida).
+
+**Zoom akkauntlar** sahifasida har bir akkaunt hostlari ro'yxati bor: litsenziyasi (Licensed yoki Basic, 40 daqiqa) va ochiq darslari. Zoom'da yangi foydalanuvchi qo'shilsa, **Zoom'dan yangilash** ni bosing.
+
+### O'quv yillari
+
+**O'quv yili qo'shish**: nomi (masalan, 2026–2027), Kuzgi va Bahorgi semestr boshlanish va tugash sanalari. Holatlar:
+
+- **Rejada** — keyingi yil, oldindan kiritilgan;
+- **Joriy** — hozirgi yil. Joriy yil bitta bo'ladi: **Joriy qilish** bosilsa, avvalgi joriy yil arxivga o'tadi;
+- **Arxiv** — tugagan yil. Darslari va hisobotlari saqlanadi, Darslar va Hisobotlar sahifalarida semestr bo'yicha ochiladi.
+
+Semestr sanalari o'zgartirilsa, darslar yangi sanalarga qarab qayta biriktiriladi. Faqat darslari yo'q o'quv yilini o'chirish mumkin.
+
+### Umumiy sozlamalar
+
+**O'zlashtirish taxmini mezoni:**
+
+- **Nima bo'yicha hisoblansin** — *Jami qatnashgan vaqt* (talaba Zoom'da bo'lgan vaqt ÷ barcha darslar davomiyligi) yoki *Qatnashgan darslar soni* (qatnashgan darslar ÷ o'tkazilgan darslar);
+- **Darsda qatnashgan hisoblanish chegarasi** — talaba darsning kamida shuncha foizida bo'lsa, shu darsga qatnashgan hisoblanadi (standart 50%);
+- **Darajalar chegarasi** — Sust 30%, Qoniqarli 50%, O'rtacha 65%, Yaxshi 80%, A'lo 90% dan (standart). Hech bir chegaraga yetmagan — Past.
+
+O'zgartirish barcha semestr hisobotlariga darhol ta'sir qiladi.
+
+**Video yozuvlar:**
+
+- **Darslarni avtomatik yozib olish** — yangi yaratiladigan darslar Zoom bulutiga yoziladi;
+- **Serverga ko'chirgach Zoom'dan o'chirish** — **Savatga** (tavsiya etiladi: 30 kun ichida Zoom'da tiklash mumkin) yoki **Butunlay**. Fayl serverga to'liq ko'chib, hajmi tekshirilmaguncha Zoom'dan hech narsa o'chirilmaydi;
+- **Alohida audio faylni ham saqlash** — standart: faqat video;
+- **Server xotirasi** — saqlangan hajm, bo'sh joy, Zoom bulutida qolganlar va xato bilan qolganlar.
+
+**Video yozuvlar** sahifasida barcha yozuvlar va ularning holati (Serverda, Navbatda, Xato) ko'rinadi. Xato bilan qolgan yozuvni **Qayta urinish** bilan qayta yuklaysiz.
 
 ### Amallar tarixi
 
-**Amallar tarixi** sahifasida kim, qachon, qaysi amalni bajargani yoziladi: kirishlar, dars yaratish va yakunlash, rol o'zgartirish, guruh va Zoom sozlamalari. Yozuvlar 2 yil saqlanadi.
+Kim, qachon, qaysi amalni bajargani: kirishlar, dars yaratish va yakunlash, rollar, guruh, Zoom va sozlamalar o'zgarishi, video yozuvlarning Zoom'dan o'chirilishi. Yozuvlar 2 yil saqlanadi.
+
+### Profil: ism va parol
+
+**Profil** sahifasida Administrator o'z ism-sharifini (**Ism-sharifni o'zgartirish**) va zaxira login parolini (**Parolni almashtirish**, kamida 12 belgi, harf va raqam) o'zgartiradi.
 
 ### HEMIS ishlamay qolsa
 
-Kirish sahifasida HEMIS tugmasi ostida **"Login orqali kirish"** tugmasi bor. Zaxira login serverda `php artisan app:create-admin` buyrug'i bilan yaratiladi ([O'rnatish, 9-bo'lim](ORNATISH.md#9-bosh-administrator)). O'qituvchilar uchun zaxira login yo'q.
+Kirish sahifasida HEMIS tugmasi ostida **"Login orqali kirish"** tugmasi bor. Zaxira login serverda `php artisan app:create-admin` buyrug'i bilan yaratiladi ([O'rnatish, 9-bo'lim](ORNATISH.md#9-administrator)). O'qituvchilar uchun zaxira login yo'q.
 
 ---
 
 ## Ko'p beriladigan savollar
 
 **Guruh "Band" ko'rinyapti, lekin u yerda dars yo'q.**
-Shu guruh yoki shu Zoom hostga biriktirilgan boshqa guruhda tanlangan vaqt bilan kesishadigan dars bor. **Darslar → Efirda / Rejalashtirilgan**da tekshiring. Kerak bo'lsa, o'qituvchi yoki administrator darsni **Yakunlash** orqali bo'shatadi.
+Shu guruhda tanlangan vaqt bilan kesishadigan dars bor. **Darslar → Efirda / Rejalashtirilgan** da tekshiring. Kerak bo'lsa, darsni **Yakunlash** orqali bo'shating.
+
+**"Bu vaqtda bo'sh host yo'q".**
+Akkauntdagi barcha Licensed hostlar shu vaqtda band. Boshqa juftlikni tanlang yoki Administratordan yangi host qo'shishni so'rang.
+
+**Haftalik dars bu hafta yaratilmadi.**
+Kalendar'da shu kunni bosing — sababi yozilgan (masalan, bo'sh host yo'q yoki guruh nofaol).
 
 **"Darsni boshlash" bosilganda Zoom ochilmadi.**
 Brauzer yangi oynani bloklagan bo'lishi mumkin: manzil satridagi "popup" belgisini bosib ruxsat bering.
 
 **Telegram'dagi "Darsni boshlash" tugmasi ishlamayapti.**
 Tugma dars tugashi bilan eskiradi. Dars davom etayotgan bo'lsa, saytdagi tugmadan foydalaning.
+
+**Video yozuv chiqmadi.**
+Yozuv faqat Administrator yozishni yoqqandan keyin **yaratilgan** darslarda va Licensed hostlarda bo'ladi. Zoom yozuvni tayyorlashiga odatda dars davomiyligicha vaqt ketadi.
 
 **Ism-familiyam noto'g'ri yozilgan.**
 Ma'lumotlar HEMIS'dan olinadi va har kirishda yangilanadi. HEMIS'dagi ma'lumotni to'g'rilating.

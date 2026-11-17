@@ -15,7 +15,7 @@ use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
 /**
- * Bosh administratorni yaratadi yoki mavjudining zaxira parolini yangilaydi.
+ * Administratorni yaratadi yoki mavjudining zaxira parolini yangilaydi.
  * HEMIS ishlamay qolganda ham tizimga kirish imkonini beradi.
  *
  *   php artisan app:create-admin
@@ -29,7 +29,7 @@ class CreateAdmin extends Command
         {--hemis-id= : HEMIS xodim ID (HEMIS orqali kirganda shu hisobga bogʻlanadi)}
         {--role=super_admin : super_admin yoki admin}';
 
-    protected $description = 'Bosh administrator yaratish yoki uning zaxira parolini yangilash';
+    protected $description = 'Administrator yaratish yoki uning zaxira parolini yangilash';
 
     public function handle(): int
     {

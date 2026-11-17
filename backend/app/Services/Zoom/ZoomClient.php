@@ -61,7 +61,7 @@ class ZoomClient
         if ($response->failed() || ! $response->json('access_token')) {
             $account->forceFill(['last_error' => $this->describe($response), 'last_checked_at' => now()])->saveQuietly();
             Log::warning('Zoom token olinmadi', ['account' => $account->id, 'status' => $response->status(), 'body' => $response->json()]);
-            throw new ExternalServiceException(__('“:name” Zoom akkauntining kalitlari notoʻgʻri yoki eskirgan. Bosh administratorga xabar bering.', ['name' => $account->name]));
+            throw new ExternalServiceException(__('“:name” Zoom akkauntining kalitlari notoʻgʻri yoki eskirgan. Administratorga xabar bering.', ['name' => $account->name]));
         }
 
         $token = (string) $response->json('access_token');

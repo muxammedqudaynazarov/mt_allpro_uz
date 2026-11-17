@@ -67,7 +67,7 @@ class HemisOAuth
     {
         try {
             $response = Http::withToken($accessToken)->acceptJson()->timeout(15)
-                ->get($this->url('/oauth/api/user'), ['fields' => $this->config['user_fields'] ?? 'id,uuid,type,name,firstname,surname,patronymic,login,picture,email,phone,university_id']);
+                ->get($this->url('/oauth/api/user'), ['fields' => $this->config['user_fields'] ?? 'id,type,name,firstname,surname,patronymic,picture,login,university_id']);
         } catch (ConnectionException $e) {
             throw new ExternalServiceException('HEMIS serveriga ulanib boʻlmadi.', ['error' => $e->getMessage()]);
         }

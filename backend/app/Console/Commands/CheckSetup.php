@@ -173,7 +173,7 @@ class CheckSetup extends Command
         $this->section('Administrator');
 
         $count = User::withRole(Role::SuperAdmin)->where('status', UserStatus::Active)->count();
-        $this->check($count > 0, "Faol bosh administrator: {$count}", 'Bosh administrator yoʻq. Buyruq: php artisan app:create-admin');
+        $this->check($count > 0, "Faol administrator: {$count}", 'Administrator yoʻq. Buyruq: php artisan app:create-admin');
     }
 
     private function zoom(): void

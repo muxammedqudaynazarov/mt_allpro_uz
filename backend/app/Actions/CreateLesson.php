@@ -21,8 +21,9 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Yangi dars yaratish:
- *  1) vaqt oralig'ini aniqlash (juftlik yoki "hozir"),
- *  2) bo'sh Zoom hostni tanlash va bandligini qulf (lock) ostida tekshirish,
+ *  1) vaqt oralig'ini aniqlash (juftlik va kun),
+ *  2) guruh, keyin bo'sh Zoom host bandligini qulf (lock) ostida tekshirish —
+ *     qulflar doim shu tartibda olinadi (guruh → host), shuning uchun bir-birini kutib qolmaydi,
  *  3) Zoom'da uchrashuv yaratish, 4) bazaga yozish, 5) Telegram xabari.
  */
 class CreateLesson
@@ -46,19 +47,36 @@ class CreateLesson
 
         self::assertGroupFree($group, $startsAt, $endsAt);
 
-        $candidates = $host ? collect([$host]) : HostAvailability::free($startsAt, $endsAt, $group);
-        if ($candidates->isEmpty()) {
-            throw ValidationException::withMessages(['host_id' => __('Bu vaqtda boʻsh Zoom host yoʻq. Boshqa vaqtni tanlang.')]);
-        }
+        // Ikki o'qituvchi bir guruhga turli hostlar bilan bir vaqtda dars yaratsa — ikkinchisi
+        // guruh bandligini birinchisi tugagach ko'radi (host qulfi buni to'smaydi).
+        $lock = Cache::lock('lesson-create:group:'.$group->id, 60);
+        try {
+            return $lock->block(self::lockWait(), function () use ($teacher, $group, $slot, $topic, $host, $startsAt, $endsAt, $seriesId) {
+                self::assertGroupFree($group, $startsAt, $endsAt);
 
-        foreach ($candidates as $candidate) {
-            $lesson = $this->tryHost($candidate, explicit: $host !== null, teacher: $teacher, group: $group, slot: $slot, topic: $topic, startsAt: $startsAt, endsAt: $endsAt, seriesId: $seriesId);
-            if ($lesson) {
-                return $lesson;
-            }
-        }
+                $candidates = $host ? collect([$host]) : HostAvailability::free($startsAt, $endsAt, $group);
+                if ($candidates->isEmpty()) {
+                    throw ValidationException::withMessages(['host_id' => __('Bu vaqtda boʻsh Zoom host yoʻq. Boshqa vaqtni tanlang.')]);
+                }
 
-        throw ValidationException::withMessages(['host_id' => __('Bu vaqtda boʻsh Zoom host yoʻq. Boshqa vaqtni tanlang.')]);
+                foreach ($candidates as $candidate) {
+                    $lesson = $this->tryHost($candidate, explicit: $host !== null, teacher: $teacher, group: $group, slot: $slot, topic: $topic, startsAt: $startsAt, endsAt: $endsAt, seriesId: $seriesId);
+                    if ($lesson) {
+                        return $lesson;
+                    }
+                }
+
+                throw ValidationException::withMessages(['host_id' => __('Bu vaqtda boʻsh Zoom host yoʻq. Boshqa vaqtni tanlang.')]);
+            });
+        } catch (LockTimeoutException) {
+            throw new ExternalServiceException(__('Bu guruhga hozir boshqa dars yaratilmoqda. Bir necha soniyadan soʻng qayta urinib koʻring.'), status: 409);
+        }
+    }
+
+    /** Qulfni kutish vaqti, soniya. */
+    private static function lockWait(): int
+    {
+        return (int) config('lessons.lock_wait', 10);
     }
 
     /**
@@ -71,8 +89,7 @@ class CreateLesson
         $lock = Cache::lock('lesson-create:host:'.$host->id, 30);
 
         try {
-            return $lock->block(10, function () use ($host, $explicit, $teacher, $group, $slot, $topic, $startsAt, $endsAt, $seriesId) {
-                self::assertGroupFree($group, $startsAt, $endsAt);
+            return $lock->block(self::lockWait(), function () use ($host, $explicit, $teacher, $group, $slot, $topic, $startsAt, $endsAt, $seriesId) {
                 if (self::hostConflict($host, $startsAt, $endsAt)) {
                     if ($explicit) {
                         throw ValidationException::withMessages(['host_id' => __('Zoom host (:email) shu vaqtda boshqa darsda band.', ['email' => $host->email])]);
@@ -146,7 +163,7 @@ class CreateLesson
         $start = $slot->startOn($now);
         $end = $slot->endOn($now);
         if ($end->lessThanOrEqualTo($now->copy()->addMinutes(5))) {
-            throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa juftlikni yoki “Hozir”ni tanlang.', ['name' => $slot->label()])]);
+            throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa juftlikni yoki boshqa kunni tanlang.', ['name' => $slot->label()])]);
         }
 
         return [$start->greaterThan($now) ? $start : $now, $end];

@@ -120,7 +120,7 @@ export default function SlotsPage() {
         {slots.isPending ? (
           <SectionLoader />
         ) : !slots.data?.length ? (
-          <EmptyState icon={<Clock3 className="size-5" />} title={t('Dars vaqtlari kiritilmagan')} description={t('Kamida bitta juftlik qoʻshing. Ularsiz faqat “Hozir” rejimida dars yaratish mumkin.')} />
+          <EmptyState icon={<Clock3 className="size-5" />} title={t('Dars vaqtlari kiritilmagan')} description={t('Kamida bitta juftlik qoʻshing: darslar faqat juftliklarga yaratiladi.')} />
         ) : (
           <ol className="divide-y divide-steel-100">
             {slots.data.map((slot, index) => (

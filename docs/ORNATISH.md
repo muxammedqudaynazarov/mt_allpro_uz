@@ -1,6 +1,6 @@
 # Serverga o'rnatish qo'llanmasi
 
-Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosqich ko'rsatadi. Misollarda domen `mt.allpro.uz`, papka `/var/www/mt.allpro.uz`. Boshqa domen yoki papka bo'lsa, ularni hamma joyda almashtiring.
+Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosqich ko'rsatadi. Misollarda sayt manzili **`https://dist.karsu.uz/zoom`** (universitet sayti ichidagi yo'l), kod papkasi `/var/www/mt.allpro.uz`. Tizim alohida domenda ham ishlaydi (masalan, `https://mt.regofis.uz`) — farqi 5 va 7-bo'limlarda ko'rsatilgan.
 
 ## Mundarija
 
@@ -12,14 +12,17 @@ Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosq
 6. [Frontendni yig'ish](#6-frontendni-yigish)
 7. [nginx va SSL](#7-nginx-va-ssl)
 8. [Navbat ishchisi va scheduler](#8-navbat-ishchisi-va-scheduler)
-9. [Bosh administrator](#9-bosh-administrator)
+9. [Administrator](#9-administrator)
 10. [HEMIS OAuth ulash](#10-hemis-oauth-ulash)
-11. [Zoom ulash](#11-zoom-ulash)
-12. [Telegram bot](#12-telegram-bot)
-13. [Eski bazadan ko'chirish](#13-eski-bazadan-kochirish)
-14. [Yangilanishlarni chiqarish](#14-yangilanishlarni-chiqarish)
-15. [Zaxira nusxa](#15-zaxira-nusxa)
-16. [Muammolarni hal qilish](#16-muammolarni-hal-qilish)
+11. [HEMIS talabalar API (HEMIS SYNC)](#11-hemis-talabalar-api-hemis-sync)
+12. [Zoom ulash](#12-zoom-ulash)
+13. [Video yozuvlar](#13-video-yozuvlar)
+14. [Telegram bot](#14-telegram-bot)
+15. [mt.regofis.uz dan dist.karsu.uz/zoom ga ko'chirish](#15-mtregofisuz-dan-distkarsuuzzoom-ga-kochirish)
+16. [Eski bazadan ko'chirish](#16-eski-bazadan-kochirish)
+17. [Yangilanishlarni chiqarish](#17-yangilanishlarni-chiqarish)
+18. [Zaxira nusxa](#18-zaxira-nusxa)
+19. [Muammolarni hal qilish](#19-muammolarni-hal-qilish)
 
 ---
 
@@ -27,13 +30,14 @@ Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosq
 
 | Komponent | Versiya |
 |---|---|
-| PHP | **8.3 yoki 8.4** (Laravel 13 talabi) — `bcmath, ctype, curl, fileinfo, intl, mbstring, mysql, openssl, pdo, tokenizer, xml, zip` kengaytmalari bilan |
+| PHP | **8.3 yoki 8.4** (Laravel 13 talabi) — `bcmath, ctype, curl, fileinfo, intl, mbstring, mysql, openssl, pdo, tokenizer, xml, zip` kengaytmalari bilan (`zip` — Excel fayllari uchun) |
 | MySQL | 8.0+ (yoki MariaDB 10.11+) |
 | Node.js | 20 yoki 22 (faqat frontendni yig'ish uchun) |
 | Composer | 2.x |
 | nginx, supervisor, cron, certbot | Ubuntu omboridan |
+| Disk | Video yozuvlar yoqilsa — ular uchun alohida joy ([13-bo'lim](#13-video-yozuvlar)) |
 
-Domen DNS'i server IP manziliga yo'naltirilgan bo'lishi kerak. HEMIS va Telegram HTTPS talab qiladi.
+HEMIS, Zoom webhook'lari va Telegram HTTPS talab qiladi.
 
 ## 2. Server paketlari
 
@@ -97,13 +101,17 @@ Eng muhim qiymatlar:
 |---|---|
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` (**hech qachon `true` qilmang** — xato sahifasida maxfiy ma'lumot chiqadi) |
-| `APP_URL`, `FRONTEND_URL` | Sayt ochiladigan manzil, ikkalasi bir xil: `https://mt.allpro.uz` |
+| `APP_URL`, `FRONTEND_URL` | Sayt brauzerda ochiladigan manzil, ikkalasi bir xil, oxirida `/` siz: `https://dist.karsu.uz/zoom` (alohida domenda: `https://mt.regofis.uz`) |
+| `SESSION_PATH` | Sayt yo'li: `/zoom`. Alohida domenda: `/` |
+| `SESSION_COOKIE` | `karsu_zoom_session` — dist.karsu.uz'dagi boshqa saytlar cookie'si bilan to'qnashmasligi uchun |
+| `SESSION_SECURE_COOKIE` | `true` |
 | `APP_LOCALE` | `kaa` (qoraqalpoqcha, asosiy til) yoki `uz` |
 | `DB_*` | 3-bosqichdagi baza ma'lumotlari |
-| `SANCTUM_STATEFUL_DOMAINS` | Shart emas: sayt ochilgan domen avtomatik qabul qilinadi. Faqat qo'shimcha domenlar uchun |
-| `SESSION_SECURE_COOKIE` | `true` |
-| `HEMIS_*` | [10-bo'lim](#10-hemis-oauth-ulash) |
-| `TELEGRAM_*` | [12-bo'lim](#12-telegram-bot) |
+| `TRUSTED_PROXIES` | dist.karsu.uz boshqa serverdan proksi qilsa — o'sha serverning IP manzili ([7.2](#72-b-tizim-boshqa-serverda-proksi)). Aks holda `127.0.0.1` |
+| `HEMIS_*` | [10](#10-hemis-oauth-ulash) va [11-bo'lim](#11-hemis-talabalar-api-hemis-sync) |
+| `RECORDINGS_*` | [13-bo'lim](#13-video-yozuvlar) |
+| `TELEGRAM_*` | [14-bo'lim](#14-telegram-bot) |
+| `SANCTUM_STATEFUL_DOMAINS` | Shart emas: sayt ochilgan domen avtomatik qabul qilinadi |
 
 > `APP_KEY` Zoom kalitlarini shifrlaydi. Uni **yo'qotmang va o'zgartirmang**, aks holda saqlangan Zoom kalitlarini qayta kiritishga to'g'ri keladi. `.env` faylining zaxira nusxasini xavfsiz joyda saqlang.
 
@@ -116,46 +124,83 @@ sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R ug+rwX storage bootstrap/cache
 ```
 
-Sozlamalarni tekshirish (domen, HTTPS, baza, papka huquqlari, HEMIS, Zoom, Telegram). `--url` ga sayt ochiladigan manzilni yozing:
-
-```bash
-sudo -u www-data php artisan app:check --url=https://mt.allpro.uz
-```
-
-Buyruq har bir muammo uchun nima qilish kerakligini yozadi. `.env` o'zgartirilgandan keyin har safar `sudo -u www-data php artisan optimize` ishga tushiring — aks holda eski sozlamalar keshda qoladi.
-
 ## 6. Frontendni yig'ish
 
 ```bash
 cd /var/www/mt.allpro.uz/frontend
 npm ci
-npm run build      # natija: frontend/dist
+VITE_BASE_PATH=/zoom/ npm run build      # natija: frontend/dist
 ```
 
-Frontend uchun `.env` kerak emas: u backend bilan bir domenda ishlaydi.
+`VITE_BASE_PATH` — sayt yo'li (`APP_URL` dagi `/zoom`). Alohida domenda uni yozmang: `npm run build`. Keyingi yangilanishlarda `deploy/deploy.sh` bu yo'lni `APP_URL` dan o'zi oladi ([17-bo'lim](#17-yangilanishlarni-chiqarish)).
+
+> Frontend bir yo'l uchun yig'ilib, sayt boshqa yo'lda ochilsa — oq sahifa chiqadi. `php artisan app:check` buni tekshiradi.
 
 ## 7. nginx va SSL
 
+Uchta variantdan o'zingiznikini tanlang. Uchala konfiguratsiya `deploy/nginx/` papkasida va nginx + PHP-FPM'da sinab ko'rilgan.
+
+| Variant | Qachon | Fayl |
+|---|---|---|
+| **A** | Tizim dist.karsu.uz bilan **bir serverda** | `dist.karsu.uz-zoom.conf` |
+| **B** | Tizim **boshqa serverda** (masalan, hozirgi mt.regofis.uz), dist.karsu.uz uni proksi qiladi | `dist.karsu.uz-proxy.conf` |
+| **C** | Tizim o'z domenida (`https://mt.regofis.uz`) | `root-domain.conf` |
+
+### 7.1. A: dist.karsu.uz bilan bir serverda
+
+dist.karsu.uz'ning mavjud nginx konfiguratsiyasiga (masalan, `/etc/nginx/sites-available/dist.karsu.uz`) faqat bitta qator qo'shiladi:
+
 ```bash
-sudo cp /var/www/mt.allpro.uz/deploy/nginx/mt.allpro.uz.conf /etc/nginx/sites-available/mt.allpro.uz
-sudo ln -s /etc/nginx/sites-available/mt.allpro.uz /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
+sudo cp /var/www/mt.allpro.uz/deploy/nginx/dist.karsu.uz-zoom.conf /etc/nginx/snippets/
+sudo nano /etc/nginx/sites-available/dist.karsu.uz
 ```
 
-Sertifikat olishdan oldin konfiguratsiyadagi `listen 443` blokini vaqtincha izohga oling yoki certbot'ni `--nginx` rejimida ishlating:
+`listen 443` bo'lgan `server { ... }` bloki ichiga, boshqa `location` lardan **oldin**:
+
+```nginx
+include snippets/dist.karsu.uz-zoom.conf;
+```
 
 ```bash
-sudo certbot --nginx -d mt.allpro.uz
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-PHP 8.4 o'rnatgan bo'lsangiz, konfiguratsiyada `php8.3-fpm.sock` ni `php8.4-fpm.sock` ga almashtiring.
+Snippet `/zoom/api`, `/zoom/auth`, `/zoom/sanctum`, `/zoom/l`, `/zoom/up` ni Laravel'ga (`SCRIPT_NAME=/zoom/index.php`), qolgan `/zoom/...` ni React'ga beradi. dist.karsu.uz'ning o'z sahifalariga tegmaydi. SSL sertifikati dist.karsu.uz'niki ishlatiladi.
 
-Tekshirish: `https://mt.allpro.uz/up` sahifasi yashil "Application up" ko'rsatishi, `https://mt.allpro.uz` esa kirish sahifasini ochishi kerak.
+> dist.karsu.uz `Content-Security-Policy` sarlavhasini o'rnatgan bo'lsa, u `/zoom` ga ham ta'sir qiladi: `script-src 'self'`, `media-src 'self'` va `img-src` da `https:` (HEMIS rasmlari) ruxsat etilgan bo'lishi kerak.
+
+### 7.2. B: tizim boshqa serverda (proksi)
+
+1. **Tizim serverida** variant C dagidek o'rnating (7.3), lekin `.env` da `APP_URL=https://dist.karsu.uz/zoom`, `FRONTEND_URL=https://dist.karsu.uz/zoom`, `SESSION_PATH=/zoom`, `TRUSTED_PROXIES=<dist.karsu.uz IP manzili>`, frontend `VITE_BASE_PATH=/zoom/` bilan yig'iladi.
+2. **dist.karsu.uz serverida** `deploy/nginx/dist.karsu.uz-proxy.conf` dagi ikkita `location` blokini `listen 443` server bloki ichiga qo'shing. `proxy_pass https://mt.regofis.uz/;` — tizim serverining manzili, oxiridagi `/` bilan.
+3. `sudo nginx -t && sudo systemctl reload nginx` (ikkala serverda).
+
+Proksi `/zoom` ni olib tashlab yuboradi va `X-Forwarded-Prefix: /zoom` qo'shadi — Laravel havolalarni `https://dist.karsu.uz/zoom/...` ko'rinishida yaratadi. `TRUSTED_PROXIES` noto'g'ri bo'lsa, Laravel bu sarlavhaga ishonmaydi va havolalar `mt.regofis.uz` bilan chiqadi.
+
+### 7.3. C: o'z domenida
+
+```bash
+sudo cp /var/www/mt.allpro.uz/deploy/nginx/root-domain.conf /etc/nginx/sites-available/mt.regofis.uz
+sudo sed -i 's/mt\.allpro\.uz;/mt.regofis.uz;/; s#live/mt\.allpro\.uz/#live/mt.regofis.uz/#g' /etc/nginx/sites-available/mt.regofis.uz
+sudo ln -s /etc/nginx/sites-available/mt.regofis.uz /etc/nginx/sites-enabled/
+sudo certbot --nginx -d mt.regofis.uz
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Kod papkasi boshqa bo'lsa, fayldagi `/var/www/mt.allpro.uz` ni almashtiring. PHP 8.4 o'rnatilgan bo'lsa, `php8.3-fpm.sock` ni `php8.4-fpm.sock` ga almashtiring (A variantida ham).
+
+### Tekshirish
+
+`https://dist.karsu.uz/zoom/up` — yashil "Application up", `https://dist.karsu.uz/zoom` — kirish sahifasi. Keyin:
+
+```bash
+cd /var/www/mt.allpro.uz/backend
+sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom
+```
+
+Buyruq domen, cookie yo'li, frontend yig'ilgan yo'l, baza, papka huquqlari, HEMIS, Zoom va Telegram'ni tekshiradi va har bir muammo uchun nima qilishni yozadi. `.env` o'zgartirilgandan keyin har safar `sudo -u www-data php artisan optimize` ishga tushiring — aks holda eski sozlamalar keshda qoladi.
 
 ## 8. Navbat ishchisi va scheduler
-
-Telegram xabarlari navbat (queue) orqali yuboriladi. Dars holatlari har daqiqada yangilanadi.
 
 ```bash
 sudo cp /var/www/mt.allpro.uz/deploy/supervisor/mt-allpro-worker.conf /etc/supervisor/conf.d/
@@ -166,7 +211,17 @@ sudo cp /var/www/mt.allpro.uz/deploy/cron/mt-allpro /etc/cron.d/mt-allpro
 sudo chmod 644 /etc/cron.d/mt-allpro
 ```
 
-## 9. Bosh administrator
+Navbat ishchisi Telegram xabarlarini yuboradi. Cron har daqiqada scheduler'ni ishga tushiradi:
+
+| Buyruq | Qachon | Nima qiladi |
+|---|---|---|
+| `lessons:sync-statuses` | har daqiqa | Dars holatlari (rejada → efirda → yakunlangan) |
+| `lessons:track-zoom` | har daqiqa | Dars Zoom'da haqiqatda boshlandimi, tugadimi; tugagan darslarning qatnashchilar hisoboti |
+| `lessons:materialize-series` | har daqiqa | Haftalik darslarni dars kuni, boshlanishidan **1 soat oldin** yaratib, Telegram'ga yuboradi |
+| `recordings:process` | har 5 daqiqa | Video yozuvlarni Zoom'dan serverga ko'chiradi va Zoom'dan o'chiradi |
+| `model:prune` | har kuni | Eski jonli qatnashuv yozuvlari (7 kun) va amallar tarixi (2 yil) tozalanadi |
+
+## 9. Administrator
 
 HEMIS ulanmagan yoki ishlamay qolgan holatda ham kirish uchun zaxira login yarating:
 
@@ -175,15 +230,15 @@ cd /var/www/mt.allpro.uz/backend
 sudo -u www-data php artisan app:create-admin --login=admin --name="Familiya Ism" --hemis-id=1568
 ```
 
-Buyruq parolni so'raydi: kamida 12 belgi, harf va raqam bo'lishi shart. `--hemis-id` ko'rsatilsa, shu xodim HEMIS orqali kirganda ham aynan shu hisobga tushadi.
+Buyruq parolni so'raydi: kamida 12 belgi, harf va raqam bo'lishi shart. `--hemis-id` ko'rsatilsa, shu xodim HEMIS orqali kirganda ham aynan shu hisobga tushadi. Kirish sahifasida HEMIS tugmasi ostidagi **"Login orqali kirish"** tugmasini bosing.
 
-Kirish sahifasida HEMIS tugmasi ostidagi **"Login orqali kirish"** tugmasini bosing.
+Tizimda uchta rol bor: **Administrator** (hammasi), **O'quv bo'limi** (barcha darslar, monitoring, hisobotlar; dars yaratmaydi, Zoom va sozlamalarni o'zgartirmaydi), **O'qituvchi**. Rollar **Foydalanuvchilar → ⋯ → Rol va sozlamalar** da beriladi.
 
 ## 10. HEMIS OAuth ulash
 
 1. Universitet HEMIS administratoriga murojaat qilib, tizimni **OAuth mijozi** (client) sifatida ro'yxatdan o'tkazishni so'rang. Unga quyidagilarni bering:
-   - **Redirect URI:** `https://mt.allpro.uz/auth/hemis/callback`
-   - Kerakli maydonlar: `id, uuid, type, name, firstname, surname, patronymic, login, picture, email, phone, university_id`
+   - **Redirect URI:** `https://dist.karsu.uz/zoom/auth/hemis/callback` (alohida domenda: `https://mt.regofis.uz/auth/hemis/callback`). Aniq qiymatni `php artisan app:check` ko'rsatadi.
+   - Kerakli maydonlar: `id, type, name, firstname, surname, patronymic, picture, login, university_id`
 2. Berilgan **Client ID** va **Client Secret**ni `.env`ga yozing:
 
    ```dotenv
@@ -196,62 +251,133 @@ Kirish sahifasida HEMIS tugmasi ostidagi **"Login orqali kirish"** tugmasini bos
    HEMIS_AUTO_REGISTER=true
    ```
 
-3. `php artisan optimize` buyrug'ini qayta ishlating.
+3. `sudo -u www-data php artisan optimize` buyrug'ini qayta ishlating.
 
-Xodim birinchi marta kirganda hisobi **"Tasdiq kutmoqda"** holatida yaratiladi. Administrator "Foydalanuvchilar" sahifasida uni tasdiqlaydi. `HEMIS_AUTO_REGISTER=false` qilinsa, faqat oldindan qo'shilgan (masalan, eski bazadan ko'chirilgan) xodimlar kira oladi.
+Bazada xodimdan faqat **familiya, ism, otasining ismi, HEMIS ID va rasm havolasi** saqlanadi. `type`, `login`, `university_id` faqat kirishda tekshirish uchun o'qiladi va saqlanmaydi. Telefon, email va boshqa ma'lumotlar so'ralmaydi.
+
+Xodim birinchi marta kirganda hisobi **"Tasdiq kutmoqda"** holatida yaratiladi, administrator uni tasdiqlaydi. `HEMIS_AUTO_REGISTER=false` qilinsa, faqat oldindan qo'shilgan xodimlar kira oladi.
 
 > `HEMIS_BASE_URL` — universitet HEMIS **xodimlar** tizimining manzili (talabalar uchun `student.*` emas). Kirishda xatolik bo'lsa, `storage/logs/laravel-*.log` faylini tekshiring.
 
-## 11. Zoom ulash
+## 11. HEMIS talabalar API (HEMIS SYNC)
+
+**Guruhlar → guruh → Talabalar** sahifasida har bir talabaga HEMIS ID kiritiladi, **HEMIS SYNC** tugmasi esa HEMIS'dan haqiqiy F.I.Sh. va rasmni oladi — faqat yangi kiritilgan yoki o'zgargan ID'lar uchun. Buning uchun talabalar HEMIS'ining REST API tokeni kerak (`https://student.karsu.uz/rest/docs`):
+
+```dotenv
+HEMIS_API_URL=https://student.karsu.uz/rest
+HEMIS_API_TOKEN=...
+HEMIS_STUDENT_ENDPOINT=v1/data/student-list
+HEMIS_STUDENT_SEARCH_PARAM=search
+```
+
+`.env` dan keyin `php artisan optimize`. Bitta talabada tekshiring:
+
+```bash
+sudo -u www-data php artisan hemis:student 123456789012
+```
+
+Buyruq javob kodini, topilgan yozuvlar sonini, javobdagi maydon nomlarini va topilgan ism-familiyani ko'rsatadi. Talaba topilmasa yoki javob tuzilmasi boshqacha bo'lsa, swagger sahifasidagi talabalar ro'yxati endpointi va qidiruv parametri nomini tekshirib, `HEMIS_STUDENT_ENDPOINT` / `HEMIS_STUDENT_SEARCH_PARAM` ni moslang.
+
+Talabadan faqat **F.I.Sh., HEMIS ID va rasm havolasi** saqlanadi.
+
+## 12. Zoom ulash
 
 Har bir Zoom akkaunt (litsenziyalar to'plami) uchun bitta **Server-to-Server OAuth** ilova kerak.
 
+### 12.1. Ilova va ruxsatlar (Scopes)
+
 1. [marketplace.zoom.us](https://marketplace.zoom.us) → **Develop → Build App → Server-to-Server OAuth App**.
 2. **Scopes** bo'limida qo'shing:
-   - `meeting:write:meeting:admin`: uchrashuv yaratish
-   - `meeting:read:meeting:admin`: host havolasini yangilash
-   - `meeting:update:meeting:admin` (yoki `meeting:update:status:admin`): darsni yakunlash
-   - `meeting:delete:meeting:admin`: boshlanmagan darsni bekor qilish
-   - `user:read:list_users:admin`: Zoom foydalanuvchilari ro'yxati
 
-   Davomat va dars Zoom'da haqiqatda qachon boshlanganini kuzatish uchun (2026-yil noyabrdan):
-   - `meeting:read:list_past_instances:admin`: o'tgan uchrashuvlar ro'yxati
-   - `meeting:read:past_meeting:admin`: uchrashuvning aniq boshlanish/tugash vaqti
-   - `report:read:list_meeting_participants:admin`: qatnashchilar va ularning kirib-chiqish vaqtlari (**Pro yoki undan yuqori tarif**)
-   - `meeting:read:list_past_participants:admin`: zaxira (hisobot ruxsati ko'rinmasa)
+| Ruxsat | Nima uchun |
+|---|---|
+| `user:read:list_users:admin` | Zoom foydalanuvchilari (hostlar) ro'yxati |
+| `meeting:write:meeting:admin` | Dars uchun uchrashuv yaratish |
+| `meeting:read:meeting:admin` | Host havolasini yangilash, holatni kuzatish |
+| `meeting:update:status:admin` | Darsni yakunlash |
+| `meeting:delete:meeting:admin` | Boshlanmagan darsni bekor qilish |
+| `meeting:read:list_past_instances:admin` | O'tgan uchrashuvlar |
+| `meeting:read:past_meeting:admin` | Darsning aniq boshlanish/tugash vaqti |
+| `report:read:list_meeting_participants:admin` | Dars tugagach qatnashchilar va kirib-chiqish vaqtlari (**Pro va yuqori**) |
+| `meeting:read:list_past_participants:admin` | Zaxira: hisobot ruxsati bo'lmasa |
+| `dashboard:read:list_meeting_participants:admin` | Zaxira: webhook kelmaganda jonli qatnashchilar (**Business va yuqori**) |
+| `cloud_recording:read:list_recording_files:admin` | Video yozuv fayllari ro'yxati |
+| `cloud_recording:delete:meeting_recording:admin` | Serverga ko'chirilgan yozuvni Zoom'dan o'chirish |
 
-   Eski ilovalarda bu ruxsatlar `meeting:write:admin`, `meeting:read:admin`, `user:read:admin`, `report:read:admin` deb ataladi. Ruxsat qo'shilgandan keyin tizimda **Zoom akkauntlar → Ulanishni tekshirish** tugmasini bosing — yangi ruxsatlar bilan token darhol olinadi (aks holda eski token muddati tugaguncha, ko'pi bilan bir soat kutiladi).
-3. Ilovani **Activate** qiling. **Account ID, Client ID, Client Secret** qiymatlarini oling.
-4. Tizimga bosh administrator sifatida kiring: **Sozlamalar → Zoom akkauntlar → Akkaunt qo'shish**. "Ulanishni tekshirish" tugmasi Zoom foydalanuvchilari sonini ko'rsatishi kerak.
-5. **Guruhlar → Guruh qo'shish**: guruhga Zoom akkaunt va **host** (dars o'tkaziladigan Zoom foydalanuvchisi emaili, masalan `zoom_1@karsu.uz`) biriktiring.
+   Eski ilovalarda ruxsatlar `meeting:write:admin`, `meeting:read:admin`, `user:read:admin`, `report:read:admin`, `recording:read:admin`, `recording:write:admin`, `dashboard_meetings:read:admin` deb ataladi.
+3. Ilovani **Activate** qiling. **Account ID, Client ID, Client Secret** ni oling.
+4. Tizimda: **Zoom akkauntlar → Akkaunt qo'shish** → **Ulanishni tekshirish** Zoom foydalanuvchilari sonini ko'rsatishi kerak. Ruxsat keyinroq qo'shilsa ham shu tugmani bosing — yangi ruxsatlar bilan token darhol olinadi.
+5. Akkaunt ostidagi **Zoom hostlar → Zoom'dan yangilash**: akkauntdagi foydalanuvchilar host sifatida qo'shiladi. Basic (litsenziyasiz) hostlar nofaol qo'shiladi: ularda uchrashuv 40 daqiqa bilan cheklangan va bulutga yozib bo'lmaydi.
+6. **Guruhlar → Guruh qo'shish**: guruhga Zoom akkaunt va (ixtiyoriy) standart host biriktiring. O'qituvchi dars yaratishda bo'sh hostni o'zi tanlaydi — bir host bir vaqtda faqat bitta dars o'tkaza oladi.
 
-Bitta Zoom foydalanuvchisi bir vaqtda faqat bitta uchrashuv o'tkaza oladi. Bir nechta guruh bitta hostga biriktirilsa, tizim ular uchun bir vaqtda dars yaratishga ruxsat bermaydi.
+### 12.2. Event Subscriptions (webhook)
 
-### Talabalar uchun tavsiya etiladigan Zoom sozlamalari
+Jonli qatnashchilar ro'yxati (Monitoring) va video yozuvlar webhook orqali keladi. Shu ilovaning o'zida:
 
-Uchrashuv ichidagi ruxsatlarni (kamerani yoqish, ismni o'zgartirish) Zoom API orqali har bir uchrashuvga berib bo'lmaydi — ular Zoom akkaunt sozlamalaridan olinadi. Zoom saytida akkaunt egasi sifatida: **Admin → Account Management → Account Settings → Meeting** bo'limida (qidiruv: Ctrl+F):
+1. **Feature → Event Subscriptions** ni yoqing → **Add Event Subscription**.
+2. **Event notification endpoint URL** — tizimdagi **Zoom akkauntlar** sahifasida har bir akkaunt uchun ko'rsatilgan manzil, masalan `https://dist.karsu.uz/zoom/api/zoom/webhook/1` (**Nusxalash** tugmasi).
+3. Hodisalar:
+   - **Meeting:** `meeting.started`, `meeting.ended`, `meeting.participant_joined`, `meeting.participant_left`
+   - **Recording:** `recording.completed`
+4. Sahifadagi **Secret Token** ni nusxalab, tizimda **Zoom akkauntlar → Tahrirlash → Webhook Secret Token** ga kiriting va saqlang.
+5. Shundan **keyin** Zoom'da **Validate** tugmasini bosing — tizim Zoom'ning tekshiruv so'roviga javob beradi. Saqlang.
+
+Ishlayotganini **Zoom akkauntlar** sahifasidagi "Webhook: Ishlayapti, oxirgi hodisa: ..." yozuvidan bilasiz. Imzosi noto'g'ri yoki 5 daqiqadan eski so'rovlar rad etiladi.
+
+### 12.3. Talabalar uchun tavsiya etiladigan Zoom sozlamalari
+
+Uchrashuv ichidagi ruxsatlar Zoom akkaunt sozlamalaridan olinadi. Zoom saytida akkaunt egasi sifatida: **Admin → Account Management → Account Settings → Meeting**:
 
 | Sozlama | Qiymat | Nima uchun |
 |---|---|---|
-| Allow participants to rename themselves | **o'chiq** 🔒 | Talaba dars o'rtasida ismini o'zgartira olmaydi — davomat ism bo'yicha aniqroq hisoblanadi |
+| Allow participants to rename themselves | **o'chiq** 🔒 | Talaba dars o'rtasida ismini o'zgartira olmaydi — davomat aniqroq |
 | Start Video / Allow participants to start video | **o'chiq** 🔒 | Talabalar kamerani yoqmaydi |
 | Participants video | **off** | Talabalar kamerasi o'chiq holda kiradi |
 | Embed passcode in invite link for one-click join | **yoqilgan** | Havolani bosgan talaba kod kiritmaydi |
 | Waiting room | **o'chiq** | Talabalar darhol kiradi |
 
-🔒 — sozlamani qulflang (lock), shunda barcha hostlarga, keyin qo'shiladiganlariga ham qo'llanadi. O'qituvchi dars davomida **Security** menyusidan bu ruxsatlarni vaqtincha o'zgartirishi mumkin.
+🔒 — sozlamani qulflang (lock), shunda barcha hostlarga qo'llanadi.
 
-### Zoom holatini kuzatish va davomat
+### 12.4. Kuzatuv va davomat qanday ishlaydi
 
-Scheduler (`* * * * * php artisan schedule:run`) har daqiqada `lessons:track-zoom` buyrug'ini ishga tushiradi:
-- dars Zoom'da boshlandimi, host tugatdimi — shu orqali hostning kechikishi va darsning haqiqiy davomiyligi aniqlanadi. Host uchrashuvni tugatsa, dars tizimda ham yakunlanadi;
-- dars tugagach (3 daqiqadan keyin) Zoom hisobotidan har bir qatnashchining kirib-chiqish vaqti olinadi. Hisobot tayyor bo'lmasa, 10, 30, 60, 180 daqiqadan keyin qayta urinadi.
+- Webhook'lar dars boshlangani, tugagani va har bir qatnashchining kirib-chiqishini darhol yetkazadi. **Monitoring** sahifasi ro'yxatni har 30 soniyada yangilaydi.
+- `lessons:track-zoom` har daqiqada holatni Zoom API'dan ham tekshiradi (webhook kelmay qolsa ham dars holati to'g'ri bo'ladi).
+- Dars tugagach (3 daqiqadan keyin) Zoom hisobotidan har bir qatnashchining aniq vaqtlari olinadi; tayyor bo'lmasa 10, 30, 60, 180 daqiqadan keyin qayta urinadi. Zoom hisobotlari **taxminan 6 oy** saqlanadi — shu muddat ichida dars sahifasidagi **"Zoom hisobotini yangilash"** bilan qayta olish mumkin.
 
-Talabalar tizimga kirmaydi: ular Zoom'dagi ismi bo'yicha guruh ichida avtomatik aniqlanadi (kirill/lotin, so'zlar tartibi, "(iPhone)" kabi qo'shimchalar farq qilmaydi). Bir talaba bir necha yozuv bo'lib qolsa, administrator **Guruhlar → guruh nomi → Talabalar** sahifasida birlashtiradi.
+Talabalar tizimga kirmaydi: ular Zoom'dagi ismi bo'yicha guruh ichida aniqlanadi (kirill/lotin, so'zlar tartibi, "(iPhone)" kabi qo'shimchalar farq qilmaydi).
 
-## 12. Telegram bot
+## 13. Video yozuvlar
 
-Bot ixtiyoriy, lekin tavsiya etiladi: o'qituvchiga har bir dars havolasi va "Darsni boshlash" tugmasi Telegram'da keladi.
+Yoqilganda darslar Zoom bulutiga yoziladi, keyin tizim ularni serverga ko'chiradi, hajmini tekshiradi va shundan keyingina Zoom'dan o'chiradi.
+
+1. **Zoom'da:** Admin → Account Settings → **Recording → Cloud recording** yoqilgan bo'lsin. Bulutga faqat **Licensed** hostlar yoza oladi. 12.1 dagi `cloud_recording:*` ruxsatlari va 12.2 dagi `recording.completed` hodisasi kerak.
+2. **Serverda papka:**
+
+   ```bash
+   sudo mkdir -p /var/www/recordings
+   sudo chown www-data:www-data /var/www/recordings
+   sudo chmod 750 /var/www/recordings
+   ```
+
+   Joyni baholash: 80 daqiqalik dars videosi odatda bir necha yuz MB. Alohida disk ulash tavsiya etiladi.
+3. **.env:**
+
+   ```dotenv
+   RECORDINGS_PATH=/var/www/recordings
+   RECORDINGS_MIN_FREE_GB=5                    # bo'sh joy shundan kam bo'lsa, yangi yozuvlar yuklanmaydi
+   RECORDINGS_ACCEL_PREFIX=/_zoom_recordings/  # videoni nginx beradi
+   ```
+
+   `RECORDINGS_ACCEL_PREFIX` — nginx'dagi ichki `location /_zoom_recordings/` (uchala konfiguratsiyada bor). Laravel faqat ruxsatni tekshiradi, katta faylni nginx beradi — video ijro va o'rash (seek) tez ishlaydi, PHP band bo'lmaydi. Papka boshqa bo'lsa, nginx'dagi `alias /var/www/recordings/;` ni ham almashtiring. Bo'sh qoldirilsa, fayl PHP orqali beriladi.
+4. **Tizimda:** **Umumiy sozlamalar → Video yozuvlar → Darslarni avtomatik yozib olish** ni yoqing. Yoqilgandan keyin **yangi yaratilgan** darslar yoziladi.
+
+Zoom'dan o'chirish usuli shu sahifada tanlanadi: **Savatga** (tavsiya etiladi; 30 kun ichida Zoom'da tiklash mumkin, savatdagi fayllar bulut hajmiga hisoblanmaydi) yoki **Butunlay**. Fayl serverga to'liq ko'chib, hajmi Zoom'dagi bilan mos kelmaguncha Zoom'dan hech narsa o'chirilmaydi. Yuklash xato bersa, 5 martagacha qayta urinadi; **Video yozuvlar** sahifasida **Qayta urinish** tugmasi bor.
+
+Yozuvlar MP4 (H.264/AAC) formatida — brauzerda dars sahifasining o'zida ijro etiladi va yuklab olinadi. Ularni Administrator, O'quv bo'limi va darsning o'qituvchisi ko'radi.
+
+## 14. Telegram bot
+
+Bot ixtiyoriy, lekin tavsiya etiladi: o'qituvchiga har bir dars havolasi va "Darsni boshlash" tugmasi Telegram'da keladi (haftalik darslar — dars kuni, 1 soat oldin).
 
 1. Telegram'da [@BotFather](https://t.me/BotFather) → `/newbot` (yoki mavjud botda `/revoke` bilan **yangi token oling**: eski token kodda ochiq qolgan edi).
 2. `.env`:
@@ -262,16 +388,52 @@ Bot ixtiyoriy, lekin tavsiya etiladi: o'qituvchiga har bir dars havolasi va "Dar
    TELEGRAM_WEBHOOK_SECRET=<openssl rand -hex 32 natijasi>
    ```
 
-3. Webhook'ni o'rnating:
+3. Webhook'ni o'rnating (manzil `APP_URL` dan olinadi: `https://dist.karsu.uz/zoom/api/telegram/webhook`):
 
    ```bash
-   php artisan optimize
+   sudo -u www-data php artisan optimize
    sudo -u www-data php artisan telegram:set-webhook
    ```
 
 Xodimlar Telegram'ni **Profil → Telegram'ni ulash** tugmasi orqali o'zlari ulaydi (QR kod yoki havola).
 
-## 13. Eski bazadan ko'chirish
+## 15. mt.regofis.uz dan dist.karsu.uz/zoom ga ko'chirish
+
+Baza, Zoom kalitlari va foydalanuvchilar o'zgarmaydi — faqat manzil o'zgaradi. Bir kecha, darslar bo'lmagan vaqtda qiling.
+
+1. **HEMIS** administratoriga yangi Redirect URI'ni oldindan yuboring: `https://dist.karsu.uz/zoom/auth/hemis/callback`. Eski URI ham o'tish davrida qolishi mumkin (HEMIS bir nechta URI'ni qabul qilsa).
+2. **nginx**: 7.1 yoki 7.2 variantini sozlang.
+3. **.env**:
+
+   ```dotenv
+   APP_URL=https://dist.karsu.uz/zoom
+   FRONTEND_URL=https://dist.karsu.uz/zoom
+   SESSION_PATH=/zoom
+   SESSION_COOKIE=karsu_zoom_session
+   ```
+
+   `HEMIS_REDIRECT_URI="${APP_URL}/auth/hemis/callback"` bo'lsa, o'zi yangilanadi.
+4. **Yangilash**: `sudo -u www-data APP_DIR=/var/www/mt.allpro.uz ./deploy/deploy.sh` — frontend `/zoom/` uchun qayta yig'iladi.
+5. **Telegram**: `sudo -u www-data php artisan telegram:set-webhook`.
+6. **Zoom**: har bir ilovada **Event Subscriptions → Event notification endpoint URL** ni yangi manzilga o'zgartiring (Zoom akkauntlar sahifasidan nusxalang) va **Validate** qiling.
+7. **Tekshirish**: `sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom`, keyin brauzerda HEMIS orqali kirib ko'ring.
+8. **Eski manzil** (variant A da, mt.regofis.uz server bloki o'rniga):
+
+   ```nginx
+   server {
+       listen 443 ssl;
+       server_name mt.regofis.uz;
+       ssl_certificate     /etc/letsencrypt/live/mt.regofis.uz/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/mt.regofis.uz/privkey.pem;
+       return 301 https://dist.karsu.uz/zoom$request_uri;
+   }
+   ```
+
+   Shunda eski xatcho'plar va Telegram'dagi eski "Darsni boshlash" tugmalari yangi manzilga o'tadi. Variant B da mt.regofis.uz proksi manbai bo'lib qoladi — uni yo'naltirmang.
+
+Foydalanuvchilar yangi manzilda bir marta qayta kiradi (cookie yangi yo'lda).
+
+## 16. Eski bazadan ko'chirish
 
 Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitlari, juftliklar va darslar tarixi ko'chiriladi. Parollar va eski Zoom tokenlari ko'chirilmaydi.
 
@@ -294,19 +456,19 @@ Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitl
 
 4. Natijani tekshiring:
    - **Zoom akkauntlar** sahifasida har bir akkauntga nom bering va **Client Secret'ni Zoom Marketplace'da yangilab**, yangi qiymatni kiriting.
-   - **Foydalanuvchilar** sahifasida HEMIS ID'si bo'lmagan o'qituvchilarga "Rol va sozlamalar" orqali HEMIS ID kiriting. Shunda ular HEMIS orqali kirganda eski hisobiga tushadi.
-   - Kerakli administratorlarga rol bering.
+   - **Foydalanuvchilar** sahifasida HEMIS ID'si bo'lmagan o'qituvchilarga "Rol va sozlamalar" orqali HEMIS ID kiriting.
+   - **O'quv yillari** sahifasida o'quv yili va semestr sanalarini kiriting — eski darslar sanasiga qarab semestrlarga biriktiriladi.
 
-## 14. Yangilanishlarni chiqarish
+## 17. Yangilanishlarni chiqarish
 
 ```bash
 cd /var/www/mt.allpro.uz
 sudo -u www-data APP_DIR=/var/www/mt.allpro.uz ./deploy/deploy.sh
 ```
 
-Skript kodni yangilaydi, frontendni qayta yig'adi, migratsiyalarni ishlatadi, keshlarni yangilaydi va navbat ishchisini qayta ishga tushiradi.
+Skript kodni yangilaydi, frontendni `APP_URL` dagi yo'l uchun qayta yig'adi, `composer install`, migratsiyalar, keshlarni yangilaydi va navbat ishchisini qayta ishga tushiradi.
 
-## 15. Zaxira nusxa
+## 18. Zaxira nusxa
 
 Kunlik baza nusxasi (cron), masalan `/etc/cron.d/mt-allpro-backup`:
 
@@ -314,23 +476,29 @@ Kunlik baza nusxasi (cron), masalan `/etc/cron.d/mt-allpro-backup`:
 30 2 * * * root mysqldump --single-transaction mt_allpro | gzip > /var/backups/mt_allpro-$(date +\%F).sql.gz && find /var/backups -name 'mt_allpro-*.sql.gz' -mtime +30 -delete
 ```
 
-`backend/.env` faylini (ayniqsa `APP_KEY`ni) alohida, xavfsiz joyda saqlang.
+`backend/.env` faylini (ayniqsa `APP_KEY`ni) alohida, xavfsiz joyda saqlang. Video yozuvlar Zoom'dan o'chirilgach yagona nusxa serverda qoladi — `/var/www/recordings` ni ham zaxiralang (masalan, `rsync` bilan boshqa diskka) yoki Zoom'dan **Savatga** o'chirish rejimini qoldiring.
 
-## 16. Muammolarni hal qilish
+## 19. Muammolarni hal qilish
 
-Avval `sudo -u www-data php artisan app:check --url=https://SAYT-MANZILI` ni ishga tushiring — ko'p muammolarni o'zi topadi.
-
-Davomat chiqmasa: dars sahifasida xato matni ko'rinadi (masalan, `does not contain scopes:[report:read:list_meeting_participants:admin]` — Zoom ilovasiga shu ruxsatni qo'shing). Zoom bepul tarifida hisobot API ishlamaydi.
+Avval `sudo -u www-data php artisan app:check --url=https://dist.karsu.uz/zoom` ni ishga tushiring — ko'p muammolarni o'zi topadi.
 
 | Belgisi | Sabab va yechim |
 |---|---|
-| Kirishda "Server Error" yoki "Serverda xatolik" | Oxirgi xato: `tail -n 60 storage/logs/laravel-$(date +%F).log`. Ko'pincha `storage` papkasiga yozish huquqi yo'q (artisan `root` nomidan ishga tushirilgan): `sudo chown -R www-data:www-data storage bootstrap/cache` |
-| "HEMIS orqali kirish hali sozlanmagan" | `.env`da `HEMIS_CLIENT_ID` va `HEMIS_CLIENT_SECRET` bo'sh yoki `.env` o'zgargandan keyin `php artisan optimize` ishga tushirilmagan |
-| Kirgandan keyin yana login sahifasiga qaytadi | `SESSION_SECURE_COOKIE=true`, lekin sayt HTTP'da ochilgan. HTTPS ishlating |
-| "CSRF token mismatch" (419) | `SESSION_DOMAIN=null` va `APP_URL` haqiqiy domen bo'lishi kerak. `php artisan optimize` |
-| "HEMIS bilan bog'lanib bo'lmadi" | `HEMIS_BASE_URL`, Client ID/Secret va Redirect URI'ni tekshiring. Log: `storage/logs` |
+| `/zoom` da oq sahifa, brauzer konsolida `/assets/...` 404 | Frontend boshqa yo'l uchun yig'ilgan. `VITE_BASE_PATH=/zoom/ npm run build` yoki `deploy.sh` |
+| `/zoom/api/...` 404 yoki dist.karsu.uz sahifasi chiqadi | nginx: snippet `server` bloki ichiga, boshqa `location` lardan oldin qo'shilmagan (7.1) |
+| Havolalar (eksport, video, Telegram) `mt.regofis.uz` bilan chiqadi | Variant B: `TRUSTED_PROXIES` da dist.karsu.uz IP manzili yo'q yoki `APP_URL` eski |
+| Kirgandan keyin yana login sahifasiga qaytadi | `SESSION_PATH` sayt yo'liga mos emas, yoki `SESSION_SECURE_COOKIE=true`, lekin sayt HTTP'da |
+| "CSRF token mismatch" (419) | `SESSION_DOMAIN=null`, `APP_URL` haqiqiy manzil, keyin `php artisan optimize` |
+| "HEMIS bilan bog'lanib bo'lmadi" yoki HEMIS "redirect_uri" xatosi | HEMIS'da ro'yxatdan o'tgan Redirect URI `app:check` ko'rsatgan bilan bir xil emas |
+| "HEMIS orqali kirish hali sozlanmagan" | `HEMIS_CLIENT_ID`/`HEMIS_CLIENT_SECRET` bo'sh yoki `php artisan optimize` qilinmagan |
+| HEMIS SYNC: "topilmadi" hammasida | `php artisan hemis:student <ID>` bilan tekshiring, endpoint va parametr nomini moslang (11-bo'lim) |
+| Davomat chiqmaydi | Dars sahifasidagi xato matnini o'qing, masalan `does not contain scopes:[report:read:list_meeting_participants:admin]` — shu ruxsatni qo'shing. Bepul tarifda hisobot API ishlamaydi |
+| Monitoring'da qatnashchilar ko'rinmaydi | Zoom akkauntlar sahifasida "Webhook: Sozlanmagan" yoki "hodisa kelmagan" — 12.2 ni tekshiring |
+| Video yozuvlar paydo bo'lmaydi | Sozlamalarda yozish yoqilganmi (faqat yangi darslar), host Licensed'mi, `recording.completed` hodisasi va `cloud_recording` ruxsatlari bormi. Xato matni **Video yozuvlar** sahifasida |
+| Video "Navbatda"dan o'tmaydi | Cron ishlayaptimi, `RECORDINGS_PATH` ga `www-data` yoza oladimi, bo'sh joy `RECORDINGS_MIN_FREE_GB` dan ko'pmi |
+| Video ochilmaydi (404), yuklab olish ham | `RECORDINGS_ACCEL_PREFIX` yoqilgan, lekin nginx'da `location /_zoom_recordings/` yo'q yoki `alias` papkasi boshqa |
 | "Zoom akkauntining kalitlari noto'g'ri" | Zoom Marketplace'da ilova faolligi va scope'larni tekshiring, Client Secret'ni qayta kiriting |
-| "Zoom'da ... foydalanuvchisi topilmadi" | Guruhga biriktirilgan host email Zoom akkauntida mavjud va faol emas |
-| Telegram xabarlari kelmaydi | `sudo supervisorctl status`, `storage/logs/worker.log`. Xodim Telegram'ni ulaganmi? Botni bloklamaganmi? |
+| Haftalik dars yaratilmadi | Kalendar'da sababi yoziladi (masalan, bo'sh host yo'q). O'qituvchiga Telegram'da xabar boradi |
+| Telegram xabarlari kelmaydi | `sudo supervisorctl status`, `storage/logs/worker.log`. Xodim Telegram'ni ulaganmi? |
 | Dars holati "Efirda"dan o'zgarmaydi | Cron ishlayaptimi: `grep CRON /var/log/syslog` |
-| 500 xato | `storage/logs/laravel-*.log`. Ruxsatlar: `sudo chown -R www-data:www-data storage bootstrap/cache` |
+| Kirishda "Server Error" yoki 500 | `tail -n 60 storage/logs/laravel-$(date +%F).log`. Ko'pincha huquqlar: `sudo chown -R www-data:www-data storage bootstrap/cache` |

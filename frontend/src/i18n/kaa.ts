@@ -248,7 +248,7 @@ export const kaa: Record<string, string> = {
   "Oʻqituvchilar dars yaratishda shu juftliklardan birini tanlaydi. Davomiylik Zoom uchrashuvining uzunligini belgilaydi.": "Oqıtıwshılar sabaq jaratqanda usı juplıqlardıń birin tańlaydı. Dawamlılıq Zoom ushırasıwınıń uzınlıǵın belgileydi.",
   "Vaqt qoʻshish": "Waqıt qosıw",
   "Dars vaqtlari kiritilmagan": "Sabaq waqıtları kirgizilmegen",
-  "Kamida bitta juftlik qoʻshing. Ularsiz faqat “Hozir” rejimida dars yaratish mumkin.": "Keminde bir juplıq qosıń. Olarsız tek “Házir” rejiminde sabaq jaratıw múmkin.",
+  "Kamida bitta juftlik qoʻshing: darslar faqat juftliklarga yaratiladi.": "Keminde bir juplıq qosıń: sabaqlar tek juplıqlarǵa jaratıladı.",
   "Nofaol": "Aktiv emes",
   "Dars vaqtini oʻchirasizmi?": "Sabaq waqtın óshiresiz be?",
   "Oldin shu vaqtda oʻtkazilgan darslar tarixda qoladi.": "Burın usı waqıtta ótkerilgen sabaqlar tariyxta qaladı.",

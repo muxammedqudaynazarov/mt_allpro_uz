@@ -5,4 +5,7 @@ return [
 
     // "Hozir" rejimida yaratilgan darsning davomiyligi (daqiqa). Bir para — 80 daqiqa.
     'default_duration' => (int) env('LESSON_DEFAULT_DURATION', 80),
+
+    // Bir guruh yoki host uchun parallel dars yaratishda qulfni kutish, soniya.
+    'lock_wait' => 10,
 ];
