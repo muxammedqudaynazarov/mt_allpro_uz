@@ -95,6 +95,11 @@ export function formatLongToday(value: string | Date = new Date()): string {
   return `${names().weekdays[p.weekday]}, ${p.day}-${month(p.month - 1)}`
 }
 
+/** dushanba */
+export function formatWeekday(value: string | Date): string {
+  return names().weekdays[parts(value).weekday]
+}
+
 export function isSameDay(a: string | Date, b: string | Date): boolean {
   const pa = parts(a)
   const pb = parts(b)

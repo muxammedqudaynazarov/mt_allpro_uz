@@ -39,5 +39,7 @@ class AppServiceProvider extends ServiceProvider
         // Universitet tarmog'ida ko'p xodim bitta IP orqali chiqadi — chegara yetarlicha keng.
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('telegram', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        // Bir vaqtda bir nechta darsga o'nlab talabalar kiradi — har biri alohida hodisa.
+        RateLimiter::for('zoom-webhook', fn (Request $request) => Limit::perMinute(3000)->by($request->ip()));
     }
 }

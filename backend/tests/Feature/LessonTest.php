@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\LessonSlot;
 use App\Models\User;
+use App\Models\ZoomHost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -112,17 +113,67 @@ class LessonTest extends TestCase
         Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/meetings'));
     }
 
-    public function test_shared_zoom_host_is_treated_as_busy(): void
+    public function test_busy_host_is_skipped_and_free_host_is_chosen(): void
     {
         $this->fakeZoom();
         $first = Group::factory()->create(['zoom_user_email' => 'zoom_1@karsu.uz']);
         $second = Group::factory()->create(['zoom_user_email' => 'zoom_1@karsu.uz', 'zoom_account_id' => $first->zoom_account_id]);
         Lesson::factory()->for($first)->create();
+        $teacher = User::factory()->create();
 
-        $this->actingAsUser(User::factory()->create())
-            ->postJson('/api/lessons', ['group_id' => $second->id])
+        // Yagona host band — bo'sh host yo'q.
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $second->id])
             ->assertStatus(422)
-            ->assertJsonPath('errors.group_id.0', fn ($msg) => str_contains($msg, 'zoom_1@karsu.uz'));
+            ->assertJsonValidationErrors('host_id');
+
+        // Boshqa host qo'shildi — dars avtomatik o'sha hostda yaratiladi.
+        $free = ZoomHost::factory()->create(['zoom_account_id' => $first->zoom_account_id, 'email' => 'zoom_2@karsu.uz']);
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $second->id])->assertCreated();
+        $this->assertSame('zoom_2@karsu.uz', Lesson::latest('id')->value('zoom_host_email'));
+        Http::assertSent(fn (Request $request) => str_contains($request->url(), '/users/zoom_2%40karsu.uz/meetings'));
+        $this->assertTrue($free->is_active);
+    }
+
+    public function test_teacher_picks_host_explicitly_and_busy_host_is_rejected(): void
+    {
+        $this->fakeZoom();
+        $group = Group::factory()->create();
+        $busy = ZoomHost::factory()->create(['email' => 'busy@karsu.uz']);
+        $chosen = ZoomHost::factory()->create(['email' => 'chosen@karsu.uz']);
+        Lesson::factory()->create(['zoom_account_id' => $busy->zoom_account_id, 'zoom_host_email' => 'busy@karsu.uz']);
+        $teacher = User::factory()->create();
+
+        $this->actingAsUser($teacher)->getJson("/api/lessons/options?group_id={$group->id}")
+            ->assertOk()
+            ->assertJsonFragment(['email' => 'busy@karsu.uz', 'busy' => true])
+            ->assertJsonFragment(['email' => 'chosen@karsu.uz', 'busy' => false]);
+
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'host_id' => $busy->id])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.host_id.0', fn ($msg) => str_contains($msg, 'busy@karsu.uz'));
+
+        $this->actingAsUser($teacher)->postJson('/api/lessons', ['group_id' => $group->id, 'host_id' => $chosen->id])->assertCreated();
+        $this->assertSame('chosen@karsu.uz', Lesson::latest('id')->value('zoom_host_email'));
+    }
+
+    public function test_lesson_can_be_scheduled_for_another_day_with_slot(): void
+    {
+        $this->fakeZoom();
+        $group = Group::factory()->create();
+        $slot = LessonSlot::factory()->create(['starts_at' => '13:00', 'duration_minutes' => 80]);
+        $tomorrow = now()->addDay()->format('Y-m-d');
+
+        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => $group->id, 'date' => $tomorrow])
+            ->assertStatus(422)->assertJsonValidationErrors('slot_id');
+        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => $group->id, 'slot_id' => $slot->id, 'date' => $tomorrow])
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'scheduled');
+        $this->assertSame($tomorrow.' 13:00', Lesson::latest('id')->first()->starts_at->format('Y-m-d H:i'));
+
+        // Administrator kalendarni taqiqlagan o'qituvchi faqat bugunga dars yaratadi.
+        $restricted = User::factory()->create(['can_manage_calendar' => false]);
+        $this->actingAsUser($restricted)->postJson('/api/lessons', ['group_id' => Group::factory()->create()->id, 'slot_id' => $slot->id, 'date' => $tomorrow])
+            ->assertForbidden();
     }
 
     public function test_ended_lesson_frees_the_group(): void
@@ -281,17 +332,16 @@ class LessonTest extends TestCase
         $this->get($url)->assertForbidden();
     }
 
-    public function test_csv_export_is_excel_friendly_and_safe(): void
+    public function test_xlsx_export_keeps_formulas_as_text(): void
     {
         $admin = User::factory()->superAdmin()->create();
         Lesson::factory()->finished()->create(['topic' => '=HYPERLINK("http://evil")']);
 
-        $response = $this->actingAsUser($admin)->get('/api/lessons/export');
-        $response->assertOk();
-        $csv = $response->streamedContent();
+        $sheets = $this->xlsx($this->actingAsUser($admin)->get('/api/lessons/export'));
+        $rows = reset($sheets);
 
-        $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
-        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertCount(2, $rows);
+        $this->assertSame('=HYPERLINK("http://evil")', $rows[1][7]);
     }
 
     public function test_teacher_cannot_export(): void

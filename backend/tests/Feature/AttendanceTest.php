@@ -273,9 +273,10 @@ class AttendanceTest extends TestCase
 
         $this->actingAsUser(User::factory()->create())->getJson("/api/lessons/{$lesson->id}/attendance")->assertForbidden();
 
-        $csv = $this->actingAsUser($teacher)->get("/api/lessons/{$lesson->id}/attendance/export")->assertOk()->streamedContent();
-        $this->assertStringContainsString('"Ali Valiyev";', $csv);
-        $this->assertStringContainsString(';75;100%;2', $csv);
+        $rows = collect($this->xlsx($this->actingAsUser($teacher)->get("/api/lessons/{$lesson->id}/attendance/export")))->first();
+        $rows = collect($rows);
+        $ali = $rows->first(fn (array $row) => $row[0] === 'Ali Valiyev');
+        $this->assertSame([75, 100], [$ali[5], $ali[6]]);
     }
 
     public function test_admin_merges_students_and_merge_is_remembered(): void

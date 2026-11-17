@@ -9,6 +9,7 @@ import {
   LogOut,
   Menu as MenuIcon,
   PlusCircle,
+  RadioTower,
   ScrollText,
   UserRound,
   Users,
@@ -59,6 +60,7 @@ function useNav(): NavSection[] {
         { to: '/', label: t('Bosh sahifa'), icon: <LayoutDashboard />, end: true },
         { to: '/lessons/new', label: t('Dars yaratish'), icon: <PlusCircle />, permission: 'lessons.create' },
         { to: '/lessons', label: t('Darslar'), icon: <CalendarClock />, end: true },
+        { to: '/monitor', label: t('Monitoring'), icon: <RadioTower />, permission: 'lessons.monitor' },
       ],
     },
     {

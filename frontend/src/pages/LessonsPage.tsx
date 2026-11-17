@@ -64,7 +64,7 @@ export default function LessonsPage() {
             {canViewAll && (
               <a href={exportUrl} className={buttonClass({ variant: 'secondary' })}>
                 <Download className="size-4" />
-                Excel (CSV)
+                Excel (.xlsx)
               </a>
             )}
             {can('lessons.create') && (

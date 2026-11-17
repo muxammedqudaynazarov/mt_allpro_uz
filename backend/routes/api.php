@@ -8,11 +8,14 @@ use App\Http\Controllers\Api\LessonAttendanceController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\LessonSlotController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\MonitorController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ZoomAccountController;
+use App\Http\Controllers\Api\ZoomHostController;
+use App\Http\Controllers\Api\ZoomWebhookController;
 use App\Http\Controllers\Auth\SessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/config', ConfigController::class);
 Route::post('/auth/login', [SessionController::class, 'store'])->middleware('throttle:auth');
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:telegram');
+Route::post('/zoom/webhook/{zoomAccount}', ZoomWebhookController::class)->middleware('throttle:zoom-webhook');
 
 Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function () {
     Route::post('/auth/logout', [SessionController::class, 'destroy']);
@@ -40,6 +44,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::post('/lessons', [LessonController::class, 'store'])->middleware('throttle:lesson-create');
         Route::post('/lessons/{lesson}/start', [LessonController::class, 'start']);
         Route::post('/lessons/{lesson}/end', [LessonController::class, 'end']);
+        Route::get('/lessons/{lesson}/live', [MonitorController::class, 'participants']);
         Route::get('/lessons/{lesson}/attendance', [LessonAttendanceController::class, 'show']);
         Route::get('/lessons/{lesson}/attendance/export', [LessonAttendanceController::class, 'export']);
         Route::post('/lessons/{lesson}/attendance/sync', [LessonAttendanceController::class, 'sync'])->middleware('throttle:10,1');
@@ -61,6 +66,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::patch('/students/{student}', [StudentController::class, 'update']);
 
             Route::get('/reports/summary', [ReportController::class, 'summary']);
+            Route::get('/monitor', [MonitorController::class, 'index']);
         });
 
         Route::middleware('role:super_admin')->group(function () {
@@ -70,6 +76,9 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::delete('/zoom-accounts/{zoomAccount}', [ZoomAccountController::class, 'destroy']);
             Route::post('/zoom-accounts/{zoomAccount}/test', [ZoomAccountController::class, 'test']);
             Route::get('/zoom-accounts/{zoomAccount}/users', [ZoomAccountController::class, 'users']);
+            Route::post('/zoom-accounts/{zoomAccount}/sync-hosts', [ZoomHostController::class, 'sync']);
+            Route::get('/zoom-hosts', [ZoomHostController::class, 'index']);
+            Route::patch('/zoom-hosts/{zoomHost}', [ZoomHostController::class, 'update']);
 
             Route::get('/lesson-slots', [LessonSlotController::class, 'index']);
             Route::post('/lesson-slots', [LessonSlotController::class, 'store']);

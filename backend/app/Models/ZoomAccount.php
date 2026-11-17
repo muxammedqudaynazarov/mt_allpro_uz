@@ -12,14 +12,17 @@ class ZoomAccount extends Model
     /** @use HasFactory<ZoomAccountFactory> */
     use HasFactory;
 
-    protected $fillable = ['name', 'account_id', 'client_id', 'client_secret', 'is_active', 'last_checked_at', 'last_error'];
+    protected $fillable = ['name', 'account_id', 'client_id', 'client_secret', 'webhook_secret', 'is_active', 'last_checked_at', 'last_error'];
 
-    protected $hidden = ['client_secret'];
+    protected $hidden = ['client_secret', 'webhook_secret'];
 
     protected function casts(): array
     {
         return [
             'client_secret' => 'encrypted',
+            // Zoom webhook imzosini tekshirish uchun "Secret Token".
+            'webhook_secret' => 'encrypted',
+            'webhook_received_at' => 'datetime',
             'is_active' => 'boolean',
             'last_checked_at' => 'datetime',
         ];
@@ -28,5 +31,16 @@ class ZoomAccount extends Model
     public function groups(): HasMany
     {
         return $this->hasMany(Group::class);
+    }
+
+    public function hosts(): HasMany
+    {
+        return $this->hasMany(ZoomHost::class);
+    }
+
+    /** Zoom ilovasining Event Subscriptions bo'limiga yoziladigan manzil. */
+    public function webhookUrl(): string
+    {
+        return rtrim((string) config('app.url'), '/').'/api/zoom/webhook/'.$this->id;
     }
 }

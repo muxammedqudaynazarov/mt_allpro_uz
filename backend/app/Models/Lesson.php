@@ -35,7 +35,7 @@ class Lesson extends Model
     public const ZOOM_MISSED = 'missed';
 
     protected $fillable = [
-        'user_id', 'group_id', 'lesson_slot_id', 'zoom_account_id',
+        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'zoom_account_id',
         'zoom_meeting_id', 'zoom_host_email', 'topic', 'join_url', 'start_url', 'passcode',
         'status', 'starts_at', 'ends_at', 'ended_at', 'ended_by_id',
         'zoom_state', 'zoom_started_at', 'zoom_ended_at', 'zoom_minutes', 'zoom_checked_at',
@@ -85,6 +85,11 @@ class Lesson extends Model
     public function endedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ended_by_id')->withTrashed();
+    }
+
+    public function liveParticipants(): HasMany
+    {
+        return $this->hasMany(LiveParticipant::class);
     }
 
     public function attendances(): HasMany

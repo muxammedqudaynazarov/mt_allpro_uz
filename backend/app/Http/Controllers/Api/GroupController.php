@@ -77,8 +77,9 @@ class GroupController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'hemis_id' => ['nullable', 'string', 'max:64', Rule::unique('groups', 'hemis_id')->ignore($group?->id)],
             'course' => ['required', 'integer', 'between:1,6'],
-            'zoom_account_id' => ['required', 'integer', Rule::exists('zoom_accounts', 'id')],
-            'zoom_user_email' => ['required', 'email', 'max:255'],
+            // Standart host (ixtiyoriy): o'qituvchi dars yaratishda boshqasini tanlashi mumkin.
+            'zoom_account_id' => ['nullable', 'required_with:zoom_user_email', 'integer', Rule::exists('zoom_accounts', 'id')],
+            'zoom_user_email' => ['nullable', 'required_with:zoom_account_id', 'email', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'name.required' => __('Guruh nomini kiriting.'),
@@ -88,7 +89,7 @@ class GroupController extends Controller
             'zoom_user_email.email' => __('Email notoʻgʻri.'),
         ]);
 
-        $data['zoom_user_email'] = mb_strtolower(trim($data['zoom_user_email']));
+        $data['zoom_user_email'] = isset($data['zoom_user_email']) ? mb_strtolower(trim($data['zoom_user_email'])) : null;
 
         return $data;
     }

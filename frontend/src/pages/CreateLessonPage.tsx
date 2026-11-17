@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Check, Copy, Play, Send, Zap } from 'lucide-react'
+import { AlertTriangle, Check, Copy, Play, Send, Sparkles, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
-import { formatDuration, formatTime } from '@/lib/format'
-import type { Lesson, LessonOptions } from '@/lib/types'
+import { addDays, formatDayMonth, formatDuration, formatTime, formatWeekday, isoDate } from '@/lib/format'
+import type { Lesson, LessonOptionHost, LessonOptions } from '@/lib/types'
 import { Button, buttonClass } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Textarea } from '@/components/ui/Field'
@@ -19,6 +19,10 @@ import { copyText, telegramShareUrl, useLessonActions } from '@/features/lessons
 import { useT } from '@/i18n/I18nProvider'
 
 type SlotChoice = 'now' | number
+type HostChoice = 'auto' | number
+
+/** Kalendar huquqi bo'lsa — bugundan boshlab 14 kun ichida rejalashtirish mumkin. */
+const PLAN_DAYS = 14
 
 function Step({ index, title, hint, children }: { index: number; title: string; hint?: string; children: ReactNode }) {
   return (
@@ -99,19 +103,34 @@ function CreatedModal({ lesson, onClose }: { lesson: Lesson | null; onClose: () 
 export default function CreateLessonPage() {
   const t = useT()
   const navigate = useNavigate()
-  const [slot, setSlot] = useState<SlotChoice>('now')
+  const { can } = useAuth()
+  const [params] = useSearchParams()
+  const today = isoDate()
+  const canPlan = can('calendar.manage')
+  const days = useMemo(() => Array.from({ length: canPlan ? PLAN_DAYS : 1 }, (_, index) => isoDate(addDays(new Date(), index))), [canPlan])
+  const initialDate = params.get('date')
+  const [date, setDate] = useState<string>(initialDate && days.includes(initialDate) ? initialDate : today)
+  const [slot, setSlot] = useState<SlotChoice>(params.get('slot') ? Number(params.get('slot')) : 'now')
   const [course, setCourse] = useState<string>('')
   const [groupId, setGroupId] = useState<number | null>(null)
+  const [host, setHost] = useState<HostChoice>('auto')
   const [topic, setTopic] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [created, setCreated] = useState<Lesson | null>(null)
+  const isToday = date === today
 
   const options = useQuery({
-    queryKey: ['lesson-options', slot],
-    queryFn: async () => (await api.get<{ data: LessonOptions }>('/api/lessons/options', { params: { slot_id: slot } })).data.data,
+    queryKey: ['lesson-options', date, slot, groupId],
+    queryFn: async () =>
+      (await api.get<{ data: LessonOptions }>('/api/lessons/options', { params: { slot_id: slot, date, group_id: groupId ?? undefined } })).data.data,
     placeholderData: (previous) => previous,
     refetchInterval: 30_000,
   })
+
+  useEffect(() => {
+    // Boshqa kunga "hozir" bo'lmaydi — birinchi juftlik tanlanadi.
+    if (!isToday && slot === 'now' && options.data?.slots.length) setSlot(options.data.slots[0].id)
+  }, [isToday, slot, options.data?.slots])
 
   const courses = useMemo(() => {
     const set = new Set(options.data?.groups.map((group) => group.course))
@@ -131,14 +150,31 @@ export default function CreateLessonPage() {
     if (selectedGroup?.busy) setGroupId(null)
   }, [selectedGroup?.busy])
 
+  const hosts = options.data?.hosts ?? []
+  const selectedHost = host === 'auto' ? undefined : hosts.find((item) => item.id === host)
+  const autoHost = hosts.find((item) => !item.busy)
+
+  useEffect(() => {
+    // Tanlangan host band bo'lib qolsa yoki ro'yxatdan chiqsa — avtomatik tanlovga qaytamiz.
+    if (host !== 'auto' && (!selectedHost || selectedHost.busy)) setHost('auto')
+  }, [host, selectedHost])
+
   const create = useMutation({
     mutationFn: async () =>
-      (await api.post<{ data: Lesson }>('/api/lessons', { group_id: groupId, slot_id: slot === 'now' ? null : slot, topic: topic.trim() || null })).data
-        .data,
+      (
+        await api.post<{ data: Lesson }>('/api/lessons', {
+          group_id: groupId,
+          slot_id: slot === 'now' ? null : slot,
+          host_id: host === 'auto' ? null : host,
+          date: isToday ? null : date,
+          topic: topic.trim() || null,
+        })
+      ).data.data,
     onSuccess: (lesson) => {
       setCreated(lesson)
       setTopic('')
       setGroupId(null)
+      setHost('auto')
       options.refetch()
     },
     onError: (error) => {
@@ -155,10 +191,14 @@ export default function CreateLessonPage() {
   }
 
   const duration = selectedSlot?.duration_minutes ?? options.data?.default_duration ?? 80
+  const shownHost = selectedHost ?? autoHost
 
   return (
     <>
-      <PageHeader title={t('Dars yaratish')} description={t('Vaqt va guruhni tanlang — Zoom uchrashuvi avtomatik yaratiladi va havola sizga yuboriladi.')} />
+      <PageHeader
+        title={t('Dars yaratish')}
+        description={t('Vaqt, guruh va boʻsh Zoom hostni tanlang — uchrashuv avtomatik yaratiladi va havola sizga yuboriladi.')}
+      />
 
       {options.isPending ? (
         <SectionLoader />
@@ -171,9 +211,44 @@ export default function CreateLessonPage() {
       ) : (
         <form onSubmit={submit} className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="rounded-panel bg-white p-6 ring-1 ring-steel-200/70 sm:p-8">
-            <Step index={1} title={t('Qachon?')} hint={t('Bugungi juftliklardan birini yoki darhol boshlashni tanlang.')}>
+            <Step
+              index={1}
+              title={t('Qachon?')}
+              hint={canPlan ? t('Kunni va juftlikni tanlang. Bugun uchun darhol boshlash ham mumkin.') : t('Bugungi juftliklardan birini yoki darhol boshlashni tanlang.')}
+            >
+              {canPlan && (
+                <div className="-mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-1" role="radiogroup" aria-label={t('Kun')}>
+                  {days.map((day) => {
+                    const active = day === date
+                    const value = new Date(`${day}T12:00:00+05:00`)
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => {
+                          setDate(day)
+                          setGroupId(null)
+                        }}
+                        className={cn(
+                          'flex w-[4.5rem] shrink-0 flex-col items-center rounded-field px-2 py-2 text-center ring-1 transition-colors ring-inset',
+                          active ? 'bg-ink-900 text-white ring-ink-900' : 'bg-white text-ink-800 ring-steel-200 hover:ring-steel-300',
+                        )}
+                      >
+                        <span className={cn('text-xs capitalize', active ? 'text-steel-200' : 'text-steel-500')}>
+                          {day === today ? t('Bugun') : formatWeekday(value).slice(0, 3)}
+                        </span>
+                        <span className="mt-0.5 text-sm font-semibold tabular-nums">{formatDayMonth(value).split('-')[0]}</span>
+                        <span className={cn('text-[0.6875rem]', active ? 'text-steel-300' : 'text-steel-500')}>{formatDayMonth(value).split('-')[1]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {errors.date && <p className="mb-2 text-sm text-onair-600">{errors.date}</p>}
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Dars vaqti')}>
-                <SlotPill active={slot === 'now'} onClick={() => setSlot('now')}>
+                <SlotPill active={slot === 'now'} disabled={!isToday} onClick={() => setSlot('now')}>
                   <Zap className="size-4" />
                   {t('Hozir, {time}', { time: formatDuration(options.data.default_duration) })}
                 </SlotPill>
@@ -241,7 +316,12 @@ export default function CreateLessonPage() {
               {errors.group_id && <p className="mt-2 text-sm text-onair-600">{errors.group_id}</p>}
             </Step>
 
-            <Step index={3} title={t('Mavzu')} hint={t('Ixtiyoriy. Koʻrsatilmasa, guruh nomi ishlatiladi.')}>
+            <Step index={3} title={t('Zoom host')} hint={t('Bir host bir vaqtda faqat bitta dars oʻtkaza oladi. Band hostlar tanlanmaydi.')}>
+              <HostPicker hosts={hosts} value={host} onChange={setHost} autoHost={autoHost} />
+              {errors.host_id && <p className="mt-2 text-sm text-onair-600">{errors.host_id}</p>}
+            </Step>
+
+            <Step index={4} title={t('Mavzu')} hint={t('Ixtiyoriy. Koʻrsatilmasa, guruh nomi ishlatiladi.')}>
               <Textarea
                 aria-label={t('Dars mavzusi')}
                 value={topic}
@@ -264,7 +344,19 @@ export default function CreateLessonPage() {
                 <div>
                   <dt className="text-steel-600">{t('Vaqt')}</dt>
                   <dd className="mt-0.5 font-medium text-ink-900 tabular-nums">
+                    {!isToday && (
+                      <span className="block first-letter:uppercase">
+                        {formatWeekday(new Date(`${date}T12:00:00+05:00`))}, {formatDayMonth(new Date(`${date}T12:00:00+05:00`))}
+                      </span>
+                    )}
                     {selectedSlot ? `${selectedSlot.name}, ${selectedSlot.starts_at}–${selectedSlot.ends_at}` : t('Hozirdan boshlab')}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-steel-600">{t('Zoom host')}</dt>
+                  <dd className="mt-0.5 font-medium break-all text-ink-900">
+                    {shownHost ? shownHost.name : <span className="text-onair-600">{t('Boʻsh host yoʻq')}</span>}
+                    {host === 'auto' && shownHost && <span className="block text-xs font-normal text-steel-500">{t('avtomatik tanlanadi')}</span>}
                   </dd>
                 </div>
                 <div>
@@ -272,7 +364,7 @@ export default function CreateLessonPage() {
                   <dd className="mt-0.5 font-medium text-ink-900">{formatDuration(duration)}</dd>
                 </div>
               </dl>
-              <Button type="submit" size="lg" className="mt-6 w-full" disabled={!groupId} loading={create.isPending}>
+              <Button type="submit" size="lg" className="mt-6 w-full" disabled={!groupId || !shownHost} loading={create.isPending}>
                 {t('Darsni yaratish')}
               </Button>
               {!groupId && <p className="mt-3 text-center text-sm text-steel-500">{t('Avval guruhni tanlang')}</p>}
@@ -307,6 +399,84 @@ function SlotPill({ active, disabled, onClick, children }: { active: boolean; di
       )}
     >
       {children}
+    </button>
+  )
+}
+
+function HostPicker({
+  hosts,
+  value,
+  onChange,
+  autoHost,
+}: {
+  hosts: LessonOptionHost[]
+  value: HostChoice
+  onChange: (value: HostChoice) => void
+  autoHost: LessonOptionHost | undefined
+}) {
+  const t = useT()
+  const manyAccounts = new Set(hosts.map((item) => item.account)).size > 1
+  if (!hosts.length) {
+    return <p className="rounded-field bg-onair-50 p-3.5 text-sm text-onair-600">{t('Zoom hostlar qoʻshilmagan. Administrator Zoom akkauntlar sahifasida hostlarni yangilashi kerak.')}</p>
+  }
+  return (
+    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3" role="radiogroup" aria-label={t('Zoom host')}>
+      <HostOption active={value === 'auto'} disabled={!autoHost} onClick={() => onChange('auto')}>
+        <span className="flex items-center gap-1.5 text-[0.9375rem] font-medium text-ink-900">
+          <Sparkles className="size-4 text-azure-500" />
+          {t('Avtomatik')}
+        </span>
+        <span className={cn('mt-1 block text-sm', autoHost ? 'text-steel-600' : 'text-onair-600')}>
+          {autoHost ? t('Birinchi boʻsh host: {name}', { name: autoHost.name }) : t('Bu vaqtda boʻsh host yoʻq')}
+        </span>
+      </HostOption>
+      {hosts.map((item) => (
+        <HostOption key={item.id} active={value === item.id} disabled={item.busy} onClick={() => onChange(item.id)}>
+          <span className="block text-[0.9375rem] leading-snug font-medium break-all text-ink-900">{item.name}</span>
+          {item.name !== item.email && <span className="block text-xs break-all text-steel-500">{item.email}</span>}
+          {manyAccounts && item.account && <span className="block text-xs text-steel-500">{item.account}</span>}
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+            <span className={item.busy ? 'text-onair-600' : 'text-leaf-600'}>
+              {item.busy ? (item.busy_until ? t('Band, {time} gacha', { time: formatTime(item.busy_until) }) : t('Band')) : t('Boʻsh')}
+            </span>
+            {item.default && <span className="text-steel-500">{t('guruh standarti')}</span>}
+          </span>
+          {!item.licensed && (
+            <span className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+              <AlertTriangle className="size-3.5" />
+              {t('Basic: uchrashuv 40 daqiqa bilan cheklangan')}
+            </span>
+          )}
+        </HostOption>
+      ))}
+    </div>
+  )
+}
+
+function HostOption({ active, disabled, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'flex min-h-16 items-start gap-3 rounded-field p-3.5 text-left ring-1 transition-colors ring-inset',
+        active ? 'bg-azure-50 ring-2 ring-azure-500' : 'bg-white ring-steel-200 hover:ring-steel-300',
+        disabled && 'cursor-not-allowed bg-steel-50 opacity-70 hover:ring-steel-200',
+      )}
+    >
+      <span
+        className={cn(
+          'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ring-1 ring-inset',
+          active ? 'bg-azure-500 text-white ring-azure-500' : 'ring-steel-300',
+        )}
+        aria-hidden
+      >
+        {active && <Check className="size-3.5" strokeWidth={3} />}
+      </span>
+      <span className="min-w-0">{children}</span>
     </button>
   )
 }

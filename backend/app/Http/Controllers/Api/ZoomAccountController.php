@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\SyncZoomHosts;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ZoomAccountResource;
+use App\Models\Lesson;
 use App\Models\ZoomAccount;
 use App\Services\Zoom\ZoomClient;
 use App\Support\Audit;
@@ -19,7 +21,7 @@ class ZoomAccountController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return ZoomAccountResource::collection(ZoomAccount::withCount('groups')->orderBy('name')->get());
+        return ZoomAccountResource::collection(ZoomAccount::withCount(['groups', 'hosts'])->orderBy('name')->get());
     }
 
     public function store(Request $request): ZoomAccountResource
@@ -27,21 +29,28 @@ class ZoomAccountController extends Controller
         $account = ZoomAccount::create($this->validated($request));
         Audit::log('zoom.created', 'Zoom akkaunt qoʻshildi: :name', $account, replace: ['name' => $account->name]);
 
-        return new ZoomAccountResource($account->loadCount('groups'));
+        return new ZoomAccountResource($account->loadCount(['groups', 'hosts']));
     }
 
     public function update(Request $request, ZoomAccount $zoomAccount): ZoomAccountResource
     {
         $data = $this->validated($request, $zoomAccount);
-        if (empty($data['client_secret'])) {
-            unset($data['client_secret']);
+        foreach (['client_secret', 'webhook_secret'] as $secret) {
+            if (empty($data[$secret])) {
+                unset($data[$secret]);
+            }
+        }
+        if ($request->boolean('remove_webhook_secret')) {
+            $data['webhook_secret'] = null;
+            $zoomAccount->webhook_received_at = null;
         }
         $zoomAccount->update($data);
         Audit::log('zoom.updated', 'Zoom akkaunt tahrirlandi: :name', $zoomAccount, replace: ['name' => $zoomAccount->name], properties: [
             'secret_changed' => array_key_exists('client_secret', $zoomAccount->getChanges()),
+            'webhook_secret_changed' => array_key_exists('webhook_secret', $zoomAccount->getChanges()),
         ]);
 
-        return new ZoomAccountResource($zoomAccount->loadCount('groups'));
+        return new ZoomAccountResource($zoomAccount->loadCount(['groups', 'hosts']));
     }
 
     public function destroy(ZoomAccount $zoomAccount): Response
@@ -49,19 +58,23 @@ class ZoomAccountController extends Controller
         if ($zoomAccount->groups()->withTrashed()->exists()) {
             throw ValidationException::withMessages(['account' => __('Akkauntga guruhlar biriktirilgan. Avval ularni boshqa akkauntga oʻtkazing.')]);
         }
+        if (Lesson::query()->open()->where('zoom_account_id', $zoomAccount->id)->exists()) {
+            throw ValidationException::withMessages(['account' => __('Bu akkauntda yakunlanmagan darslar bor. Avval akkauntni nofaol qiling.')]);
+        }
         $zoomAccount->delete();
         Audit::log('zoom.deleted', 'Zoom akkaunt oʻchirildi: :name', $zoomAccount, replace: ['name' => $zoomAccount->name]);
 
         return response()->noContent();
     }
 
-    public function test(ZoomAccount $zoomAccount, ZoomClient $zoom): JsonResponse
+    /** Ulanishni tekshiradi va shu bilan hostlar ro'yxatini yangilaydi. */
+    public function test(ZoomAccount $zoomAccount, ZoomClient $zoom, SyncZoomHosts $hosts): JsonResponse
     {
         $zoom->token($zoomAccount, fresh: true);
-        $users = $zoom->users($zoomAccount);
+        $count = $hosts->handle($zoomAccount);
         $zoomAccount->forceFill(['last_checked_at' => now(), 'last_error' => null])->save();
 
-        return response()->json(['data' => ['users' => count($users)]]);
+        return response()->json(['data' => ['users' => $count]]);
     }
 
     public function users(ZoomAccount $zoomAccount, ZoomClient $zoom): JsonResponse
@@ -79,6 +92,8 @@ class ZoomAccountController extends Controller
             'account_id' => ['required', 'string', 'max:128'],
             'client_id' => ['required', 'string', 'max:128', Rule::unique('zoom_accounts')->where('account_id', $request->input('account_id'))->ignore($account?->id)],
             'client_secret' => [$account ? 'nullable' : 'required', 'string', 'max:255'],
+            // Zoom ilovasi → Feature → Event Subscriptions → Secret Token.
+            'webhook_secret' => ['nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'client_id.unique' => __('Bu akkaunt allaqachon qoʻshilgan.'),

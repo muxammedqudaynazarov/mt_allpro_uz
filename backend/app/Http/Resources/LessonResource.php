@@ -22,8 +22,8 @@ class LessonResource extends JsonResource
             'starts_at' => $this->starts_at->toIso8601String(),
             'ends_at' => $this->ends_at->toIso8601String(),
             'ended_at' => $this->ended_at?->toIso8601String(),
-            // Talabalar havolasi faqat dars davom etayotganda kerak.
-            'join_url' => $open ? $this->join_url : null,
+            // Talabalar havolasi faqat dars davom etayotganda kerak (Zoom'da jadvaldan uzoqroq davom etsa ham).
+            'join_url' => $open || $this->zoom_state === Lesson::ZOOM_STARTED ? $this->join_url : null,
             'passcode' => $open ? $this->passcode : null,
             'group' => [
                 'id' => $this->group->id,
@@ -31,6 +31,7 @@ class LessonResource extends JsonResource
                 'course' => $this->group->course,
             ],
             'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->name],
+            'host' => $this->zoom_host_email,
             'slot' => $this->slot ? ['id' => $this->slot->id, 'name' => $this->slot->label(), 'starts_at' => $this->slot->starts_at] : null,
             // Zoom'dagi haqiqiy holat: host qachon boshlagan/tugatgan, nechta talaba qatnashgan.
             'tracking' => [
@@ -41,6 +42,8 @@ class LessonResource extends JsonResource
                 'minutes' => $this->actualMinutes(),
                 'participants' => $this->attendance_synced_at ? $this->resource->getAttribute('participants_count') : null,
                 'synced' => $this->attendance_synced_at !== null,
+                // Hozir darsda (webhook orqali; faqat monitoring so'rovida hisoblanadi).
+                'present' => $this->resource->getAttribute('present_count'),
                 'error' => $this->attendance_synced_at ? null : $this->attendance_error,
             ],
             'can' => [

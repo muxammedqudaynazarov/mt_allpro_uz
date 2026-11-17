@@ -10,12 +10,14 @@ use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\ZoomParticipation;
 use App\Support\AttendanceCalculator;
-use App\Support\Csv;
+use App\Support\Xlsx;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /** Bitta darsning Zoom'dagi haqiqiy vaqtlari va talabalar davomati. */
 class LessonAttendanceController extends Controller
@@ -44,24 +46,44 @@ class LessonAttendanceController extends Controller
         return response()->json(['data' => $this->payload($request, $lesson->refresh())]);
     }
 
-    public function export(Request $request, Lesson $lesson): StreamedResponse
+    /** Dars hisoboti .xlsx: dars ma'lumotlari va har bir talabaning qatnashuvi. */
+    public function export(Request $request, Lesson $lesson): BinaryFileResponse
     {
         Gate::authorize('view', $lesson);
-        $rows = $this->students($lesson);
-        $header = array_map(fn (string $title) => __($title), ['Talaba', 'Zoom’dagi ismlar', 'Birinchi kirgan', 'Kechikish (daqiqa)', 'Qatnashgan (daqiqa)', 'Foiz', 'Kirishlar soni']);
-        $filename = __('davomat').'-'.$lesson->starts_at->format('Y-m-d-Hi').'.csv';
+        $lesson->load(['group', 'teacher', 'slot']);
+        $rows = $this->students($lesson)->where('ignored', false)->values();
+        $host = ZoomParticipation::query()->where('lesson_id', $lesson->id)->where('is_host', true)->min('joined_at');
+        $filename = Str::slug($lesson->group->name).'-'.$lesson->starts_at->format('Y-m-d-Hi').'.xlsx';
 
-        return Csv::download($filename, $header, function (\Closure $write) use ($rows) {
-            foreach ($rows->where('ignored', false) as $row) {
-                $write([
-                    Csv::safe($row['name']),
-                    Csv::safe(implode(', ', $row['names'])),
+        return Xlsx::download($filename, function (Xlsx $xlsx) use ($lesson, $rows, $host) {
+            $xlsx->sheet(__('Davomat'), [34, 30, 14, 14, 14, 10, 10], freezeRow: 13)
+                ->title(__('Dars hisoboti').': '.$lesson->group->name)
+                ->meta(__('Sana'), $lesson->starts_at->format('d.m.Y'))
+                ->meta(__('Juftlik'), $lesson->slot?->label() ?? '—')
+                ->meta(__('Oʻqituvchi'), $lesson->teacher->name)
+                ->meta(__('Mavzu'), $lesson->topic)
+                ->meta(__('Jadval boʻyicha'), $lesson->starts_at->format('H:i').'–'.$lesson->ends_at->format('H:i'))
+                ->meta(__('Zoom’da boshlandi'), $lesson->zoom_started_at?->format('H:i') ?? ($lesson->zoom_state === Lesson::ZOOM_MISSED ? __('Oʻtkazilmagan') : '—'))
+                ->meta(__('Host kechikishi (daqiqa)'), $lesson->startDelayMinutes())
+                ->meta(__('Haqiqiy davomiylik (daqiqa)'), $lesson->actualMinutes())
+                ->meta(__('Qatnashgan talabalar'), $rows->count())
+                ->meta(__('Host birinchi kirgan'), $host ? Carbon::parse($host)->format('H:i') : '—')
+                ->blank()
+                ->header(array_map(fn (string $title) => __($title), ['Talaba', 'Zoom’dagi ismlar', 'Birinchi kirgan', 'Oxirgi chiqqan', 'Kechikish (daqiqa)', 'Qatnashgan (daqiqa)', 'Foiz, %']));
+
+            foreach ($rows as $row) {
+                $xlsx->row([
+                    $row['name'],
+                    implode(', ', $row['names']),
                     $row['first_joined_at']?->format('H:i'),
+                    $row['last_left_at']?->format('H:i'),
                     $row['late_minutes'],
                     $row['minutes'],
-                    $row['percent'] !== null ? $row['percent'].'%' : '',
-                    $row['sessions'],
+                    $row['percent'],
                 ]);
+            }
+            if ($rows->isEmpty()) {
+                $xlsx->note(__('Zoom hisoboti hali olinmagan yoki darsga talabalar kirmagan.'));
             }
         });
     }

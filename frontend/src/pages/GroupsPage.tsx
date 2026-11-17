@@ -42,7 +42,7 @@ function GroupModal({ group, onClose }: { group: Group | 'new'; onClose: () => v
           hemis_id: group.hemis_id ?? '',
           course: String(group.course),
           zoom_account_id: group.zoom_account ? String(group.zoom_account.id) : '',
-          zoom_user_email: group.zoom_user_email,
+          zoom_user_email: group.zoom_user_email ?? '',
           is_active: group.is_active,
         }
       : emptyForm,
@@ -69,6 +69,7 @@ function GroupModal({ group, onClose }: { group: Group | 'new'; onClose: () => v
         hemis_id: form.hemis_id || null,
         course: Number(form.course),
         zoom_account_id: form.zoom_account_id ? Number(form.zoom_account_id) : null,
+        zoom_user_email: form.zoom_user_email.trim() || null,
       }
       return editing ? api.put(`/api/groups/${group.id}`, payload) : api.post('/api/groups', payload)
     },
@@ -95,7 +96,7 @@ function GroupModal({ group, onClose }: { group: Group | 'new'; onClose: () => v
       onClose={onClose}
       size="lg"
       title={editing ? t('Guruhni tahrirlash') : t('Yangi guruh')}
-      description={t('Har bir guruh Zoom akkauntidagi bitta foydalanuvchiga (host) biriktiriladi. Bitta host bir vaqtda faqat bitta dars oʻtkaza oladi.')}
+      description={t('Standart host ixtiyoriy: oʻqituvchi dars yaratishda boʻsh hostlardan birini tanlaydi, standart host esa birinchi taklif qilinadi.')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -126,9 +127,9 @@ function GroupModal({ group, onClose }: { group: Group | 'new'; onClose: () => v
             set('zoom_user_email', '')
           }}
           error={errors.zoom_account_id}
-          required
+          hint={t('Ixtiyoriy')}
         >
-          <option value="">{t('Tanlang')}</option>
+          <option value="">{t('Standart host yoʻq')}</option>
           {accounts.data?.map((account) => (
             <option key={account.id} value={account.id}>
               {account.name}
@@ -137,15 +138,16 @@ function GroupModal({ group, onClose }: { group: Group | 'new'; onClose: () => v
         </Select>
         <div className="sm:col-span-3">
           <Input
-            label={t('Zoom foydalanuvchisi (host)')}
+            label={t('Standart host')}
             type="email"
             list="zoom-users"
             placeholder="zoom_1@karsu.uz"
             value={form.zoom_user_email}
+            disabled={!form.zoom_account_id}
             onChange={(e) => set('zoom_user_email', e.target.value)}
             error={errors.zoom_user_email}
             hint={zoomUsers.isError ? t('Zoom’dan roʻyxat olinmadi, emailni qoʻlda kiriting.') : zoomUsers.data ? t('{count} ta foydalanuvchi topildi', { count: zoomUsers.data.length }) : undefined}
-            required
+            required={!!form.zoom_account_id}
           />
           <datalist id="zoom-users">
             {zoomUsers.data?.map((user) => (
@@ -205,7 +207,7 @@ export default function GroupsPage() {
   const filtered = (groups.data ?? []).filter(
     (group) =>
       (course === 'all' || String(group.course) === course) &&
-      (!search || group.name.toLocaleLowerCase('uz').includes(search.toLocaleLowerCase('uz')) || group.zoom_user_email.includes(search.toLowerCase())),
+      (!search || group.name.toLocaleLowerCase('uz').includes(search.toLocaleLowerCase('uz')) || (group.zoom_user_email ?? '').includes(search.toLowerCase())),
   )
 
   return (
@@ -278,8 +280,14 @@ export default function GroupsPage() {
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">{group.course}-kurs</td>
                     <td className="px-3 py-3">
-                      <p className="text-ink-800">{group.zoom_user_email}</p>
-                      <p className="text-steel-600">{group.zoom_account?.name ?? t('Akkaunt yoʻq')}</p>
+                      {group.zoom_user_email ? (
+                        <>
+                          <p className="text-ink-800">{group.zoom_user_email}</p>
+                          <p className="text-steel-600">{group.zoom_account?.name ?? t('Akkaunt yoʻq')}</p>
+                        </>
+                      ) : (
+                        <p className="text-steel-600">{t('Boʻsh hostlardan')}</p>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">{group.lessons_count}</td>
                     <td className="px-3 py-3">

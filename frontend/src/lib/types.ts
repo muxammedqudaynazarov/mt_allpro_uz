@@ -65,6 +65,8 @@ export interface LessonTracking {
   participants: number | null
   synced: boolean
   error: string | null
+  /** Hozir darsda (faqat monitoring javobida). */
+  present: number | null
 }
 
 export interface Lesson {
@@ -78,6 +80,8 @@ export interface Lesson {
   passcode: string | null
   group: GroupRef
   teacher: UserRef
+  /** Dars o'tkazilayotgan Zoom host (email). */
+  host: string | null
   slot: SlotRef | null
   tracking: LessonTracking
   can: { start: boolean; end: boolean }
@@ -116,11 +120,65 @@ export interface LessonOptionSlot {
   available: boolean
 }
 
+export interface LessonOptionHost {
+  id: number
+  name: string
+  email: string
+  account: string | null
+  /** Basic (litsenziyasiz) host'da uchrashuv 40 daqiqa bilan cheklangan. */
+  licensed: boolean
+  /** Tanlangan guruhning standart hosti. */
+  default: boolean
+  busy: boolean
+  busy_until: string | null
+}
+
 export interface LessonOptions {
   now: string
+  /** Tanlangan kun (YYYY-MM-DD). */
+  date: string
+  from: string
+  to: string
   default_duration: number
   groups: LessonOptionGroup[]
+  hosts: LessonOptionHost[]
   slots: LessonOptionSlot[]
+}
+
+export interface LiveParticipant {
+  name: string
+  email: string | null
+  is_host: boolean
+  present: boolean
+  joined_at: string
+  left_at: string | null
+  minutes: number
+}
+
+export interface LiveSnapshot {
+  /** webhook — Zoom hodisalari, dashboard — Zoom Dashboard API, none — ma'lumot yo'q. */
+  source: 'webhook' | 'dashboard' | 'none'
+  reason: string | null
+  checked_at: string
+  participants: LiveParticipant[]
+}
+
+export interface MonitorData {
+  checked_at: string
+  webhooks: boolean
+  live: Lesson[]
+  upcoming: Lesson[]
+  finished: Lesson[]
+}
+
+export interface ZoomHost {
+  id: number
+  name: string
+  email: string
+  licensed: boolean
+  is_active: boolean
+  account: { id: number; name: string | null; is_active: boolean }
+  open_lessons: number
 }
 
 export interface Group {
@@ -129,7 +187,8 @@ export interface Group {
   hemis_id: string | null
   course: number
   is_active: boolean
-  zoom_user_email: string
+  /** Standart host (ixtiyoriy). */
+  zoom_user_email: string | null
   zoom_account: { id: number; name: string } | null
   lessons_count: number
   live: boolean
@@ -143,6 +202,11 @@ export interface ZoomAccount {
   has_secret: boolean
   is_active: boolean
   groups_count: number
+  hosts_count: number
+  has_webhook_secret: boolean
+  /** Zoom ilovasining Event Subscriptions bo'limiga yoziladigan manzil. */
+  webhook_url: string
+  webhook_received_at: string | null
   last_checked_at: string | null
   last_error: string | null
 }

@@ -32,6 +32,18 @@ class Group extends Model
         return Attribute::make(set: fn (?string $value) => $value === null ? null : mb_strtolower(trim($value)));
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (Group $group) {
+            if ($group->zoom_account_id && $group->zoom_user_email) {
+                ZoomHost::firstOrCreate(
+                    ['zoom_account_id' => $group->zoom_account_id, 'email' => mb_strtolower($group->zoom_user_email)],
+                    ['name' => mb_strtolower($group->zoom_user_email), 'type' => ZoomHost::LICENSED, 'is_active' => true],
+                );
+            }
+        });
+    }
+
     public function zoomAccount(): BelongsTo
     {
         return $this->belongsTo(ZoomAccount::class);
@@ -46,12 +58,5 @@ class Group extends Model
     public function scopeVisibleTo(Builder $query, User $viewer): Builder
     {
         return $viewer->canViewAll() ? $query : $query->whereRaw('1 = 0');
-    }
-
-    /** Dars yaratish mumkin bo'lgan guruhlar. */
-    public function scopeBookable(Builder $query): Builder
-    {
-        return $query->where('is_active', true)
-            ->whereHas('zoomAccount', fn (Builder $q) => $q->where('is_active', true));
     }
 }

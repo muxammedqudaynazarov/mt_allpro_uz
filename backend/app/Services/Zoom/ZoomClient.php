@@ -274,16 +274,49 @@ class ZoomClient
     }
 
     /**
+     * Efirdagi uchrashuv qatnashchilari — Dashboard API (Business va undan yuqori tarif,
+     * akkauntda Dashboard yoqilgan bo'lishi kerak). Webhook sozlanmagan akkauntlar uchun
+     * zaxira yo'l. Imkoni bo'lmasa — null (sababi $reason'da).
+     *
+     * @return list<array{key: string, name: string, email: string, join_time: string, leave_time: ?string}>|null
+     */
+    public function liveParticipants(ZoomAccount $account, string $meetingId, ?string &$reason = null): ?array
+    {
+        $rows = $this->paginate($account, '/metrics/meetings/'.rawurlencode($meetingId).'/participants', 'participants', ['type' => 'live']);
+        if ($rows instanceof Response) {
+            $reason = (string) ($rows->json('message') ?: 'HTTP '.$rows->status());
+
+            return null;
+        }
+
+        $participants = [];
+        foreach ($rows as $row) {
+            if (empty($row['join_time'])) {
+                continue;
+            }
+            $participants[] = [
+                'key' => (string) (($row['participant_uuid'] ?? '') ?: ($row['id'] ?? '') ?: ($row['user_id'] ?? '')),
+                'name' => (string) ($row['user_name'] ?? ''),
+                'email' => (string) ($row['email'] ?? ''),
+                'join_time' => (string) $row['join_time'],
+                'leave_time' => ! empty($row['leave_time']) ? (string) $row['leave_time'] : null,
+            ];
+        }
+
+        return $participants;
+    }
+
+    /**
      * Sahifalab o'qish. Xato bo'lsa — javobning o'zi qaytariladi.
      *
      * @return list<array<string, mixed>>|Response
      */
-    private function paginate(ZoomAccount $account, string $path, string $key): array|Response
+    private function paginate(ZoomAccount $account, string $path, string $key, array $query = []): array|Response
     {
         $rows = [];
         $next = null;
         do {
-            $response = $this->send($account, 'get', $path, array_filter(['page_size' => 300, 'next_page_token' => $next]));
+            $response = $this->send($account, 'get', $path, array_filter([...$query, 'page_size' => 300, 'next_page_token' => $next]));
             if ($response->failed()) {
                 return $response;
             }

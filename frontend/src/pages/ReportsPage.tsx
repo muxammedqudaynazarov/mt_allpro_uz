@@ -53,7 +53,7 @@ export default function ReportsPage() {
         actions={
           <a href={`/api/lessons/export?from=${from}&to=${to}`} className={buttonClass({ variant: 'secondary' })}>
             <Download className="size-4" />
-            {t('Batafsil roʻyxat')} (CSV)
+            {t('Batafsil roʻyxat')} (.xlsx)
           </a>
         }
       />

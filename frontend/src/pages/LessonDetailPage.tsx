@@ -13,6 +13,7 @@ import { PageHeader, Panel } from '@/components/ui/Page'
 import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { LessonActions } from '@/features/lessons/LessonActions'
+import { LiveParticipantsPanel } from '@/features/lessons/LiveParticipants'
 import { LessonStatusBadge } from '@/features/lessons/LessonStatusBadge'
 import { delayToneClass, LATE_START_MINUTES, PresenceStrip, startDelay } from '@/features/lessons/ZoomTracking'
 import { useT } from '@/i18n/I18nProvider'
@@ -205,10 +206,10 @@ export default function LessonDetailPage() {
         }
         actions={
           <>
-            {counted.length > 0 && (
+            {finished && (
               <a href={`/api/lessons/${lesson.id}/attendance/export`} className={buttonClass({ variant: 'secondary' })}>
                 <Download className="size-4" />
-                Excel (CSV)
+                {t('Excel (.xlsx)')}
               </a>
             )}
             {canSync && (
@@ -236,6 +237,8 @@ export default function LessonDetailPage() {
           {notice.text}
         </p>
       )}
+
+      {tracking.state === 'started' && <LiveParticipantsPanel lesson={lesson} className="mb-6" />}
 
       {tracking.synced && tracking.state === 'ended' && (
         <Panel
