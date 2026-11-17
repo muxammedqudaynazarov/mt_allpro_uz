@@ -1,2 +1,2 @@
 # /etc/cron.d/mt-allpro — Laravel scheduler (dars holatlari har daqiqada yangilanadi)
-* * * * * www-data cd /var/www/mt.allpro.uz/backend && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+* * * * * www-data cd /mnt/projects/sites/regofis.uz/mt.regofis.uz/backend && /usr/bin/php artisan schedule:run >> /dev/null 2>&1

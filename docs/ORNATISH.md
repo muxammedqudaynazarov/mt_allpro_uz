@@ -1,6 +1,6 @@
 # Serverga o'rnatish qo'llanmasi
 
-Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosqich ko'rsatadi. Sayt manzili **`https://mt.regofis.uz`**, kod papkasi `/var/www/mt.allpro.uz`. Papka boshqa bo'lsa, uni hamma joyda almashtiring.
+Bu qo'llanma tizimni **Ubuntu 24.04** serverga noldan o'rnatishni bosqichma-bosqich ko'rsatadi. Sayt manzili **`https://mt.regofis.uz`**, kod papkasi `/mnt/projects/sites/regofis.uz/mt.regofis.uz`. Papka boshqa bo'lsa, uni hamma joyda almashtiring.
 
 ## Mundarija
 
@@ -77,19 +77,21 @@ EXIT;
 ## 4. Kodni yuklab olish
 
 ```bash
-sudo mkdir -p /var/www/mt.allpro.uz
-sudo chown -R $USER:www-data /var/www/mt.allpro.uz
-git clone https://github.com/muxammedqudaynazarov/mt_allpro_uz.git /var/www/mt.allpro.uz
-cd /var/www/mt.allpro.uz/backend
+sudo mkdir -p /mnt/projects/sites/regofis.uz/mt.regofis.uz
+sudo chown -R $USER:www-data /mnt/projects/sites/regofis.uz/mt.regofis.uz
+git clone https://github.com/muxammedqudaynazarov/mt_allpro_uz.git /mnt/projects/sites/regofis.uz/mt.regofis.uz
+cd /mnt/projects/sites/regofis.uz/mt.regofis.uz/backend
 composer install --no-dev --optimize-autoloader
 ```
+
+nginx (`www-data`) fayllarni o'qiy olishi uchun yo'ldagi har bir papkada `x` huquqi bo'lishi kerak. Tekshirish: `namei -l /mnt/projects/sites/regofis.uz/mt.regofis.uz/frontend` — har qatorda oxirgi belgilar orasida `x` bo'lsin.
 
 Repo yopiq bo'lsa, GitHub'da **Deploy key** (faqat o'qish huquqi bilan) qo'shib, SSH orqali klonlang. Shaxsiy tokenni serverda saqlamang.
 
 ## 5. Backend sozlamalari (.env)
 
 ```bash
-cd /var/www/mt.allpro.uz/backend
+cd /mnt/projects/sites/regofis.uz/mt.regofis.uz/backend
 cp .env.example .env
 php artisan key:generate
 nano .env
@@ -127,7 +129,7 @@ sudo chmod -R ug+rwX storage bootstrap/cache
 ## 6. Frontendni yig'ish
 
 ```bash
-cd /var/www/mt.allpro.uz/frontend
+cd /mnt/projects/sites/regofis.uz/mt.regofis.uz/frontend
 npm ci
 npm run build      # natija: frontend/dist
 ```
@@ -145,7 +147,7 @@ sudo certbot certonly --nginx -d mt.regofis.uz
 Keyin tizim konfiguratsiyasini o'rnating:
 
 ```bash
-sudo cp /var/www/mt.allpro.uz/deploy/nginx/mt.regofis.uz.conf /etc/nginx/sites-available/mt.regofis.uz
+sudo cp /mnt/projects/sites/regofis.uz/mt.regofis.uz/deploy/nginx/mt.regofis.uz.conf /etc/nginx/sites-available/mt.regofis.uz
 sudo ln -sf /etc/nginx/sites-available/mt.regofis.uz /etc/nginx/sites-enabled/mt.regofis.uz
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
@@ -165,7 +167,7 @@ Konfiguratsiya qiladigan ishlar:
 `https://mt.regofis.uz/up` — yashil "Application up", `https://mt.regofis.uz` — kirish sahifasi. Keyin:
 
 ```bash
-cd /var/www/mt.allpro.uz/backend
+cd /mnt/projects/sites/regofis.uz/mt.regofis.uz/backend
 sudo -u www-data php artisan app:check --url=https://mt.regofis.uz
 ```
 
@@ -174,11 +176,11 @@ Buyruq domen, cookie, frontend yig'ilgan yo'l, baza, papka huquqlari, HEMIS, Zoo
 ## 8. Navbat ishchisi va scheduler
 
 ```bash
-sudo cp /var/www/mt.allpro.uz/deploy/supervisor/mt-allpro-worker.conf /etc/supervisor/conf.d/
+sudo cp /mnt/projects/sites/regofis.uz/mt.regofis.uz/deploy/supervisor/mt-allpro-worker.conf /etc/supervisor/conf.d/
 sudo supervisorctl reread && sudo supervisorctl update
 sudo supervisorctl status          # mt-allpro-worker_00  RUNNING
 
-sudo cp /var/www/mt.allpro.uz/deploy/cron/mt-allpro /etc/cron.d/mt-allpro
+sudo cp /mnt/projects/sites/regofis.uz/mt.regofis.uz/deploy/cron/mt-allpro /etc/cron.d/mt-allpro
 sudo chmod 644 /etc/cron.d/mt-allpro
 ```
 
@@ -197,7 +199,7 @@ Navbat ishchisi Telegram xabarlarini yuboradi. Cron har daqiqada scheduler'ni is
 HEMIS ulanmagan yoki ishlamay qolgan holatda ham kirish uchun zaxira login yarating:
 
 ```bash
-cd /var/www/mt.allpro.uz/backend
+cd /mnt/projects/sites/regofis.uz/mt.regofis.uz/backend
 sudo -u www-data php artisan app:create-admin --login=admin --name="Familiya Ism" --hemis-id=1568
 ```
 
@@ -412,8 +414,8 @@ Eski tizimdagi o'qituvchilar (HEMIS ID va Telegram bilan), guruhlar, Zoom kalitl
 ## 17. Yangilanishlarni chiqarish
 
 ```bash
-cd /var/www/mt.allpro.uz
-sudo -u www-data APP_DIR=/var/www/mt.allpro.uz ./deploy/deploy.sh
+cd /mnt/projects/sites/regofis.uz/mt.regofis.uz
+sudo -u www-data APP_DIR=/mnt/projects/sites/regofis.uz/mt.regofis.uz ./deploy/deploy.sh
 ```
 
 Skript kodni yangilaydi, frontendni `APP_URL` dagi yo'l uchun qayta yig'adi, `composer install`, migratsiyalar, keshlarni yangilaydi va navbat ishchisini qayta ishga tushiradi.

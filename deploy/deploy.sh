@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Yangilanishlarni serverga chiqarish.
-# Ishlatish: sudo -u www-data APP_DIR=/var/www/mt.allpro.uz ./deploy/deploy.sh
+# Ishlatish: sudo -u www-data APP_DIR=/mnt/projects/sites/regofis.uz/mt.regofis.uz ./deploy/deploy.sh
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/var/www/mt.allpro.uz}"
+APP_DIR="${APP_DIR:-/mnt/projects/sites/regofis.uz/mt.regofis.uz}"
 BRANCH="${BRANCH:-main}"
 
 echo "==> Kod yangilanmoqda ($BRANCH)"
