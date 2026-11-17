@@ -324,24 +324,17 @@ Talabalar tizimga kirmaydi: ular Zoom'dagi ismi bo'yicha guruh ichida aniqlanadi
 Yoqilganda darslar Zoom bulutiga yoziladi, keyin tizim ularni serverga ko'chiradi, hajmini tekshiradi va shundan keyingina Zoom'dan o'chiradi.
 
 1. **Zoom'da:** Admin → Account Settings → **Recording → Cloud recording** yoqilgan bo'lsin. Bulutga faqat **Licensed** hostlar yoza oladi. 12.1 dagi `cloud_recording:*` ruxsatlari va 12.2 dagi `recording.completed` hodisasi kerak.
-2. **Serverda papka:**
-
-   ```bash
-   sudo mkdir -p /var/www/recordings
-   sudo chown www-data:www-data /var/www/recordings
-   sudo chmod 750 /var/www/recordings
-   ```
-
-   Joyni baholash: 80 daqiqalik dars videosi odatda bir necha yuz MB. Alohida disk ulash tavsiya etiladi.
+2. **Papka:** yozuvlar `backend/storage/app/recordings` da saqlanadi (`/mnt/projects/sites/regofis.uz/mt.regofis.uz/backend/storage/app/recordings`). Papka o'zi yaratiladi va git'ga kirmaydi — `git pull` unga tegmaydi. Joyni baholash: 80 daqiqalik dars videosi odatda bir necha yuz MB; `df -h /mnt/projects` bilan bo'sh joyni kuzating.
 3. **.env:**
 
    ```dotenv
-   RECORDINGS_PATH=/var/www/recordings
-   RECORDINGS_MIN_FREE_GB=5                    # bo'sh joy shundan kam bo'lsa, yangi yozuvlar yuklanmaydi
    RECORDINGS_ACCEL_PREFIX=/_zoom_recordings/  # videoni nginx beradi
+   RECORDINGS_MIN_FREE_GB=5                    # ixtiyoriy: bo'sh joy shundan kam bo'lsa, yangi yozuvlar yuklanmaydi
    ```
 
-   `RECORDINGS_ACCEL_PREFIX` — nginx'dagi ichki `location /_zoom_recordings/` (`mt.regofis.uz.conf` da bor). Laravel faqat ruxsatni tekshiradi, katta faylni nginx beradi — video ijro va o'rash (seek) tez ishlaydi, PHP band bo'lmaydi. Papka boshqa bo'lsa, nginx'dagi `alias /var/www/recordings/;` ni ham almashtiring. Bo'sh qoldirilsa, fayl PHP orqali beriladi.
+   `/_zoom_recordings/` — papka emas, nginx'ning ichki manzili (`mt.regofis.uz.conf` dagi `location /_zoom_recordings/`, u `storage/app/recordings` ga qaraydi). Brauzer videoni `/api/recordings/{id}/file` dan so'raydi: Laravel ruxsatni tekshiradi, faylni nginx beradi — video ijro va o'rash (seek) tez ishlaydi, PHP band bo'lmaydi. Bu qator bo'lmasa, fayl PHP orqali beriladi (ishlaydi, lekin sekinroq).
+
+   Yozuvlarni boshqa diskda saqlash kerak bo'lsa: `RECORDINGS_PATH=<to'liq yo'l>` va nginx'dagi `alias` ni shu yo'lga almashtiring.
 4. **Tizimda:** **Umumiy sozlamalar → Video yozuvlar → Darslarni avtomatik yozib olish** ni yoqing. Yoqilgandan keyin **yangi yaratilgan** darslar yoziladi.
 
 Zoom'dan o'chirish usuli shu sahifada tanlanadi: **Savatga** (tavsiya etiladi; 30 kun ichida Zoom'da tiklash mumkin, savatdagi fayllar bulut hajmiga hisoblanmaydi) yoki **Butunlay**. Fayl serverga to'liq ko'chib, hajmi Zoom'dagi bilan mos kelmaguncha Zoom'dan hech narsa o'chirilmaydi. Yuklash xato bersa, 5 martagacha qayta urinadi; **Video yozuvlar** sahifasida **Qayta urinish** tugmasi bor.
@@ -428,7 +421,7 @@ Kunlik baza nusxasi (cron), masalan `/etc/cron.d/mt-allpro-backup`:
 30 2 * * * root mysqldump --single-transaction mt_allpro | gzip > /var/backups/mt_allpro-$(date +\%F).sql.gz && find /var/backups -name 'mt_allpro-*.sql.gz' -mtime +30 -delete
 ```
 
-`backend/.env` faylini (ayniqsa `APP_KEY`ni) alohida, xavfsiz joyda saqlang. Video yozuvlar Zoom'dan o'chirilgach yagona nusxa serverda qoladi — `/var/www/recordings` ni ham zaxiralang (masalan, `rsync` bilan boshqa diskka) yoki Zoom'dan **Savatga** o'chirish rejimini qoldiring.
+`backend/.env` faylini (ayniqsa `APP_KEY`ni) alohida, xavfsiz joyda saqlang. Video yozuvlar Zoom'dan o'chirilgach yagona nusxa serverda qoladi — `backend/storage/app/recordings` ni ham zaxiralang (masalan, `rsync` bilan boshqa diskka) yoki Zoom'dan **Savatga** o'chirish rejimini qoldiring.
 
 ## 19. Muammolarni hal qilish
 
