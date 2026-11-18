@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, Download, FileText, Loader2, Video } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, Download, FileText, Loader2, RotateCcw, Video } from 'lucide-react'
+import { useAuth } from '@/auth/AuthProvider'
 import { api } from '@/lib/api'
+import { Button } from '@/components/ui/Button'
 import { formatBytes, formatTime } from '@/lib/format'
 import type { Lesson, Recording } from '@/lib/types'
 import { cn } from '@/components/ui/cn'
@@ -16,16 +18,28 @@ const TYPE_LABELS: Record<string, string> = {
   CC: 'Subtitr',
 }
 
+/** Xato bilan qolgan, lekin tizim hali o'zi qayta urinadigan fayl. */
+function willRetry(item: Recording): boolean {
+  return item.status === 'failed' && item.attempts < item.max_attempts
+}
+
 /** Darsning video yozuvi: ijro etish va fayllarni yuklab olish. */
 export function LessonRecordings({ lesson }: { lesson: Lesson }) {
   const t = useT()
+  const { isSuperAdmin } = useAuth()
+  const queryClient = useQueryClient()
   const query = useQuery({
     queryKey: ['lesson-recordings', lesson.id],
     queryFn: async () => (await api.get<{ data: Recording[] }>(`/api/lessons/${lesson.id}/recordings`)).data.data,
     // Zoom yozuvni tayyorlab, server yuklab olguncha sahifa yangilanib turadi.
-    refetchInterval: (q) => (q.state.data?.some((item) => item.status === 'pending') || (lesson.record && !q.state.data?.length) ? 60_000 : false),
+    refetchInterval: (q) => (q.state.data?.some((item) => item.status === 'pending' || willRetry(item)) || (lesson.record && !q.state.data?.length) ? 60_000 : false),
+  })
+  const retry = useMutation({
+    mutationFn: async (id: number) => api.post(`/api/recordings/${id}/retry`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lesson-recordings', lesson.id] }),
   })
   const files = query.data ?? []
+  const failed = files.find((item) => item.status === 'failed')
   const videos = files.filter((item) => item.file_type === 'MP4' && item.status === 'downloaded')
   const [active, setActive] = useState(0)
   const current = videos[Math.min(active, videos.length - 1)]
@@ -51,19 +65,34 @@ export function LessonRecordings({ lesson }: { lesson: Lesson }) {
           </video>
         </div>
       ) : (
-        <p className="flex items-center gap-2.5 px-5 py-4 text-sm text-steel-600">
-          {files.some((item) => item.status === 'failed') ? (
-            <>
-              <AlertTriangle className="size-4 text-amber-600" />
-              {t('Video yozuvni yuklab boʻlmadi. Administrator qayta urinishi mumkin.')}
-            </>
-          ) : (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              {files.length ? t('Video yozuv serverga koʻchirilmoqda.') : t('Zoom yozuvni tayyorlamoqda. Odatda dars davomiyligicha vaqt oladi.')}
-            </>
-          )}
-        </p>
+        failed ? (
+          <div className="flex flex-wrap items-start gap-x-4 gap-y-3 px-5 py-4 text-sm">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="min-w-0 flex-1">
+              <p className="text-ink-900">
+                {willRetry(failed)
+                  ? t('Video yozuvni yuklab boʻlmadi. Tizim 5 daqiqadan soʻng qayta urinadi ({attempts}/{max}).', { attempts: failed.attempts, max: failed.max_attempts })
+                  : t('Video yozuvni yuklab boʻlmadi.')}
+              </p>
+              {failed.error && (
+                <p className="mt-1 break-words text-steel-600">
+                  {t('Sababi')}: {failed.error}
+                </p>
+              )}
+            </div>
+            {isSuperAdmin && !willRetry(failed) && (
+              <Button size="sm" variant="secondary" loading={retry.isPending} onClick={() => retry.mutate(failed.id)}>
+                <RotateCcw className="size-4" />
+                {t('Qayta urinish')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <p className="flex items-center gap-2.5 px-5 py-4 text-sm text-steel-600">
+            <Loader2 className="size-4 animate-spin" />
+            {files.length ? t('Video yozuv serverga koʻchirilmoqda.') : t('Zoom yozuvni tayyorlamoqda. Odatda dars davomiyligicha vaqt oladi.')}
+          </p>
+        )
       )}
       {files.length > 0 && (
         <ul className="divide-y divide-steel-100 border-t border-steel-100">

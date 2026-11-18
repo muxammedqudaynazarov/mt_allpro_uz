@@ -22,6 +22,7 @@ class RecordingResource extends JsonResource
             'status' => $this->status,
             'error' => $this->status === Recording::DOWNLOADED ? null : $this->error,
             'attempts' => $this->attempts,
+            'max_attempts' => (int) config('recordings.max_attempts'),
             'recording_start' => $this->recording_start?->toIso8601String(),
             'recording_end' => $this->recording_end?->toIso8601String(),
             'downloaded_at' => $this->downloaded_at?->toIso8601String(),

@@ -242,6 +242,7 @@
     "Serverda joy yetarli emas.": "Serverde orın jetkiliksiz.",
     "Video yozuv Zoom bulutidan oʻchirildi: :size MB": "Video jazba Zoom bultınan óshirildi: :size MB",
     "Video yozuv qayta navbatga qoʻyildi": "Video jazba qaytadan gezekke qoyıldı",
+    "Zoom faylni bermadi (HTTP :status) — yozuvni yuklab olishga ruxsat yoʻq. Zoom ilovasida cloud_recording:read:recording:admin ruxsatini tekshiring. :detail": "Zoom fayldı bermedi (HTTP :status) — jazbanı júklep alıwǵa ruqsat joq. Zoom qosımshasında cloud_recording:read:recording:admin ruqsatın tekseriń. :detail",
     "Video yozuvni yuklab boʻlmadi (HTTP :status).": "Video jazbanı júklep bolmadı (HTTP :status).",
     "Zoom akkaunt topilmadi.": "Zoom akkaunt tabılmadı.",
     "Zoom’da bu yozuv topilmadi (oʻchirilgan boʻlishi mumkin).": "Zoom’da bul jazba tabılmadı (óshirilgen bolıwı múmkin).",

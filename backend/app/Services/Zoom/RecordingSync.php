@@ -28,7 +28,7 @@ class RecordingSync
      * @param  array{id?: mixed, uuid?: mixed, recording_files?: array}  $object
      * @return int yangi fayllar soni
      */
-    public function register(ZoomAccount $account, array $object): int
+    public function register(ZoomAccount $account, array $object, ?string $downloadToken = null): int
     {
         $meetingId = (string) ($object['id'] ?? '');
         $uuid = (string) ($object['uuid'] ?? '');
@@ -61,6 +61,8 @@ class RecordingSync
                 'recording_end' => self::time($file['recording_end'] ?? null),
                 'size' => (int) ($file['file_size'] ?? 0),
                 'download_url' => $file['download_url'] ?? null,
+                // Zoom 24 soatga beradi; ozroq zaxira bilan.
+                ...($downloadToken ? ['download_token' => $downloadToken, 'download_token_expires_at' => now()->addHours(23)] : []),
             ]);
             if ($isNew) {
                 $recording->status = RecordingSettings::wanted($type) ? Recording::PENDING : Recording::SKIPPED;
@@ -159,7 +161,8 @@ class RecordingSync
         }
         $part = $root.'/'.$folder.'/.'.$name.'.part';
 
-        $bytes = $this->zoom->downloadRecording($account, $url, $part);
+        $token = $recording->download_token_expires_at?->isFuture() ? $recording->download_token : null;
+        $bytes = $this->zoom->downloadRecording($account, $url, $part, $token);
         // Zoom ko'rsatgan hajm bilan solishtiriladi: chala yuklangan fayl saqlanmaydi.
         if ($bytes <= 0 || ($recording->size > 0 && $bytes !== $recording->size)) {
             @unlink($part);
@@ -173,6 +176,8 @@ class RecordingSync
             'size' => $bytes,
             'downloaded_at' => now(),
             'download_url' => null,
+            'download_token' => null,
+            'download_token_expires_at' => null,
             'error' => null,
         ])->save();
     }

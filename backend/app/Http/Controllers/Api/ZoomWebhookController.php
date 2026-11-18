@@ -73,8 +73,16 @@ class ZoomWebhookController extends Controller
             return response()->json(['plainToken' => $plain, 'encryptedToken' => hash_hmac('sha256', $plain, $secret)]);
         }
 
-        $handler->handle($zoomAccount, (string) $data['event'], (array) ($data['payload'] ?? []));
+        $handler->handle($zoomAccount, (string) $data['event'], (array) ($data['payload'] ?? []), self::downloadToken($data));
 
         return response()->noContent();
+    }
+
+    /** Zoom yuklash tokeni hodisaning ildizida keladi (ba'zi versiyalarda payload ichida). */
+    private static function downloadToken(array $data): ?string
+    {
+        $token = $data['download_token'] ?? $data['payload']['download_token'] ?? null;
+
+        return is_string($token) && $token !== '' ? $token : null;
     }
 }

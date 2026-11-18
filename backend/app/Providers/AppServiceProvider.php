@@ -28,9 +28,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Zoom "recording.completed" webhook'i: fayllar ro'yxatga olinadi, yuklash — scheduler'da (recordings:process).
-        Event::listen('zoom.recording', function (ZoomAccount $account, string $event, array $object): void {
+        Event::listen('zoom.recording', function (ZoomAccount $account, string $event, array $object, ?string $downloadToken = null): void {
             if ($event === 'recording.completed') {
-                app(RecordingSync::class)->register($account, $object);
+                app(RecordingSync::class)->register($account, $object, $downloadToken);
             }
         });
 

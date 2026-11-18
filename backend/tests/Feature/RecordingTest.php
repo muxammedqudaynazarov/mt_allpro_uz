@@ -47,7 +47,7 @@ class RecordingTest extends TestCase
                 ['id' => 'f-chat', 'file_type' => 'CHAT', 'file_extension' => 'TXT', 'file_size' => 12, 'recording_type' => 'chat_file', 'status' => 'completed', 'download_url' => 'https://zoom.us/rec/download/chat'],
                 ['id' => 'f-timeline', 'file_type' => 'TIMELINE', 'file_extension' => 'JSON', 'file_size' => 5, 'status' => 'completed', 'download_url' => 'https://zoom.us/rec/download/timeline'],
             ],
-        ]]];
+        ]], 'download_token' => 'webhook-download-token'];
     }
 
     private function webhook(ZoomAccount $account, array $data): void
@@ -95,6 +95,8 @@ class RecordingTest extends TestCase
         });
 
         $this->webhook($account, $this->completed($lesson, strlen($video)));
+        // Zoom bergan yuklash tokeni saqlanadi (birinchi usul).
+        $this->assertSame('webhook-download-token', Recording::query()->where('zoom_file_id', 'f-video')->firstOrFail()->download_token);
 
         // Video va chat yuklanadi; alohida audio (sozlamada o'chiq) va timeline — yo'q.
         $this->assertSame(

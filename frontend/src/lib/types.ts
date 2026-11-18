@@ -480,6 +480,8 @@ export interface Recording {
   status: 'pending' | 'downloaded' | 'failed' | 'skipped'
   error: string | null
   attempts: number
+  /** Shuncha urinishgacha tizim o'zi qayta yuklaydi (har 5 daqiqada). */
+  max_attempts: number
   recording_start: string | null
   recording_end: string | null
   downloaded_at: string | null

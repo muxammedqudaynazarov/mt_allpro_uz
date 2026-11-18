@@ -348,31 +348,80 @@ class ZoomClient
      *
      * @return int yuklangan baytlar soni
      */
-    public function downloadRecording(ZoomAccount $account, string $url, string $path): int
+    /**
+     * Yozuv faylini yuklaydi. Usullar tartibi (birinchi muvaffaqiyatlisi):
+     *  1) webhook bergan download_token (24 soat; ilova ruxsatlariga bog'liq emas) — sarlavhada, keyin ?access_token=;
+     *  2) ilova tokeni — sarlavhada (401 bo'lsa yangi token bilan), keyin ?access_token=.
+     * Ruxsat bo'lmasa Zoom 401/403 yoki 200 kodli kirish sahifasini (HTML) qaytaradi — bu fayl deb saqlanmaydi.
+     *
+     * @return int yuklangan baytlar
+     */
+    public function downloadRecording(ZoomAccount $account, string $url, string $path, ?string $downloadToken = null): int
     {
-        $attempt = function (bool $fresh) use ($account, $url, $path): Response {
+        $get = function (string $token, bool $inQuery) use ($url, $path): Response {
             try {
-                return Http::withToken($this->token($account, $fresh))
-                    ->timeout(3 * 3600)
+                $request = Http::timeout(3 * 3600)
                     ->connectTimeout(30)
-                    ->withOptions(['sink' => $path, 'allow_redirects' => ['max' => 10]])
-                    ->get($url);
+                    ->withOptions(['sink' => $path, 'allow_redirects' => ['max' => 10]]);
+
+                return $inQuery
+                    ? $request->get($url.(str_contains($url, '?') ? '&' : '?').'access_token='.urlencode($token))
+                    : $request->withToken($token)->get($url);
             } catch (ConnectionException $e) {
                 throw new ExternalServiceException(__('Zoom serveriga ulanib boʻlmadi. Birozdan soʻng qayta urinib koʻring.'), ['error' => $e->getMessage()]);
             }
         };
 
-        $response = $attempt(false);
-        if ($response->status() === 401) {
-            $response = $attempt(true);
+        $tries = [];
+        if ($downloadToken) {
+            $tries[] = fn () => $get($downloadToken, false);
+            $tries[] = fn () => $get($downloadToken, true);
         }
-        if ($response->failed()) {
-            @unlink($path);
-            throw new ExternalServiceException(__('Video yozuvni yuklab boʻlmadi (HTTP :status).', ['status' => $response->status()]), status: $response->status() === 404 ? 404 : 502);
-        }
-        clearstatcache(true, $path);
+        $tries[] = function () use ($get, $account): Response {
+            $response = $get($this->token($account), false);
 
-        return (int) @filesize($path);
+            return $response->status() === 401 ? $get($this->token($account, true), false) : $response;
+        };
+        $tries[] = fn () => $get($this->token($account), true);
+
+        foreach ($tries as $try) {
+            $response = $try();
+            if ($response->successful() && $this->isFile($response)) {
+                clearstatcache(true, $path);
+
+                return (int) @filesize($path);
+            }
+            // 404, 5xx — boshqa token yordam bermaydi.
+            if (! $response->successful() && ! in_array($response->status(), [401, 403], true)) {
+                break;
+            }
+        }
+
+        $detail = $this->downloadError($path);
+        @unlink($path);
+        if ($response->successful() || in_array($response->status(), [401, 403], true)) {
+            throw new ExternalServiceException(trim(__('Zoom faylni bermadi (HTTP :status) — yozuvni yuklab olishga ruxsat yoʻq. Zoom ilovasida cloud_recording:read:recording:admin ruxsatini tekshiring. :detail', ['status' => $response->status(), 'detail' => $detail])), status: 502);
+        }
+        throw new ExternalServiceException(trim(__('Video yozuvni yuklab boʻlmadi (HTTP :status).', ['status' => $response->status()]).' '.$detail), status: $response->status() === 404 ? 404 : 502);
+    }
+
+    /** Javob faylmi (video/audio/matn fayl), yoki Zoom'ning sahifasi/xatosi. */
+    private function isFile(Response $response): bool
+    {
+        $type = strtolower((string) $response->header('Content-Type'));
+
+        return ! str_starts_with($type, 'text/html') && ! str_starts_with($type, 'application/json');
+    }
+
+    /** Zoom JSON xatosi bo'lsa — uning matni (masalan, "Invalid access token."). */
+    private function downloadError(string $path): string
+    {
+        $body = @file_get_contents($path, length: 4096);
+        $json = is_string($body) ? json_decode($body, true) : null;
+
+        $message = is_array($json) ? ($json['message'] ?? $json['errorMessage'] ?? null) : null;
+
+        return is_string($message) && $message !== '' ? 'Zoom: '.mb_substr($message, 0, 120) : '';
     }
 
     /**

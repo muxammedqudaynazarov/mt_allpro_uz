@@ -17,12 +17,13 @@ class WebhookHandler
 {
     public function __construct(private readonly MeetingTracker $tracker) {}
 
-    public function handle(ZoomAccount $account, string $event, array $payload): void
+    /** @param  string|null  $downloadToken  recording.completed bilan Zoom bergan yuklash tokeni (24 soat) */
+    public function handle(ZoomAccount $account, string $event, array $payload, ?string $downloadToken = null): void
     {
         $object = (array) ($payload['object'] ?? []);
 
         if (str_starts_with($event, 'recording.')) {
-            Event::dispatch('zoom.recording', [$account, $event, $object]);
+            Event::dispatch('zoom.recording', [$account, $event, $object, $downloadToken]);
 
             return;
         }

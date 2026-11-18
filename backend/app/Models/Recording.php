@@ -25,16 +25,18 @@ class Recording extends Model
 
     protected $fillable = [
         'lesson_id', 'zoom_account_id', 'zoom_meeting_id', 'zoom_meeting_uuid', 'zoom_file_id', 'file_type', 'file_extension',
-        'recording_type', 'recording_start', 'recording_end', 'size', 'download_url', 'status', 'path', 'attempts', 'error',
+        'recording_type', 'recording_start', 'recording_end', 'size', 'download_url', 'download_token', 'download_token_expires_at', 'status', 'path', 'attempts', 'error',
         'downloaded_at', 'zoom_deleted_at',
     ];
 
-    protected $hidden = ['download_url'];
+    protected $hidden = ['download_url', 'download_token'];
 
     protected function casts(): array
     {
         return [
             'download_url' => 'encrypted',
+            'download_token' => 'encrypted',
+            'download_token_expires_at' => 'datetime',
             'size' => 'integer',
             'attempts' => 'integer',
             'recording_start' => 'datetime',
