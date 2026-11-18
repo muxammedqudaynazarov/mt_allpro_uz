@@ -452,7 +452,7 @@ Avval `sudo -u www-data php artisan app:check --url=https://mt.regofis.uz` ni is
 | Monitoring'da qatnashchilar ko'rinmaydi | Zoom akkauntlar sahifasida "Webhook: Sozlanmagan" yoki "hodisa kelmagan" — 12.2 ni tekshiring |
 | Video yozuvlar paydo bo'lmaydi | Sozlamalarda yozish yoqilganmi (faqat yangi darslar), host Licensed'mi, `recording.completed` hodisasi va `cloud_recording` ruxsatlari bormi. Xato matni **Video yozuvlar** sahifasida |
 | Video "Navbatda"dan o'tmaydi | Cron ishlayaptimi, `RECORDINGS_PATH` ga `www-data` yoza oladimi, bo'sh joy `RECORDINGS_MIN_FREE_GB` dan ko'pmi |
-| Video ochilmaydi (404), yuklab olish ham | `RECORDINGS_ACCEL_PREFIX` yoqilgan, lekin nginx'da `location /_zoom_recordings/` yo'q yoki `alias` papkasi boshqa |
+| Video bo'sh (0:00), yuklab olingan fayl ~1 KB | `RECORDINGS_ACCEL_PREFIX` yoqilgan, lekin nginx'da `location /_zoom_recordings/` yo'q yoki `alias` papkasi boshqa — nginx video o'rniga sayt sahifasini beradi. `app:check` buni tekshiradi va qo'shiladigan blokni ko'rsatadi |
 | "Zoom akkauntining kalitlari noto'g'ri" | Zoom Marketplace'da ilova faolligi va scope'larni tekshiring, Client Secret'ni qayta kiriting |
 | Haftalik dars yaratilmadi | Kalendar'da sababi yoziladi (masalan, bo'sh host yo'q). O'qituvchiga Telegram'da xabar boradi |
 | Telegram xabarlari kelmaydi | `sudo supervisorctl status`, `storage/logs/worker.log`. Xodim Telegram'ni ulaganmi? |

@@ -51,6 +51,30 @@ class RecordingController extends Controller
      * Faylni berish. Range so'rovlari qo'llab-quvvatlanadi — video brauzerda istalgan joyidan
      * ijro etiladi. ?download=1 — yuklab olish.
      */
+    /** Nazorat fayli nomi (yozuvlar papkasida) — app:check nginx sozlamasini shu bilan tekshiradi. */
+    public const ACCEL_CHECK_FILE = 'accel-check.txt';
+
+    /**
+     * nginx'ning ichki /_zoom_recordings/ manzili sozlanganmi: to'g'ri bo'lsa javob "ok",
+     * aks holda nginx sayt sahifasini (index.html) qaytaradi — videolar o'rniga ham shu beriladi.
+     */
+    public function accelCheck(): Response
+    {
+        $accel = rtrim((string) config('recordings.accel_prefix'), '/');
+        abort_if($accel === '', 404);
+        $root = rtrim((string) config('recordings.path'), '/');
+        if (! is_file($root.'/'.self::ACCEL_CHECK_FILE)) {
+            @mkdir($root, 0750, true);
+            @file_put_contents($root.'/'.self::ACCEL_CHECK_FILE, 'ok');
+        }
+
+        return new Response('', 200, [
+            'Content-Type' => 'text/plain',
+            'Cache-Control' => 'no-store',
+            'X-Accel-Redirect' => $accel.'/'.self::ACCEL_CHECK_FILE,
+        ]);
+    }
+
     public function file(Request $request, Recording $recording): BinaryFileResponse|Response
     {
         if ($recording->lesson) {

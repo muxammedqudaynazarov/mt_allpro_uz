@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Route;
 
 // Ochiq marshrutlar
 Route::get('/config', ConfigController::class);
+// app:check: nginx video yozuvlarni bera oladimi (X-Accel-Redirect). Ichida faqat "ok" degan nazorat fayli.
+Route::get('/recordings/accel-check', [RecordingController::class, 'accelCheck'])->middleware('throttle:30,1');
 Route::post('/auth/login', [SessionController::class, 'store'])->middleware('throttle:auth');
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:telegram');
 Route::post('/zoom/webhook/{zoomAccount}', ZoomWebhookController::class)->middleware('throttle:zoom-webhook');

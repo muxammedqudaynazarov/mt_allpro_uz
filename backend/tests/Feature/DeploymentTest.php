@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /** Serverdagi .env xatolari kirishni buzmasligi va app:check ularni topishi. */
@@ -173,6 +174,40 @@ class DeploymentTest extends TestCase
      * .env faqat config/ fayllarida o'qilishi kerak: `php artisan optimize` dan keyin boshqa joydagi
      * env() null qaytaradi (TRUSTED_PROXIES shu sababli jimgina 127.0.0.1 ga qaytgan edi).
      */
+    /** Serverdagi holat: nginx'da /_zoom_recordings/ yo'q — video o'rniga index.html (672 bayt) berilardi. */
+    public function test_check_command_detects_missing_nginx_recordings_location(): void
+    {
+        config(['recordings.accel_prefix' => '/_zoom_recordings/', 'app.url' => 'https://mt.regofis.uz', 'app.frontend_url' => 'https://mt.regofis.uz']);
+        Http::fake(['mt.regofis.uz/api/recordings/accel-check' => Http::response('<!doctype html><html lang="kaa"></html>', 200, ['Content-Type' => 'text/plain'])]);
+
+        $this->assertSame(1, Artisan::call('app:check'));
+        $output = Artisan::output();
+        $this->assertStringContainsString("nginx'da `location /_zoom_recordings/` yoʻq", $output);
+        $this->assertStringContainsString('location /_zoom_recordings/ { internal; alias '.storage_path('app/recordings').'/; }', $output);
+    }
+
+    public function test_check_command_confirms_nginx_serves_recordings(): void
+    {
+        config(['recordings.accel_prefix' => '/_zoom_recordings/', 'app.url' => 'https://mt.regofis.uz', 'app.frontend_url' => 'https://mt.regofis.uz']);
+        Http::fake(['mt.regofis.uz/api/recordings/accel-check' => Http::response('ok')]);
+
+        Artisan::call('app:check');
+        $this->assertStringContainsString('✓ Video yozuvlarni nginx beradi', Artisan::output());
+    }
+
+    public function test_accel_check_endpoint_hands_marker_file_to_nginx(): void
+    {
+        $this->getJson('/api/recordings/accel-check')->assertNotFound();
+
+        config(['recordings.accel_prefix' => '/_zoom_recordings/', 'recordings.path' => $dir = sys_get_temp_dir().'/rec-'.uniqid()]);
+        $this->beforeApplicationDestroyed(function () use ($dir) {
+            @unlink($dir.'/accel-check.txt');
+            @rmdir($dir);
+        });
+        $this->get('/api/recordings/accel-check')->assertOk()->assertHeader('X-Accel-Redirect', '/_zoom_recordings/accel-check.txt');
+        $this->assertStringEqualsFile($dir.'/accel-check.txt', 'ok');
+    }
+
     /** Toza klonda `php artisan optimize` (view:cache) resources/views papkasini talab qiladi. */
     public function test_views_directory_is_tracked_in_git(): void
     {

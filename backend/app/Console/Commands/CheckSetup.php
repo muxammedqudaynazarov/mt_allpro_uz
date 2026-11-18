@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
@@ -233,6 +234,37 @@ class CheckSetup extends Command
 
         $failed = Lesson::query()->whereNull('attendance_synced_at')->whereNotNull('attendance_error')->latest('ends_at')->first();
         $this->check(! $failed, 'Davomat Zoom hisobotidan olinmoqda', 'Davomat olinmadi ('.$failed?->starts_at->format('d.m H:i').'): '.$failed?->attendance_error, warning: true);
+
+        $this->recordingDelivery();
+    }
+
+    /**
+     * RECORDINGS_ACCEL_PREFIX bo'lsa — videoni nginx beradi. nginx'da `location /_zoom_recordings/` bo'lmasa,
+     * u video o'rniga sayt sahifasini (index.html) qaytaradi: brauzerda video bo'sh, yuklangan fayl ~1 KB.
+     */
+    private function recordingDelivery(): void
+    {
+        $accel = rtrim((string) config('recordings.accel_prefix'), '/');
+        if ($accel === '') {
+            return;
+        }
+        $url = rtrim((string) ($this->option('url') ?: config('app.url')), '/');
+        $url = (str_contains($url, '://') ? $url : 'https://'.$url).'/api/recordings/accel-check';
+        try {
+            $response = Http::timeout(10)->get($url);
+        } catch (Throwable $e) {
+            $this->check(false, '', "Video yozuvlarni nginx berishini tekshirib boʻlmadi ({$url}): ".mb_substr($e->getMessage(), 0, 120), warning: true);
+
+            return;
+        }
+        $root = rtrim((string) config('recordings.path'), '/');
+        $this->check(
+            $response->successful() && trim($response->body()) === 'ok',
+            'Video yozuvlarni nginx beradi',
+            "nginx'da `location {$accel}/` yoʻq yoki notoʻgʻri — video oʻrniga sayt sahifasi beriladi (HTTP {$response->status()}). "
+                ."\n    nginx sayt fayliga, `location /` dan oldin: location {$accel}/ { internal; alias {$root}/; }"
+                ."\n    yoki .env dan RECORDINGS_ACCEL_PREFIX ni olib tashlang (videoni PHP beradi).",
+        );
     }
 
     private function telegram(): void
