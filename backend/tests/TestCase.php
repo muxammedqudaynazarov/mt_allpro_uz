@@ -74,9 +74,10 @@ abstract class TestCase extends BaseTestCase
     }
 
     /** Hozir davom etayotgan juftlik (5 daqiqa oldin boshlangan, 80 daqiqa). */
-    protected function slotNow(): LessonSlot
+    /** 10 daqiqadan keyin boshlanadigan juftlik (boshlangan juftlikka qo'lda dars yaratib bo'lmaydi). */
+    protected function slotSoon(): LessonSlot
     {
-        return LessonSlot::factory()->create(['starts_at' => now()->subMinutes(5)->format('H:i'), 'duration_minutes' => 80]);
+        return LessonSlot::factory()->create(['starts_at' => now()->addMinutes(10)->format('H:i'), 'duration_minutes' => 80]);
     }
 
     /** Zoom API uchun standart soxta javoblar. */

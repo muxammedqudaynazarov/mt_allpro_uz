@@ -35,9 +35,14 @@ class CreateLesson
      * @param  ZoomHost|null  $host  o'qituvchi tanlagan host; ko'rsatilmasa — birinchi bo'sh host
      * @param  Carbon|null  $date  boshqa kun uchun (kalendar); ko'rsatilmasa — bugun
      */
-    public function handle(User $teacher, Group $group, ?LessonSlot $slot, ?string $topic, ?ZoomHost $host = null, ?Carbon $date = null, ?int $seriesId = null): Lesson
+    /**
+     * @param  bool  $allowStartedSlot  faqat haftalik darsni avtomatik yaratish (MaterializeSeries) uchun: server
+     *                                  kechiksa ham boshlangan juftlikka yaratiladi — talabalar havolani oladi.
+     *                                  Qo'lda (forma, "Har hafta takrorlash" bilan ham) — boshlangan juftlik yopiq.
+     */
+    public function handle(User $teacher, Group $group, ?LessonSlot $slot, ?string $topic, ?ZoomHost $host = null, ?Carbon $date = null, ?int $seriesId = null, bool $allowStartedSlot = false): Lesson
     {
-        [$startsAt, $endsAt] = self::window($slot, null, $date);
+        [$startsAt, $endsAt] = self::window($slot, null, $date, allowStarted: $allowStartedSlot);
 
         if (! $group->is_active) {
             throw ValidationException::withMessages(['group_id' => __('Bu guruh nofaol — unga dars yaratib boʻlmaydi.')]);
@@ -144,7 +149,11 @@ class CreateLesson
      *
      * @return array{0: Carbon, 1: Carbon}
      */
-    public static function window(?LessonSlot $slot, ?Carbon $now = null, ?Carbon $date = null): array
+    /**
+     * Dars vaqti. Qo'lda yaratishda boshlangan juftlik tanlanmaydi (11:30 dan keyin 11:30–12:50 yopiq);
+     * $allowStarted — haftalik dars uchun: juftlik tugamaguncha yaratiladi.
+     */
+    public static function window(?LessonSlot $slot, ?Carbon $now = null, ?Carbon $date = null, bool $allowStarted = false): array
     {
         $now = ($now ?? now())->copy()->startOfMinute();
         $day = $date ?? $now;
@@ -169,6 +178,9 @@ class CreateLesson
         $end = $slot->endOn($now);
         if ($end->lessThanOrEqualTo($now->copy()->addMinutes(5))) {
             throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa juftlikni yoki boshqa kunni tanlang.', ['name' => $slot->label()])]);
+        }
+        if (! $allowStarted && $start->lessThanOrEqualTo($now)) {
+            throw ValidationException::withMessages(['slot_id' => __('“:name” boshlanib boʻlgan — unga dars yaratib boʻlmaydi. Keyingi juftlikni yoki boshqa kunni tanlang.', ['name' => $slot->label()])]);
         }
 
         return [$start->greaterThan($now) ? $start : $now, $end];

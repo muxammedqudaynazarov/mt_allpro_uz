@@ -65,7 +65,7 @@ class RecordingTest extends TestCase
         $this->fakeZoom();
         Setting::put('recording', ['enabled' => true, 'delete_from_zoom' => true, 'delete_action' => 'trash', 'include_audio' => false]);
 
-        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => Group::factory()->create()->id, 'slot_id' => $this->slotNow()->id])->assertCreated();
+        $this->actingAsUser(User::factory()->create())->postJson('/api/lessons', ['group_id' => Group::factory()->create()->id, 'slot_id' => $this->slotSoon()->id])->assertCreated();
 
         $this->assertTrue(Lesson::sole()->record_cloud);
         Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/meetings') && $request['settings']['auto_recording'] === 'cloud');

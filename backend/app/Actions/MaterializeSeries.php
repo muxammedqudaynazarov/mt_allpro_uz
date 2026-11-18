@@ -87,7 +87,7 @@ class MaterializeSeries
             ? $preferred
             : null;
 
-        $this->create->handle($series->teacher, $series->group, $series->slot, $series->topic, $host, $today, $series->id);
+        $this->create->handle($series->teacher, $series->group, $series->slot, $series->topic, $host, $today, $series->id, allowStartedSlot: true);
 
         if ($series->last_error) {
             $series->forceFill(['last_error' => null, 'last_error_on' => null])->save();

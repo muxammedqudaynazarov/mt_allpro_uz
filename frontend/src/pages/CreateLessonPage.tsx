@@ -274,6 +274,15 @@ export default function CreateLessonPage() {
                   </SlotPill>
                 ))}
               </div>
+              {!options.data.closed && options.data.slots.some((item) => !item.available) && (
+                <p className="mt-2 text-sm text-steel-500">
+                  {options.data.slots.some((item) => item.available)
+                    ? t('Boshlangan juftliklar tanlanmaydi.')
+                    : canPlan
+                      ? t('Bugungi barcha juftliklar boshlanib boʻlgan. Boshqa kunni tanlang.')
+                      : t('Bugungi barcha juftliklar boshlanib boʻlgan.')}
+                </p>
+              )}
               {errors.slot_id && <p className="mt-2 text-sm text-onair-600">{errors.slot_id}</p>}
             </Step>
 

@@ -84,7 +84,8 @@ class LessonController extends Controller
             'starts_at' => $item->starts_at,
             'ends_at' => $item->endsAtLabel(),
             'duration_minutes' => $item->duration_minutes,
-            'available' => ! $closed && (! $isToday || $item->endOn($now)->greaterThan($now->copy()->addMinutes(5))),
+            // Boshlangan juftlik tanlanmaydi (11:30 dan keyin 11:30–12:50 yopiq).
+            'available' => ! $closed && (! $isToday || $item->startOn($now)->greaterThan($now)),
         ])->values();
 
         return response()->json(['data' => [
