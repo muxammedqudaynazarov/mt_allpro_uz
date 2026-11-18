@@ -7,7 +7,7 @@ Tizimda uchta rol bor. Bir xodimda bir nechta rol bo'lishi mumkin: masalan, O'qu
 | Rol | Nima qila oladi |
 |---|---|
 | **O'qituvchi** | Dars yaratadi, boshlaydi, yakunlaydi; haftalik darslar jadvalini yuritadi. Faqat o'z darslarini, ularning davomati va video yozuvlarini ko'radi |
-| **O'quv bo'limi** | Barcha guruhlar va darslarni ko'radi, efirdagi darslarni kuzatadi, hisobot va Excel fayllarini oladi, guruh talabalarini yuritadi (HEMIS ID, HEMIS SYNC). Dars yaratmaydi; Zoom, sozlamalar va o'quv yillarini o'zgartirmaydi |
+| **O'quv bo'limi** | Barcha guruhlar va darslarni ko'radi, efirdagi darslarni kuzatadi, hisobot va Excel fayllarini oladi, guruh talabalarini yuritadi (HEMIS ID, HEMIS SYNC), yangi foydalanuvchilarni tasdiqlaydi. Dars yaratmaydi; rollar, Zoom, sozlamalar va o'quv yillarini o'zgartirmaydi |
 | **Administrator** | Hammasi: foydalanuvchilar va rollar, Zoom akkauntlar, guruhlar, dars vaqtlari, o'quv yillari, umumiy sozlamalar, amallar tarixi |
 
 ---
@@ -117,6 +117,10 @@ Qatnashuv dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Tala
 - **Birlashtirish** — bir talaba turli ism bilan kirgan bo'lsa ("Madina T." va "Madina Tursınbaeva"), qatorlarni belgilang → **Birlashtirish** → qaysi nom qolishini tanlang. Davomat qayta hisoblanadi, keyingi darslarda bu ismlar avtomatik taniladi.
 - **Nomini o'zgartirish** (⋯) — hisobotlarda ko'rinadigan nom.
 - **Talaba emas** (⋯) — o'qituvchining shaxsiy hisobi, kuzatuvchi yoki "iPhone" kabi yozuvlar hisobotlarda hisobga olinmaydi.
+
+### Yangi foydalanuvchilarni tasdiqlash
+
+Xodim birinchi marta HEMIS orqali kirganda **"Tasdiq kutmoqda"** holatida bo'ladi, sizga Telegram'da xabar keladi. **Foydalanuvchilar** sahifasida uning qatoridagi **Tasdiqlash** tugmasini bosing. Rolni (O'qituvchi, O'quv bo'limi, Administrator) berish, bloklash va o'chirish — Administrator vakolatida.
 
 ### O'quv yillari
 

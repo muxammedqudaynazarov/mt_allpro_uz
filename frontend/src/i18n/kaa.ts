@@ -274,6 +274,7 @@ export const kaa: Record<string, string> = {
   "Faollashtirish": "Aktivlestiriw",
   "Foydalanuvchi faollashtirildi": "Paydalanıwshı aktivlestirildi",
   "Bloklash": "Bloklaw",
+  "Tizim foydalanuvchilari. Yangi foydalanuvchilarni tasdiqlashingiz mumkin; rollarni Administrator boshqaradi.": "Sistema paydalanıwshıları. Jańa paydalanıwshılardı tastıyıqlawıńız múmkin; rollerdi Administrator basqaradı.",
   "Sababi": "Sebebi",
   "Video yozuvni yuklab boʻlmadi.": "Video jazbanı júklep bolmadı.",
   "Video yozuvni yuklab boʻlmadi. Tizim 5 daqiqadan soʻng qayta urinadi ({attempts}/{max}).": "Video jazbanı júklep bolmadı. Sistema 5 minuttan soń qaytadan urınadı ({attempts}/{max}).",

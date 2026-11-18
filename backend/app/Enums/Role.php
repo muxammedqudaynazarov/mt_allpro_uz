@@ -37,12 +37,12 @@ enum Role: string
             self::Teacher => ['lessons.create', 'lessons.view-own'],
             self::Education => [
                 'lessons.view-own', 'lessons.view-all', 'lessons.monitor',
-                'groups.view', 'students.manage', 'reports.view', 'users.view',
+                'groups.view', 'students.manage', 'reports.view', 'users.view', 'users.approve',
             ],
             self::SuperAdmin => [
                 'lessons.create', 'lessons.view-own', 'lessons.view-all', 'lessons.monitor',
                 'groups.view', 'groups.toggle', 'groups.manage', 'students.manage', 'reports.view',
-                'users.view', 'users.manage', 'users.roles', 'users.delete',
+                'users.view', 'users.approve', 'users.manage', 'users.roles', 'users.delete',
                 'calendar.manage', 'calendar.manage-all',
                 'zoom.manage', 'slots.manage', 'settings.manage', 'audit.view',
             ],

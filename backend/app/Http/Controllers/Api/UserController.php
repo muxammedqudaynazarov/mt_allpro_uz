@@ -92,7 +92,9 @@ class UserController extends Controller
         }
 
         if (array_key_exists('status', $data)) {
-            Gate::authorize('updateStatus', $user);
+            // Tasdiqlash (kutmoqda -> faol) O'quv bo'limiga ham ruxsat; qolgan holat o'zgarishlari — Administrator.
+            $approving = $data['status'] === UserStatus::Active->value && $user->status === UserStatus::Pending;
+            Gate::authorize($approving ? 'approve' : 'updateStatus', $user);
             $user->status = UserStatus::from($data['status']);
         }
 

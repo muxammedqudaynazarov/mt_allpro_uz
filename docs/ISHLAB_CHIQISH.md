@@ -178,7 +178,7 @@ Barcha `/api/*` marshrutlari JSON qaytaradi. Autentifikatsiya: Sanctum SPA (cook
 | * | `/api/series`, `/{id}/cancel`, `/{id}/skips` | O'qituvchi (kalendar huquqi bilan), Administrator | Haftalik darslar |
 | GET | `/api/semesters` | faol | Semestrlar (filtrlar uchun) |
 | GET | `/api/monitor` | O'quv bo'limi, Administrator | Bugungi va efirdagi darslar |
-| GET/PATCH/DELETE | `/api/users`, `/api/users/counts` | O'quv bo'limi (ko'radi), Administrator | Foydalanuvchilar, rollar, `can_manage_calendar`, ism |
+| GET/PATCH/DELETE | `/api/users`, `/api/users/counts` | O'quv bo'limi (ko'radi va tasdiqlaydi: `pending` → `active`), Administrator | Foydalanuvchilar, rollar, `can_manage_calendar`, ism |
 | * | `/api/groups`, `/{id}/toggle` | O'quv bo'limi (ko'radi), Administrator | Guruhlar |
 | GET/POST/PATCH | `/api/groups/{id}/students`, `/merge`, `/hemis-sync`, `/api/students/{id}` | O'quv bo'limi, Administrator | Talabalar, birlashtirish, HEMIS SYNC, `{name?, ignored?, hemis_id?}` |
 | GET | `/api/reports/summary`, `/api/reports/semester`, `/semester/export` | O'quv bo'limi, Administrator | Hisobotlar; XLSX |

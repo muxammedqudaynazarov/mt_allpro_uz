@@ -162,7 +162,9 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
 
 export default function UsersPage() {
   const t = useT()
-  const { user: me, isSuperAdmin } = useAuth()
+  const { user: me, isSuperAdmin, can } = useAuth()
+  // O'quv bo'limi: faqat tasdiq kutayotganlarni tasdiqlaydi.
+  const canApprove = can('users.approve')
   const queryClient = useQueryClient()
   const [params, setParams] = useSearchParams()
   const tab = (params.get('status') as Tab) || 'all'
@@ -205,7 +207,9 @@ export default function UsersPage() {
         description={
           isSuperAdmin
             ? t('HEMIS orqali kirgan foydalanuvchilar shu yerda paydo boʻladi. Ularni tasdiqlang, bloklang yoki rolini oʻzgartiring.')
-            : t('Tizim foydalanuvchilari. Ularni Administrator boshqaradi.')
+            : canApprove
+              ? t('Tizim foydalanuvchilari. Yangi foydalanuvchilarni tasdiqlashingiz mumkin; rollarni Administrator boshqaradi.')
+              : t('Tizim foydalanuvchilari. Ularni Administrator boshqaradi.')
         }
       />
 
@@ -302,11 +306,11 @@ export default function UsersPage() {
                         <td className="px-3 py-3 whitespace-nowrap text-steel-700">{user.last_login_at ? formatDateTime(user.last_login_at) : '—'}</td>
                         <td className="px-3 py-3 text-right tabular-nums">{user.lessons_count}</td>
                         <td className="px-5 py-2 text-right">
-                          {!isSuperAdmin ? null : user.status === 'pending' ? (
+                          {user.status === 'pending' && canApprove && !self ? (
                             <Button size="sm" icon={<CheckCircle2 className="size-4" />} onClick={() => setStatus(user, 'active', t('Foydalanuvchi tasdiqlandi'))}>
                               {t('Tasdiqlash')}
                             </Button>
-                          ) : (
+                          ) : !isSuperAdmin ? null : (
                             (
                               <ActionMenu
                                 items={[

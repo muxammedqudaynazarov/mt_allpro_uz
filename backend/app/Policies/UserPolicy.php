@@ -2,18 +2,27 @@
 
 namespace App\Policies;
 
+use App\Enums\UserStatus;
 use App\Models\User;
 
 /**
- * Foydalanuvchilarni faqat Administrator boshqaradi. O'quv bo'limi ro'yxatni
- * ko'ra oladi, lekin o'zgartira olmaydi. Hech kim o'zining rolini yoki holatini
- * o'zgartira olmaydi.
+ * Foydalanuvchilarni Administrator boshqaradi. O'quv bo'limi ro'yxatni ko'radi va yangi
+ * (tasdiq kutayotgan) foydalanuvchini tasdiqlay oladi — boshqa hech narsani o'zgartira olmaydi.
+ * Hech kim o'zining rolini yoki holatini o'zgartira olmaydi.
  */
 class UserPolicy
 {
     public function viewAny(User $user): bool
     {
         return $user->canViewAll();
+    }
+
+    /** Faqat "Tasdiq kutmoqda" -> "Faol": Administrator va O'quv bo'limi. */
+    public function approve(User $actor, User $target): bool
+    {
+        return in_array('users.approve', $actor->permissions(), true)
+            && ! $actor->is($target)
+            && $target->status === UserStatus::Pending;
     }
 
     public function updateStatus(User $actor, User $target): bool
