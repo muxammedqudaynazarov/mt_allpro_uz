@@ -75,7 +75,7 @@ export default function RecordingsPage() {
         }}
         options={[
           { value: 'all', label: t('Hammasi') },
-          { value: 'downloaded', label: t('Serverda') },
+          { value: 'downloaded', label: t('Yuklangan') },
           { value: 'pending', label: t('Navbatda'), count: storage?.pending },
           { value: 'failed', label: t('Xato'), count: storage?.failed },
         ]}
@@ -126,7 +126,7 @@ export default function RecordingsPage() {
                     <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">{formatBytes(item.size)}</td>
                     <td className="px-3 py-3">
                       {item.status === 'downloaded' ? (
-                        <Badge tone="leaf">{item.zoom_deleted_at ? t('Serverda, Zoom’dan oʻchirilgan') : t('Serverda')}</Badge>
+                        <Badge tone="leaf">{t('Yuklangan')}</Badge>
                       ) : item.status === 'failed' ? (
                         <span title={item.error ?? undefined}>
                           <Badge tone="amber">{t('Xato')}</Badge>

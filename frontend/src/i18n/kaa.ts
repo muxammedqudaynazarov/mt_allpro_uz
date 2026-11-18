@@ -630,7 +630,7 @@ export const kaa: Record<string, string> = {
   "Semestr sanalari, oʻzlashtirish taxmini mezoni va darslarning video yozuvlari.": "Semestr sáneleri, ózlestiriw boljamınıń ólshemi hám sabaqlardıń video jazbaları.",
   "Server xotirasi": "Server yadı",
   "Serverda": "Serverde",
-  "Serverda, Zoom’dan oʻchirilgan": "Serverde, Zoom’nan óshirilgen",
+  "Yuklangan": "Júklengen",
   "Serverga koʻchirgach Zoom’dan oʻchirish": "Serverge kóshirgennen keyin Zoom’nan óshiriw",
   "Sozlama saqlandi": "Sazlaw saqlandı",
   "Umumiy sozlamalarda “Darslarni avtomatik yozib olish”ni yoqing.": "Ulıwma sazlawlarda “Sabaqlardı avtomatikalıq jazıp alıw”dı qosıń.",
