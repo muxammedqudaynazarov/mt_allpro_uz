@@ -6,7 +6,6 @@ use App\Actions\CreateSeries;
 use App\Actions\EndLesson;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LessonSeriesResource;
-use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\LessonSeries;
 use App\Models\LessonSeriesSkip;
@@ -14,6 +13,7 @@ use App\Models\LessonSlot;
 use App\Models\User;
 use App\Models\ZoomHost;
 use App\Support\Audit;
+use App\Support\LessonGroupsInput;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationException;
 /** Har haftalik takroriy darslar. */
 class LessonSeriesController extends Controller
 {
-    private const WITH = ['group', 'teacher', 'slot', 'host', 'skips'];
+    private const WITH = ['group', 'groups', 'teacher', 'slot', 'host', 'skips'];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -35,7 +35,7 @@ class LessonSeriesController extends Controller
             ->visibleTo($request->user())
             ->when(! ($data['all'] ?? false), fn ($q) => $q->active())
             ->when($data['teacher_id'] ?? null, fn ($q, $id) => $q->where('user_id', $id))
-            ->when($data['group_id'] ?? null, fn ($q, $id) => $q->where('group_id', $id))
+            ->when($data['group_id'] ?? null, fn ($q, $id) => $q->forGroup((int) $id))
             ->with(self::WITH)
             ->orderBy('weekday')
             ->get()
@@ -49,7 +49,6 @@ class LessonSeriesController extends Controller
     {
         Gate::authorize('create', LessonSeries::class);
         $data = $request->validate([
-            'group_id' => ['required', 'integer', Rule::exists('groups', 'id')->whereNull('deleted_at')],
             'lesson_slot_id' => ['required', 'integer', Rule::exists('lesson_slots', 'id')->where('is_active', true)],
             'weekday' => ['required', 'integer', 'between:1,7'],
             'zoom_host_id' => ['nullable', 'integer', Rule::exists('zoom_hosts', 'id')->where('is_active', true)],
@@ -57,19 +56,20 @@ class LessonSeriesController extends Controller
             'starts_on' => ['nullable', 'date_format:Y-m-d'],
             'ends_on' => ['nullable', 'date_format:Y-m-d'],
             'teacher_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
+            'is_lecture' => ['nullable', 'boolean'],
         ], [
-            'group_id.required' => __('Guruhni tanlang.'),
             'lesson_slot_id.required' => __('Juftlikni tanlang.'),
             'weekday.required' => __('Hafta kunini tanlang.'),
         ]);
 
+        [$groups, $lecture] = LessonGroupsInput::from($request);
         $actor = $request->user();
         // Administrator boshqa o'qituvchi nomidan ham qo'sha oladi.
         $teacher = isset($data['teacher_id']) && $actor->isSuperAdmin() ? User::findOrFail($data['teacher_id']) : $actor;
 
         $series = $action->handle(
             $teacher,
-            Group::findOrFail($data['group_id']),
+            $groups,
             LessonSlot::findOrFail($data['lesson_slot_id']),
             (int) $data['weekday'],
             isset($data['zoom_host_id']) ? ZoomHost::find($data['zoom_host_id']) : null,
@@ -77,6 +77,7 @@ class LessonSeriesController extends Controller
             isset($data['starts_on']) ? Carbon::parse($data['starts_on']) : today(),
             isset($data['ends_on']) ? Carbon::parse($data['ends_on']) : null,
             $actor,
+            $lecture,
         );
 
         return new LessonSeriesResource($series->load(self::WITH));
@@ -92,7 +93,7 @@ class LessonSeriesController extends Controller
             'ends_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:'.$series->starts_on->toDateString()],
         ]);
         $series->fill($data)->save();
-        Audit::log('series.updated', 'Haftalik dars oʻzgartirildi: :group', $series, $series->getChanges(), replace: ['group' => $series->group->name]);
+        Audit::log('series.updated', 'Haftalik dars oʻzgartirildi: :group', $series, $series->getChanges(), replace: ['group' => $series->groupsLabel()]);
 
         return new LessonSeriesResource($series->load(self::WITH));
     }
@@ -103,7 +104,7 @@ class LessonSeriesController extends Controller
         Gate::authorize('cancel', $series);
         if ($series->is_active) {
             $series->forceFill(['is_active' => false, 'cancelled_at' => now(), 'cancelled_by_id' => $request->user()->id])->save();
-            Audit::log('series.cancelled', 'Haftalik dars bekor qilindi: :group', $series, replace: ['group' => $series->group->name]);
+            Audit::log('series.cancelled', 'Haftalik dars bekor qilindi: :group', $series, replace: ['group' => $series->groupsLabel()]);
         }
 
         return new LessonSeriesResource($series->load(self::WITH));
@@ -114,7 +115,7 @@ class LessonSeriesController extends Controller
         Gate::authorize('delete', $series);
         Lesson::query()->where('lesson_series_id', $series->id)->update(['lesson_series_id' => null]);
         $series->delete();
-        Audit::log('series.deleted', 'Haftalik dars oʻchirildi: :group', $series, replace: ['group' => $series->group->name]);
+        Audit::log('series.deleted', 'Haftalik dars oʻchirildi: :group', $series, replace: ['group' => $series->groupsLabel()]);
 
         return response()->noContent();
     }
@@ -137,7 +138,7 @@ class LessonSeriesController extends Controller
         }
 
         LessonSeriesSkip::firstOrCreate(['lesson_series_id' => $series->id, 'date' => $date->toDateString()], ['created_by_id' => $request->user()->id]);
-        Audit::log('series.skipped', 'Haftalik dars bir kunga bekor qilindi: :group, :date', $series, replace: ['group' => $series->group->name, 'date' => $date->format('d.m.Y')]);
+        Audit::log('series.skipped', 'Haftalik dars bir kunga bekor qilindi: :group, :date', $series, replace: ['group' => $series->groupsLabel(), 'date' => $date->format('d.m.Y')]);
 
         return new LessonSeriesResource($series->load(self::WITH));
     }

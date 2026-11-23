@@ -7,6 +7,7 @@ use App\Http\Resources\LessonResource;
 use App\Models\Lesson;
 use App\Models\LessonSeries;
 use App\Models\LessonSlot;
+use App\Support\GroupRef;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -40,8 +41,8 @@ class CalendarController extends Controller
             ->visibleTo($user)
             ->whereBetween('starts_at', [$from, $to])
             ->when($teacherId, fn ($q) => $q->where('user_id', $teacherId))
-            ->when($groupId, fn ($q) => $q->where('group_id', $groupId))
-            ->with(['group', 'teacher', 'slot'])
+            ->when($groupId, fn ($q) => $q->forGroup((int) $groupId))
+            ->with(['group', 'groups', 'teacher', 'slot'])
             ->withParticipantsCount()
             ->orderBy('starts_at')
             ->get();
@@ -53,8 +54,8 @@ class CalendarController extends Controller
             ->visibleTo($user)
             ->active()
             ->when($teacherId, fn ($q) => $q->where('user_id', $teacherId))
-            ->when($groupId, fn ($q) => $q->where('group_id', $groupId))
-            ->with(['group', 'teacher', 'slot', 'host', 'skips'])
+            ->when($groupId, fn ($q) => $q->forGroup((int) $groupId))
+            ->with(['group', 'groups', 'teacher', 'slot', 'host', 'skips'])
             ->get();
 
         foreach ($series as $item) {
@@ -74,7 +75,9 @@ class CalendarController extends Controller
                     'date' => $date->toDateString(),
                     'starts_at' => $starts->toIso8601String(),
                     'ends_at' => $ends->toIso8601String(),
-                    'group' => ['id' => $item->group->id, 'name' => $item->group->name, 'course' => $item->group->course],
+                    'group' => GroupRef::make($item->group),
+                    'groups' => GroupRef::list($item->groupList()),
+                    'is_lecture' => $item->is_lecture,
                     'teacher' => ['id' => $item->teacher->id, 'name' => $item->teacher->displayName()],
                     'slot' => ['id' => $item->slot->id, 'name' => $item->slot->label()],
                     'topic' => $item->topic,

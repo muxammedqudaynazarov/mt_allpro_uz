@@ -17,7 +17,7 @@ class DashboardController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $user = $request->user();
-        $scope = fn () => Lesson::query()->visibleTo($user)->with(['group', 'teacher', 'slot', 'zoomAccount'])->withParticipantsCount();
+        $scope = fn () => Lesson::query()->visibleTo($user)->with(['group', 'groups', 'teacher', 'slot', 'zoomAccount'])->withParticipantsCount();
 
         $live = $scope()->live()->orderBy('starts_at')->get();
         $today = $scope()

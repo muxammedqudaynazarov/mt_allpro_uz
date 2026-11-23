@@ -38,7 +38,7 @@ Har bir dars uchun Telegram'ga **"Darsni boshlash"** va **"Guruhga yuborish"** t
 
 1. **"Dars yaratish"** tugmasini bosing.
 2. **Qachon?** — kunni (bugun yoki keyingi kunlar) va juftlikni tanlang. Dars faqat jadvaldagi juftlikka yaratiladi; boshlangan juftlik tanlanmaydi (soat 11:30 dan keyin 11:30–12:50 juftligi yopiq). Yakshanba — dam olish kuni: bu kunga dars ham, haftalik dars ham qo'shib bo'lmaydi.
-3. **Qaysi guruh?** — kursni, keyin guruhni tanlang. Shu vaqtda boshqa darsi bor guruhlar **"Band"** deb ko'rsatiladi.
+3. **Qaysi guruh?** — kursni, keyin guruhni tanlang. Shu vaqtda boshqa darsi bor guruhlar **"Band"** deb ko'rsatiladi. Bir nechta guruhga birga o'tiladigan dars uchun **Ma'ruza** ni yoqing va guruhlarni belgilang (pastga qarang).
 4. **Zoom host** — dars o'tkaziladigan Zoom hisobi. **Avtomatik** qoldirilsa, birinchi bo'sh host olinadi. Band hostlar tanlanmaydi: bir host bir vaqtda faqat bitta dars o'tkaza oladi.
 5. **Mavzu** — ixtiyoriy.
 6. **Har hafta takrorlash** — belgilansa, dars har hafta shu kuni va shu juftlikda avtomatik yaratiladi (pastga qarang).
@@ -49,6 +49,16 @@ Dars yaratilgach, oynada talabalar havolasi va kirish kodi chiqadi:
 - **Darsni boshlash** — Zoom'ni host (boshlovchi) sifatida ochadi;
 - **Nusxalash** — havolani nusxalaydi;
 - **Guruhga Telegram orqali yuborish** — Telegram'ni ochadi, guruh chatini tanlab havolani yuborasiz.
+
+### Ma'ruza: bir nechta guruh birga
+
+**Ma'ruza** yoqilsa, 2–3 (ko'pi bilan 6) guruhni belgilaysiz — hammasi **bitta Zoom uchrashuviga** kiradi, havola bitta. Har xil kurs guruhlarini ham tanlash mumkin. Guruhlardan birida shu vaqtda boshqa dars bo'lsa, ma'ruza yaratilmaydi va qaysi guruh band ekani yoziladi; ma'ruzadagi guruhlarga shu vaqtga alohida dars ham yaratib bo'lmaydi. Haftalik dars ham ma'ruza bo'lishi mumkin.
+
+Ro'yxatlarda, kalendarda va monitoringda ma'ruza **"Ma'ruza"** belgisi va barcha guruhlar nomi bilan chiqadi; guruh bo'yicha filtrda ma'ruza har bir guruhida ko'rinadi.
+
+**Davomat** guruhlar bo'yicha bo'linadi: har bir talaba o'z guruhida. Zoom'dagi ismi hech bir guruh talabasiga mos kelmagan qatnashchi **"Guruhi aniqlanmagan"** bo'limiga tushadi (ma'ruzada tizim yangi talabani o'zi yaratmaydi — qaysi guruhga tegishli ekani noma'lum). Uning guruhini tanlang — u shu guruhga qo'shiladi va keyingi darslarda avtomatik taniladi. Guruhlarning amaliy darslari o'tgani sari talabalar ismlari eslab qolinadi, shuning uchun aniqlanmaganlar odatda kamayib boradi.
+
+Semestr hisobotida ma'ruza va amaliy darslardagi qatnashuv **alohida ustunlarda** ko'rsatiladi (saytda va Excel'da).
 
 ### Kalendar va haftalik darslar
 
@@ -107,7 +117,9 @@ Qatnashuv dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Tala
 
 > O'zlashtirish taxmini faqat Zoom'dagi qatnashuvdan hisoblanadi — bu baho emas. Mezonni Administrator **Umumiy sozlamalar** da belgilaydi.
 
-**Davr bo'yicha** — tanlangan sanalar oralig'idagi umumiy ko'rsatkichlar: o'qituvchilar va guruhlar kesimida darslar soni, o'tkazilmagan va kech boshlangan darslar, o'qituvchilarning o'rtacha kechikishi. **Darslar** sahifasidagi filtrlangan ro'yxat ham Excel'ga yuklanadi.
+Ma'ruzalar bo'lsa, guruh hisobotida **Ma'ruza** va **Amaliy** ustunlari qo'shiladi: talaba nechta ma'ruza va nechta amaliy darsda qatnashgani va foizi. Ma'ruza unga qo'shilgan har bir guruh hisobotida hisoblanadi, lekin har guruhda faqat shu guruh talabalari.
+
+**Davr bo'yicha** — tanlangan sanalar oralig'idagi umumiy ko'rsatkichlar (shundan nechtasi ma'ruza): o'qituvchilar va guruhlar kesimida darslar soni, o'tkazilmagan va kech boshlangan darslar, o'qituvchilarning o'rtacha kechikishi. **Darslar** sahifasidagi filtrlangan ro'yxat ham Excel'ga yuklanadi.
 
 ### Guruh talabalari
 
@@ -177,6 +189,10 @@ Semestr sanalari o'zgartirilsa, darslar yangi sanalarga qarab qayta biriktirilad
 - **Darajalar chegarasi** — Sust 30%, Qoniqarli 50%, O'rtacha 65%, Yaxshi 80%, A'lo 90% dan (standart). Hech bir chegaraga yetmagan — Qoniqarsiz.
 
 O'zgartirish barcha semestr hisobotlariga darhol ta'sir qiladi.
+
+**Zoom darslari:**
+
+- **Zoom'ni avtomatik yakunlash, %** — juftlik davomiyligining necha foizida Zoom avtomatik yopilsin. **0** — uzilmaydi; **50** — 80 daqiqalik juftlikda 40-daqiqada; **10** — 8-daqiqada. Masalan, darsning 40 daqiqasi Zoom'da, qolgani Moodle'da topshiriq bo'lsa — 50 kiriting. Yangi yaratiladigan darslar shu davomiylik bilan yaratiladi (dars vaqti va davomat foizi ham shu qismga nisbatan), host vaqtidan keyin ham davom ettirsa, tizim bir daqiqa ichida uchrashuvni yopadi.
 
 **Video yozuvlar:**
 

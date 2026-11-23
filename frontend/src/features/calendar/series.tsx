@@ -1,11 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, CalendarOff, CalendarX2, Repeat, RotateCcw, Trash2 } from 'lucide-react'
+import { AlertTriangle, CalendarOff, CalendarX2, Check, Repeat, RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { dayDate, formatDayMonth, formatTime, formatWeekday, isoDate, weekdayName } from '@/lib/format'
+import { groupsLabel, MAX_LECTURE_GROUPS } from '@/lib/groups'
 import type { LessonOptions, LessonSeries, PlannedLesson } from '@/lib/types'
 import { StaffName } from '@/components/ui/StaffName'
 import { ActionMenu } from '@/components/ui/ActionMenu'
@@ -17,6 +18,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Input, Select } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { Panel } from '@/components/ui/Page'
+import { Switch } from '@/components/ui/Switch'
+import { LectureBadge } from '@/features/lessons/LectureBadge'
 import { useT } from '@/i18n/I18nProvider'
 
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
@@ -76,6 +79,8 @@ export function SeriesModal({ open, onClose, initial }: { open: boolean; onClose
   const { user, config } = useAuth()
   const weekdays = WEEKDAYS.filter((day) => !(config?.closed_weekdays ?? [7]).includes(day))
   const queryClient = useQueryClient()
+  const [lecture, setLecture] = useState(false)
+  const [groupIds, setGroupIds] = useState<number[]>([])
   const [form, setForm] = useState({
     group_id: '',
     weekday: initial?.weekday ?? 1,
@@ -98,7 +103,7 @@ export function SeriesModal({ open, onClose, initial }: { open: boolean; onClose
   const save = useMutation({
     mutationFn: async () =>
       api.post('/api/series', {
-        group_id: form.group_id ? Number(form.group_id) : null,
+        ...(lecture ? { is_lecture: true, group_ids: groupIds } : { group_id: form.group_id ? Number(form.group_id) : null }),
         weekday: form.weekday,
         lesson_slot_id: form.lesson_slot_id ? Number(form.lesson_slot_id) : null,
         zoom_host_id: form.zoom_host_id ? Number(form.zoom_host_id) : null,
@@ -173,20 +178,77 @@ export function SeriesModal({ open, onClose, initial }: { open: boolean; onClose
             </option>
           ))}
         </Select>
-        <Select label={t('Guruh')} value={form.group_id} onChange={(e) => set('group_id', e.target.value)} error={errors.group_id} required>
-          <option value="">{t('Tanlang')}</option>
-          {courses.map((course) => (
-            <optgroup key={course} label={t('{n}-kurs', { n: course })}>
-              {options.data?.groups
-                .filter((group) => group.course === course)
-                .map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-        </Select>
+        {!lecture && (
+          <Select label={t('Guruh')} value={form.group_id} onChange={(e) => set('group_id', e.target.value)} error={errors.group_id} required>
+            <option value="">{t('Tanlang')}</option>
+            {courses.map((course) => (
+              <optgroup key={course} label={t('{n}-kurs', { n: course })}>
+                {options.data?.groups
+                  .filter((group) => group.course === course)
+                  .map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </Select>
+        )}
+        <label className={cn('flex items-start gap-3 text-sm', lecture ? 'sm:col-span-2' : 'sm:self-end sm:pb-2.5')}>
+          <Switch
+            checked={lecture}
+            onChange={(value) => {
+              setLecture(value)
+              setGroupIds(value && form.group_id ? [Number(form.group_id)] : [])
+              if (!value && groupIds[0]) set('group_id', String(groupIds[0]))
+            }}
+            label={t('Maʼruza')}
+          />
+          <span>
+            <span className="block font-medium text-ink-900">{t('Maʼruza')}</span>
+            <span className="block text-steel-600">{t('Bir nechta guruh birga')}</span>
+          </span>
+        </label>
+        {lecture && (
+          <fieldset className="sm:col-span-2">
+            <legend className="mb-1.5 text-sm font-medium text-ink-800">
+              {t('Guruhlar')} <span className="font-normal text-steel-500">({t('koʻpi bilan {max} ta', { max: MAX_LECTURE_GROUPS })})</span>
+            </legend>
+            <div className="max-h-56 space-y-3 overflow-y-auto rounded-field p-3 ring-1 ring-steel-200 ring-inset">
+              {courses.map((course) => (
+                <div key={course}>
+                  <p className="mb-1.5 text-xs font-medium text-steel-500">{t('{n}-kurs', { n: course })}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {options.data?.groups
+                      .filter((group) => group.course === course)
+                      .map((group) => {
+                        const active = groupIds.includes(group.id)
+                        return (
+                          <button
+                            key={group.id}
+                            type="button"
+                            role="checkbox"
+                            aria-checked={active}
+                            disabled={!active && groupIds.length >= MAX_LECTURE_GROUPS}
+                            onClick={() => setGroupIds((current) => (active ? current.filter((id) => id !== group.id) : [...current, group.id]))}
+                            className={cn(
+                              'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                              active ? 'bg-azure-500 text-white' : 'bg-white text-ink-800 ring-1 ring-steel-200 ring-inset hover:ring-steel-300',
+                            )}
+                          >
+                            {active && <Check className="size-3.5" strokeWidth={3} aria-hidden />}
+                            {group.name}
+                          </button>
+                        )
+                      })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {groupIds.length > 0 && <p className="mt-1.5 text-sm text-steel-600">{t('Tanlangan: {count} ta guruh', { count: groupIds.length })}</p>}
+            {(errors.group_ids ?? errors.group_id) && <p className="mt-1.5 text-sm text-onair-600">{errors.group_ids ?? errors.group_id}</p>}
+          </fieldset>
+        )}
         <Select
           wrapperClassName="sm:col-span-2"
           label={t('Zoom host')}
@@ -254,7 +316,7 @@ export function PlannedModal({ item, onClose, leadMinutes }: { item: PlannedLess
       <Modal
         open={!!item && !confirmStop}
         onClose={onClose}
-        title={item.group.name}
+        title={item.is_lecture ? `${t('Maʼruza')}: ${groupsLabel(item)}` : item.group.name}
         description={`${capital(formatWeekday(day))}, ${formatDayMonth(day)}. ${item.slot.name}, ${formatTime(item.starts_at)}–${formatTime(item.ends_at)}`}
         footer={
           item.can_cancel ? (
@@ -295,7 +357,7 @@ export function PlannedModal({ item, onClose, leadMinutes }: { item: PlannedLess
             </>
           )}
           <dt className="text-steel-600">{t('Mavzu')}</dt>
-          <dd className="text-ink-900">{item.topic || t('Guruh nomi')}</dd>
+          <dd className="text-ink-900">{item.topic || (item.is_lecture ? t('Maʼruza va guruhlar nomi') : t('Guruh nomi'))}</dd>
           <dt className="text-steel-600">{t('Holat')}</dt>
           <dd>
             {item.skipped ? (
@@ -380,7 +442,10 @@ export function SeriesList({ params, onAdd }: { params: Record<string, string>; 
                 </p>
               </div>
               <div className="min-w-0 flex-1 text-sm">
-                <p className="font-medium text-ink-900">{item.group.name}</p>
+                <p className="flex flex-wrap items-center gap-2 font-medium text-ink-900">
+                  {groupsLabel(item)}
+                  {item.is_lecture && <LectureBadge />}
+                </p>
                 <p className="text-steel-600">
                   {canViewAll && (
                     <>

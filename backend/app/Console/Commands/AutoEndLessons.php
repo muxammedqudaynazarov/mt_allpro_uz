@@ -38,7 +38,7 @@ class AutoEndLessons extends Command
                 }
                 $tracker->markEnded($lesson, now());
                 $lesson->save();
-                Audit::log('lesson.auto_ended', 'Zoom avtomatik yakunlandi: :group', $lesson, replace: ['group' => $lesson->group?->name]);
+                Audit::log('lesson.auto_ended', 'Zoom avtomatik yakunlandi: :group', $lesson, replace: ['group' => $lesson->groupsLabel()]);
                 $this->info("Yakunlandi: #{$lesson->id}");
             } catch (Throwable $e) {
                 // Keyingi daqiqada qayta urinadi.

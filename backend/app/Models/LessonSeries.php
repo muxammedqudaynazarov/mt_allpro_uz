@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Har haftalik takroriy dars: shu hafta kuni, shu juftlikda.
@@ -23,9 +26,13 @@ class LessonSeries extends Model
     /** Zoom uchrashuvi dars boshlanishidan shuncha daqiqa oldin yaratiladi. */
     public const LEAD_MINUTES = 60;
 
+    private const PIVOT = 'lesson_series_group';
+
+    private const PIVOT_KEY = 'lesson_series_id';
+
     protected $table = 'lesson_series';
 
-    protected $fillable = ['user_id', 'group_id', 'lesson_slot_id', 'zoom_host_id', 'weekday', 'topic', 'starts_on', 'ends_on', 'is_active'];
+    protected $fillable = ['user_id', 'group_id', 'lesson_slot_id', 'zoom_host_id', 'weekday', 'topic', 'is_lecture', 'starts_on', 'ends_on', 'is_active'];
 
     protected function casts(): array
     {
@@ -34,6 +41,7 @@ class LessonSeries extends Model
             'starts_on' => 'date',
             'ends_on' => 'date',
             'is_active' => 'boolean',
+            'is_lecture' => 'boolean',
             'cancelled_at' => 'datetime',
             'last_error_on' => 'date',
         ];
@@ -47,6 +55,18 @@ class LessonSeries extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class)->withTrashed();
+    }
+
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, self::PIVOT)->withTrashed();
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (LessonSeries $series) {
+            DB::table(self::PIVOT)->insertOrIgnore([self::PIVOT_KEY => $series->id, 'group_id' => $series->group_id]);
+        });
     }
 
     public function slot(): BelongsTo
@@ -67,6 +87,51 @@ class LessonSeries extends Model
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class);
+    }
+
+    /**
+     * Haftalik darsning barcha guruhlari (ma'ruzada — bir nechta).
+     *
+     * @return Collection<int, Group>
+     */
+    public function groupList(): Collection
+    {
+        if (! $this->is_lecture) {
+            return collect([$this->group]);
+        }
+        $groups = $this->relationLoaded('groups') ? $this->groups : $this->groups()->get();
+
+        return ($groups->isEmpty() ? collect([$this->group]) : $groups)->sortBy(fn (Group $group) => sprintf('%03d|%s', $group->course, mb_strtolower($group->name)))->values();
+    }
+
+    /** @return list<int> */
+    public function groupIds(): array
+    {
+        return $this->groupList()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+    }
+
+    /** Guruh nomlari: "101, 102, 103". */
+    public function groupsLabel(): string
+    {
+        return $this->groupList()->pluck('name')->implode(', ');
+    }
+
+    /** Shu guruhning haftalik darslari (ma'ruzalar ham). */
+    public function scopeForGroup(Builder $query, int $groupId): Builder
+    {
+        $table = $this->getTable();
+
+        return $query->where(fn (Builder $q) => $q
+            ->where($table.'.group_id', $groupId)
+            ->orWhereIn($table.'.id', fn ($sub) => $sub->select(self::PIVOT_KEY)->from(self::PIVOT)->where('group_id', $groupId)));
+    }
+
+    /** Guruhlarni saqlaydi; birinchisi — asosiy (group_id). */
+    public function syncGroups(iterable $groupIds): void
+    {
+        $ids = collect($groupIds)->map(fn ($id) => (int) $id)->push((int) $this->group_id)->unique()->values()->all();
+        $this->groups()->sync($ids);
+        $this->unsetRelation('groups');
     }
 
     public function scopeActive(Builder $query): Builder

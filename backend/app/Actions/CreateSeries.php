@@ -15,13 +15,20 @@ use Illuminate\Validation\ValidationException;
 /** Har haftalik darsni ro'yxatga oladi (Zoom uchrashuvi dars kuni yaratiladi). */
 class CreateSeries
 {
-    public function handle(User $teacher, Group $group, LessonSlot $slot, int $weekday, ?ZoomHost $host, ?string $topic, Carbon $startsOn, ?Carbon $endsOn, User $actor): LessonSeries
+    /** @param  Group|iterable<Group>  $groups  guruh; ma'ruzada — bir nechta (birinchisi asosiy) */
+    public function handle(User $teacher, Group|iterable $groups, LessonSlot $slot, int $weekday, ?ZoomHost $host, ?string $topic, Carbon $startsOn, ?Carbon $endsOn, User $actor, bool $lecture = false): LessonSeries
     {
+        $groups = CreateLesson::normalizeGroups($groups, $lecture);
+        $group = $groups->first();
         if (LessonDays::isClosedWeekday($weekday)) {
             throw ValidationException::withMessages(['weekday' => LessonDays::closedMessage($weekday)]);
         }
-        if (! $group->is_active) {
-            throw ValidationException::withMessages(['group_id' => __('Bu guruh nofaol — unga dars yaratib boʻlmaydi.')]);
+        foreach ($groups as $item) {
+            if (! $item->is_active) {
+                throw ValidationException::withMessages(['group_id' => $groups->count() > 1
+                    ? __(':group guruhi nofaol — unga dars yaratib boʻlmaydi.', ['group' => $item->name])
+                    : __('Bu guruh nofaol — unga dars yaratib boʻlmaydi.')]);
+            }
         }
         if ($startsOn->lt(today())) {
             throw ValidationException::withMessages(['starts_on' => __('Boshlanish sanasi bugundan oldin boʻlishi mumkin emas.')]);
@@ -33,8 +40,12 @@ class CreateSeries
         $same = LessonSeries::query()->active()->where('weekday', $weekday)->where('lesson_slot_id', $slot->id)
             ->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', $startsOn))
             ->when($endsOn, fn ($q) => $q->whereDate('starts_on', '<=', $endsOn));
-        if ((clone $same)->where('group_id', $group->id)->exists()) {
-            throw ValidationException::withMessages(['group_id' => __('Bu guruhda shu kuni va juftlikda haftalik dars allaqachon bor.')]);
+        foreach ($groups as $item) {
+            if ((clone $same)->forGroup($item->id)->exists()) {
+                throw ValidationException::withMessages(['group_id' => $groups->count() > 1
+                    ? __(':group guruhida shu kuni va juftlikda haftalik dars allaqachon bor.', ['group' => $item->name])
+                    : __('Bu guruhda shu kuni va juftlikda haftalik dars allaqachon bor.')]);
+            }
         }
         if ((clone $same)->where('user_id', $teacher->id)->exists()) {
             throw ValidationException::withMessages(['lesson_slot_id' => __('Oʻqituvchida shu kuni va juftlikda boshqa haftalik dars bor.')]);
@@ -47,12 +58,19 @@ class CreateSeries
             'zoom_host_id' => $host?->id,
             'weekday' => $weekday,
             'topic' => filled($topic) ? trim($topic) : null,
+            'is_lecture' => $lecture,
             'starts_on' => $startsOn->toDateString(),
             'ends_on' => $endsOn?->toDateString(),
         ]);
 
-        Audit::log('series.created', 'Haftalik dars qoʻshildi: :group, :day :time', $series, ['teacher_id' => $teacher->id], $actor, [
-            'group' => $group->name,
+        if ($lecture) {
+            $series->syncGroups($groups->pluck('id'));
+        }
+        $series->setRelation('group', $group);
+        $series->setRelation('groups', $groups);
+
+        Audit::log('series.created', $lecture ? 'Haftalik maʼruza qoʻshildi: :group, :day :time' : 'Haftalik dars qoʻshildi: :group, :day :time', $series, ['teacher_id' => $teacher->id], $actor, [
+            'group' => $groups->pluck('name')->implode(', '),
             'day' => self::weekdayName($weekday),
             'time' => $slot->starts_at,
         ]);

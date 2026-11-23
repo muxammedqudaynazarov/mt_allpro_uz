@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import type { Lesson } from '@/lib/types'
 import { copyText, telegramShareUrl, useLessonActions } from './useLessonActions'
 import { useT } from '@/i18n/I18nProvider'
+import { groupsLabel } from '@/lib/groups'
 
 export function LessonActions({ lesson, compact = false }: { lesson: Lesson; compact?: boolean }) {
   const t = useT()
@@ -49,7 +50,11 @@ export function LessonActions({ lesson, compact = false }: { lesson: Lesson; com
       <ConfirmDialog
         open={confirmEnd}
         title={t('Darsni yakunlaysizmi?')}
-        description={t('{group} guruhidagi Zoom uchrashuvi barcha ishtirokchilar uchun yopiladi. Bu amalni ortga qaytarib boʻlmaydi.', { group: lesson.group.name })}
+        description={
+          lesson.is_lecture
+            ? t('Maʼruzaning ({groups}) Zoom uchrashuvi barcha ishtirokchilar uchun yopiladi. Bu amalni ortga qaytarib boʻlmaydi.', { groups: groupsLabel(lesson) })
+            : t('{group} guruhidagi Zoom uchrashuvi barcha ishtirokchilar uchun yopiladi. Bu amalni ortga qaytarib boʻlmaydi.', { group: lesson.group.name })
+        }
         confirmLabel={t('Darsni yakunlash')}
         tone="danger"
         loading={end.isPending}

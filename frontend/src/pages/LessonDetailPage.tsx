@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Download, RefreshCw, UserRoundX, Users } from 'lucide-react'
@@ -6,7 +6,8 @@ import { toast } from 'sonner'
 import { withBase } from '@/lib/base'
 import { api, errorMessage, isStatus } from '@/lib/api'
 import { formatDuration, formatLongToday, formatTime } from '@/lib/format'
-import type { AttendanceRow, LessonAttendance } from '@/lib/types'
+import { groupsLabel } from '@/lib/groups'
+import type { AttendanceRow, GroupRef, LessonAttendance, UnassignedParticipant } from '@/lib/types'
 import { StaffName } from '@/components/ui/StaffName'
 import { Button, buttonClass } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
@@ -14,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
+import { LectureBadge } from '@/features/lessons/LectureBadge'
 import { LessonActions } from '@/features/lessons/LessonActions'
 import { LiveParticipantsPanel } from '@/features/lessons/LiveParticipants'
 import { LessonRecordings } from '@/features/recordings/LessonRecordings'
@@ -85,6 +87,81 @@ function StudentRow({ row, from, to, muted = false }: { row: AttendanceRow; from
   )
 }
 
+/** Ma'ruza: guruhi aniqlanmagan qatnashchi — o'qituvchi guruhini tanlaydi. */
+function UnassignedRow({
+  row,
+  from,
+  to,
+  groups,
+  pending,
+  onAssign,
+}: {
+  row: UnassignedParticipant
+  from: number
+  to: number
+  groups: GroupRef[]
+  pending: boolean
+  onAssign: (groupId: number) => void
+}) {
+  const t = useT()
+  const otherNames = row.names.filter((name) => name !== row.name)
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-5 py-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_5.5rem_8.5rem]">
+      <div className="min-w-0">
+        <p className="font-medium break-words text-ink-900 md:truncate" title={row.name}>
+          {row.name}
+        </p>
+        <p className="truncate text-sm text-steel-500" title={otherNames.join(', ')}>
+          {formatDuration(row.minutes)}
+          {row.percent !== null && `, ${row.percent}%`}
+          {otherNames.length > 0 && `. ${t('Zoom’da: {names}', { names: otherNames.join(', ') })}`}
+        </p>
+      </div>
+      <PresenceStrip
+        from={from}
+        to={to}
+        segments={row.segments}
+        tone="steel"
+        label={t('{name} darsda boʻlgan vaqt', { name: row.name })}
+        className="order-last col-span-2 md:order-none md:col-span-1"
+      />
+      <p className="hidden text-sm text-steel-600 tabular-nums md:block">{row.first_joined_at ? formatTime(row.first_joined_at) : '—'}</p>
+      <select
+        value=""
+        disabled={pending}
+        onChange={(event) => event.target.value && onAssign(Number(event.target.value))}
+        aria-label={t('{name} qaysi guruh talabasi', { name: row.name })}
+        className="h-9 w-36 min-w-0 rounded-field bg-white px-2.5 text-sm md:w-full text-ink-800 ring-1 ring-steel-200 ring-inset focus-visible:ring-2 focus-visible:ring-azure-500 focus-visible:outline-none disabled:opacity-60"
+      >
+        <option value="">{t('Guruhini tanlang')}</option>
+        {groups.map((group) => (
+          <option key={group.id} value={group.id}>
+            {group.name}
+          </option>
+        ))}
+      </select>
+    </li>
+  )
+}
+
+/** Ma'ruzada talabalar guruhlar bo'yicha: guruh sarlavhasi va uning talabalari. */
+function GroupHeading({ group, count, link }: { group: GroupRef; count: number; link: boolean }) {
+  const t = useT()
+  return (
+    <li className="flex items-center justify-between gap-3 bg-mist/70 px-5 py-2 text-sm">
+      <span className="font-semibold text-ink-900">
+        {group.name}
+        <span className="ml-2 font-normal text-steel-600">{t('{count} talaba', { count })}</span>
+      </span>
+      {link && (
+        <Link to={`/groups/${group.id}/students`} className="text-azure-600 hover:underline">
+          {t('Guruh talabalari')}
+        </Link>
+      )}
+    </li>
+  )
+}
+
 export default function LessonDetailPage() {
   const t = useT()
   const { id } = useParams()
@@ -99,6 +176,17 @@ export default function LessonDetailPage() {
       const tracking = q.state.data?.lesson.tracking
       return tracking && (tracking.state === 'started' || tracking.state === 'waiting' || (tracking.state === 'ended' && !tracking.synced)) ? 30_000 : false
     },
+  })
+
+  const assign = useMutation({
+    mutationFn: async ({ key, group_id }: { key: string; group_id: number }) =>
+      (await api.post<{ data: LessonAttendance }>(`/api/lessons/${id}/attendance/assign`, { key, group_id })).data.data,
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['lesson-attendance', id], data)
+      const group = data.groups.find((item) => item.id === variables.group_id)
+      toast.success(t('{group} guruhiga biriktirildi', { group: group?.name ?? '' }))
+    },
+    onError: (error) => toast.error(errorMessage(error)),
   })
 
   const sync = useMutation({
@@ -127,6 +215,9 @@ export default function LessonDetailPage() {
   const delay = startDelay(t, tracking.start_delay_minutes)
   const counted = students.filter((row) => !row.ignored)
   const ignored = students.filter((row) => row.ignored)
+  // Ma'ruza (bir nechta guruh): talabalar guruhlar bo'yicha bo'linadi.
+  const byGroups = lesson.is_lecture && data.groups.length > 1
+  const unassigned = data.unassigned ?? []
   const finished = lesson.status === 'finished' || tracking.state === 'ended' || tracking.state === 'missed'
   const canSync = finished && tracking.state !== 'started'
 
@@ -158,11 +249,13 @@ export default function LessonDetailPage() {
       label: t('Qatnashdi'),
       value: tracking.synced && tracking.state === 'ended' ? t('{count} talaba', { count: counted.length }) : '—',
       note:
-        counted.length > 0
-          ? t('Oʻrtacha {time}', {
-              time: formatDuration(counted.reduce((sum, row) => sum + row.minutes, 0) / counted.length),
-            })
-          : null,
+        byGroups && unassigned.length > 0 ? (
+          <span className="text-amber-600">{t('Yana {count} nafarining guruhi aniqlanmagan', { count: unassigned.length })}</span>
+        ) : counted.length > 0 ? (
+          t('Oʻrtacha {time}', {
+            time: formatDuration(counted.reduce((sum, row) => sum + row.minutes, 0) / counted.length),
+          })
+        ) : null,
     },
   ]
 
@@ -197,7 +290,8 @@ export default function LessonDetailPage() {
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
-            {lesson.group.name}
+            {groupsLabel(lesson)}
+            {lesson.is_lecture && <LectureBadge />}
             <LessonStatusBadge status={lesson.status} />
           </span>
         }
@@ -253,7 +347,7 @@ export default function LessonDetailPage() {
           title={t('Talabalar')}
           actions={
             <div className="flex items-center gap-3">
-              {data.can_manage_students && (
+              {data.can_manage_students && !byGroups && (
                 <Link to={`/groups/${lesson.group.id}/students`} className="text-sm text-azure-600 hover:underline">
                   {t('Guruh talabalari')}
                 </Link>
@@ -261,7 +355,7 @@ export default function LessonDetailPage() {
             </div>
           }
         >
-          {students.length === 0 ? (
+          {students.length === 0 && unassigned.length === 0 ? (
             <EmptyState icon={<UserRoundX className="size-5" />} title={t('Darsga talabalar kirmagan')} description={t('Zoom hisobotida hostdan boshqa qatnashchi yoʻq.')} />
           ) : (
             <>
@@ -305,10 +399,45 @@ export default function LessonDetailPage() {
                     <span className="hidden md:block" />
                   </li>
                 )}
-                {counted.map((row) => (
-                  <StudentRow key={row.student_id} row={row} from={from} to={to} />
-                ))}
+                {byGroups
+                  ? data.groups.map((group) => {
+                      const rows = counted.filter((row) => row.group_id === group.id)
+                      return (
+                        <Fragment key={group.id}>
+                          <GroupHeading group={group} count={rows.length} link={data.can_manage_students} />
+                          {rows.map((row) => (
+                            <StudentRow key={row.student_id} row={row} from={from} to={to} />
+                          ))}
+                        </Fragment>
+                      )
+                    })
+                  : counted.map((row) => <StudentRow key={row.student_id} row={row} from={from} to={to} />)}
               </ul>
+              {byGroups && unassigned.length > 0 && (
+                <section className="border-t border-steel-100" aria-labelledby="unassigned-title">
+                  <div className="bg-amber-50 px-5 py-3">
+                    <h3 id="unassigned-title" className="text-sm font-semibold text-ink-900">
+                      {t('Guruhi aniqlanmagan: {count}', { count: unassigned.length })}
+                    </h3>
+                    <p className="mt-0.5 text-sm text-steel-700">
+                      {t('Zoom’dagi ismi hech bir guruh talabasiga mos kelmadi. Guruhini tanlang — keyingi darslarda avtomatik taniladi.')}
+                    </p>
+                  </div>
+                  <ul className="divide-y divide-steel-100">
+                    {unassigned.map((row) => (
+                      <UnassignedRow
+                        key={row.key}
+                        row={row}
+                        from={from}
+                        to={to}
+                        groups={data.groups}
+                        pending={assign.isPending && assign.variables?.key === row.key}
+                        onAssign={(groupId) => assign.mutate({ key: row.key, group_id: groupId })}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              )}
               {ignored.length > 0 && (
                 <details className="border-t border-steel-100">
                   <summary className="cursor-pointer px-5 py-3 text-sm text-steel-600 hover:text-ink-900">
@@ -328,7 +457,7 @@ export default function LessonDetailPage() {
         </Panel>
       )}
 
-      {data.can_manage_students && !(tracking.synced && tracking.state === 'ended') && (
+      {data.can_manage_students && !byGroups && !(tracking.synced && tracking.state === 'ended') && (
         <Link to={`/groups/${lesson.group.id}/students`} className={cn(buttonClass({ variant: 'quiet' }), 'mt-2')}>
           <Users className="size-4" />
           {t('Guruh talabalari')}

@@ -18,6 +18,7 @@ use App\Support\Notifier;
 use App\Support\ZoomAutoEnd;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
@@ -33,41 +34,47 @@ class CreateLesson
     public function __construct(private readonly ZoomClient $zoom, private readonly Notifier $notifier) {}
 
     /**
+     * @param  Group|iterable<Group>  $groups  dars guruhi; ma'ruzada — bir nechta guruh (birinchisi asosiy)
      * @param  ZoomHost|null  $host  o'qituvchi tanlagan host; ko'rsatilmasa — birinchi bo'sh host
      * @param  Carbon|null  $date  boshqa kun uchun (kalendar); ko'rsatilmasa — bugun
-     */
-    /**
      * @param  bool  $allowStartedSlot  faqat haftalik darsni avtomatik yaratish (MaterializeSeries) uchun: server
      *                                  kechiksa ham boshlangan juftlikka yaratiladi — talabalar havolani oladi.
      *                                  Qo'lda (forma, "Har hafta takrorlash" bilan ham) — boshlangan juftlik yopiq.
+     * @param  bool  $lecture  ma'ruza: bir uchrashuvda bir nechta guruh, hisobotda alohida
      */
-    public function handle(User $teacher, Group $group, ?LessonSlot $slot, ?string $topic, ?ZoomHost $host = null, ?Carbon $date = null, ?int $seriesId = null, bool $allowStartedSlot = false): Lesson
+    public function handle(User $teacher, Group|iterable $groups, ?LessonSlot $slot, ?string $topic, ?ZoomHost $host = null, ?Carbon $date = null, ?int $seriesId = null, bool $allowStartedSlot = false, bool $lecture = false): Lesson
     {
+        $groups = self::normalizeGroups($groups, $lecture);
         [$startsAt, $endsAt] = self::window($slot, null, $date, allowStarted: $allowStartedSlot);
 
-        if (! $group->is_active) {
-            throw ValidationException::withMessages(['group_id' => __('Bu guruh nofaol — unga dars yaratib boʻlmaydi.')]);
+        foreach ($groups as $group) {
+            if (! $group->is_active) {
+                throw ValidationException::withMessages(['group_id' => $groups->count() > 1
+                    ? __(':group guruhi nofaol — unga dars yaratib boʻlmaydi.', ['group' => $group->name])
+                    : __('Bu guruh nofaol — unga dars yaratib boʻlmaydi.')]);
+            }
         }
         if ($host && (! $host->is_active || ! $host->zoomAccount?->is_active)) {
             throw ValidationException::withMessages(['host_id' => __('Tanlangan Zoom host nofaol.')]);
         }
 
-        self::assertGroupFree($group, $startsAt, $endsAt);
+        self::assertGroupsFree($groups, $startsAt, $endsAt);
 
         // Ikki o'qituvchi bir guruhga turli hostlar bilan bir vaqtda dars yaratsa — ikkinchisi
         // guruh bandligini birinchisi tugagach ko'radi (host qulfi buni to'smaydi).
-        $lock = Cache::lock('lesson-create:group:'.$group->id, 60);
+        // Ma'ruzada barcha guruhlar qulflanadi — doim ID tartibida, shuning uchun bir-birini kutib qolmaydi.
+        $keys = $groups->pluck('id')->sort()->map(fn (int $id) => 'lesson-create:group:'.$id)->values()->all();
         try {
-            return $lock->block(self::lockWait(), function () use ($teacher, $group, $slot, $topic, $host, $startsAt, $endsAt, $seriesId) {
-                self::assertGroupFree($group, $startsAt, $endsAt);
+            return self::withLocks($keys, function () use ($teacher, $groups, $slot, $topic, $host, $startsAt, $endsAt, $seriesId, $lecture) {
+                self::assertGroupsFree($groups, $startsAt, $endsAt);
 
-                $candidates = $host ? collect([$host]) : HostAvailability::free($startsAt, $endsAt, $group);
+                $candidates = $host ? collect([$host]) : HostAvailability::free($startsAt, $endsAt, $groups->first());
                 if ($candidates->isEmpty()) {
                     throw ValidationException::withMessages(['host_id' => __('Bu vaqtda boʻsh Zoom host yoʻq. Boshqa vaqtni tanlang.')]);
                 }
 
                 foreach ($candidates as $candidate) {
-                    $lesson = $this->tryHost($candidate, explicit: $host !== null, teacher: $teacher, group: $group, slot: $slot, topic: $topic, startsAt: $startsAt, endsAt: $endsAt, seriesId: $seriesId);
+                    $lesson = $this->tryHost($candidate, explicit: $host !== null, teacher: $teacher, groups: $groups, slot: $slot, topic: $topic, startsAt: $startsAt, endsAt: $endsAt, seriesId: $seriesId, lecture: $lecture);
                     if ($lesson) {
                         return $lesson;
                     }
@@ -78,6 +85,41 @@ class CreateLesson
         } catch (LockTimeoutException) {
             throw new ExternalServiceException(__('Bu guruhga hozir boshqa dars yaratilmoqda. Bir necha soniyadan soʻng qayta urinib koʻring.'), status: 409);
         }
+    }
+
+    /**
+     * @param  Group|iterable<Group>  $groups
+     * @return Collection<int, Group>
+     */
+    public static function normalizeGroups(Group|iterable $groups, bool $lecture): Collection
+    {
+        $list = collect($groups instanceof Group ? [$groups] : $groups)->unique(fn (Group $group) => $group->id)->values();
+        if ($list->isEmpty()) {
+            throw ValidationException::withMessages(['group_id' => __('Guruhni tanlang.')]);
+        }
+        if (! $lecture && $list->count() > 1) {
+            throw ValidationException::withMessages(['group_id' => __('Bir nechta guruh faqat maʼruzada tanlanadi.')]);
+        }
+        if ($list->count() > Lesson::MAX_LECTURE_GROUPS) {
+            throw ValidationException::withMessages(['group_id' => __('Maʼruzaga koʻpi bilan :max ta guruh qoʻshiladi.', ['max' => Lesson::MAX_LECTURE_GROUPS])]);
+        }
+
+        return $list;
+    }
+
+    /**
+     * Qulflarni berilgan tartibda olib, $callback'ni bajaradi.
+     *
+     * @param  list<string>  $keys
+     */
+    private static function withLocks(array $keys, \Closure $callback): mixed
+    {
+        if (! $keys) {
+            return $callback();
+        }
+        $key = array_shift($keys);
+
+        return Cache::lock($key, 60)->block(self::lockWait(), fn () => self::withLocks($keys, $callback));
     }
 
     /** Qulfni kutish vaqti, soniya. */
@@ -91,12 +133,15 @@ class CreateLesson
      * o'tkaza oladi: ikki o'qituvchi bir vaqtda bitta hostni tanlasa, ikkinchisi band
      * xabarini oladi (yoki avtomatik tanlovda keyingi bo'sh hostga o'tadi).
      */
-    private function tryHost(ZoomHost $host, bool $explicit, User $teacher, Group $group, ?LessonSlot $slot, ?string $topic, Carbon $startsAt, Carbon $endsAt, ?int $seriesId): ?Lesson
+    /** @param  Collection<int, Group>  $groups */
+    private function tryHost(ZoomHost $host, bool $explicit, User $teacher, Collection $groups, ?LessonSlot $slot, ?string $topic, Carbon $startsAt, Carbon $endsAt, ?int $seriesId, bool $lecture): ?Lesson
     {
         $lock = Cache::lock('lesson-create:host:'.$host->id, 30);
+        $group = $groups->first();
+        $names = $groups->pluck('name')->implode(', ');
 
         try {
-            return $lock->block(self::lockWait(), function () use ($host, $explicit, $teacher, $group, $slot, $topic, $startsAt, $endsAt, $seriesId) {
+            return $lock->block(self::lockWait(), function () use ($host, $explicit, $teacher, $groups, $group, $names, $slot, $topic, $startsAt, $endsAt, $seriesId, $lecture) {
                 if (self::hostConflict($host, $startsAt, $endsAt)) {
                     if ($explicit) {
                         throw ValidationException::withMessages(['host_id' => __('Zoom host (:email) shu vaqtda boshqa darsda band.', ['email' => $host->email])]);
@@ -106,7 +151,7 @@ class CreateLesson
                 }
 
                 $account = $host->zoomAccount;
-                $title = trim((string) $topic) !== '' ? trim((string) $topic) : $group->name;
+                $title = trim((string) $topic) !== '' ? trim((string) $topic) : ($lecture ? __('Maʼruza').': '.$names : $group->name);
                 $passcode = (string) random_int(100000, 999999);
                 $duration = max(10, (int) ceil($startsAt->diffInMinutes($endsAt)));
 
@@ -127,15 +172,20 @@ class CreateLesson
                     'passcode' => $meeting['password'] ?: $passcode,
                     'record_cloud' => $record,
                     'auto_end' => ZoomAutoEnd::enabled(),
+                    'is_lecture' => $lecture,
                     'status' => $startsAt->isFuture() ? LessonStatus::Scheduled : LessonStatus::Live,
                     'starts_at' => $startsAt,
                     'ends_at' => $endsAt,
                 ]);
 
+                if ($lecture) {
+                    $lesson->syncGroups($groups->pluck('id'));
+                }
                 $lesson->setRelation('group', $group);
+                $lesson->setRelation('groups', $groups);
                 $lesson->setRelation('teacher', $teacher);
 
-                Audit::log('lesson.created', 'Dars yaratildi: :group, :time', $lesson, ['zoom_meeting_id' => $meeting['id'], 'host' => $host->email], $teacher, ['group' => $group->name, 'time' => $startsAt->format('d.m.Y H:i')]);
+                Audit::log('lesson.created', $lecture ? 'Maʼruza yaratildi: :group, :time' : 'Dars yaratildi: :group, :time', $lesson, ['zoom_meeting_id' => $meeting['id'], 'host' => $host->email, 'groups' => $groups->pluck('id')->all()], $teacher, ['group' => $names, 'time' => $startsAt->format('d.m.Y H:i')]);
                 $this->notifier->lessonCreated($lesson);
 
                 return $lesson;
@@ -189,18 +239,24 @@ class CreateLesson
         return [$start->greaterThan($now) ? $start : $now, $end];
     }
 
-    /** Guruhda shu oraliqda boshqa dars bo'lsa — o'sha dars. */
+    /** Guruhda (ma'ruzalarni ham hisobga olib) shu oraliqda boshqa dars bo'lsa — o'sha dars. */
     public static function groupConflict(Group $group, Carbon $from, Carbon $to): ?Lesson
     {
-        return Lesson::query()->overlapping($from, $to)->where('group_id', $group->id)->orderByDesc('ends_at')->first();
+        return Lesson::query()->overlapping($from, $to)->forGroup($group->id)->orderByDesc('ends_at')->first();
     }
 
-    private static function assertGroupFree(Group $group, Carbon $from, Carbon $to): void
+    /** @param  Collection<int, Group>  $groups */
+    private static function assertGroupsFree(Collection $groups, Carbon $from, Carbon $to): void
     {
-        if ($conflict = self::groupConflict($group, $from, $to)) {
-            throw ValidationException::withMessages([
-                'group_id' => __('Bu guruhda :from–:to oraligʻida boshqa dars bor.', ['from' => $conflict->starts_at->format('H:i'), 'to' => $conflict->ends_at->format('H:i')]),
-            ]);
+        foreach ($groups as $group) {
+            if ($conflict = self::groupConflict($group, $from, $to)) {
+                $times = ['from' => $conflict->starts_at->format('H:i'), 'to' => $conflict->ends_at->format('H:i')];
+                throw ValidationException::withMessages([
+                    'group_id' => $groups->count() > 1
+                        ? __(':group guruhida :from–:to oraligʻida boshqa dars bor.', [...$times, 'group' => $group->name])
+                        : __('Bu guruhda :from–:to oraligʻida boshqa dars bor.', $times),
+                ]);
+            }
         }
     }
 

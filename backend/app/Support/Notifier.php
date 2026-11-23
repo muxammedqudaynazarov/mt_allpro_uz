@@ -30,7 +30,9 @@ class Notifier
         $lines = [
             '<b>'.($lesson->lesson_series_id ? __('Haftalik dars: Zoom uchrashuvi tayyor', [], $l) : __('Dars yaratildi', [], $l)).'</b>',
             '',
-            '<b>'.__('Guruh:', [], $l).'</b> '.e($lesson->group->name),
+            $lesson->is_lecture
+                ? '<b>'.__('Maʼruza, guruhlar:', [], $l).'</b> '.e($lesson->groupsLabel())
+                : '<b>'.__('Guruh:', [], $l).'</b> '.e($lesson->group->name),
             '<b>'.__('Vaqt:', [], $l).'</b> '.$day.', '.$time,
             '<b>'.__('Mavzu:', [], $l).'</b> '.e($lesson->topic),
         ];
@@ -50,7 +52,7 @@ class Notifier
         // Zoom'ning start_url (ZAK) havolasi 2 soatda eskiradi, shuning uchun
         // u to'g'ridan-to'g'ri yuborilmaydi — har bosilganda yangisi olinadi.
         $launch = URL::temporarySignedRoute('lessons.launch', $lesson->ends_at, ['lesson' => $lesson->id]);
-        $share = 'https://t.me/share/url?'.http_build_query(['url' => $lesson->join_url, 'text' => $lesson->group->name.', '.$time]);
+        $share = 'https://t.me/share/url?'.http_build_query(['url' => $lesson->join_url, 'text' => $lesson->groupsLabel().', '.$time]);
 
         SendTelegramMessage::dispatch((string) $teacher->telegram_chat_id, implode("\n", $lines), [
             [['text' => __('Darsni boshlash', [], $l), 'url' => $launch]],
@@ -70,7 +72,9 @@ class Notifier
         $text = implode("\n", [
             '<b>'.__('Haftalik dars yaratilmadi', [], $l).'</b>',
             '',
-            '<b>'.__('Guruh:', [], $l).'</b> '.e($series->group->name),
+            $series->is_lecture
+                ? '<b>'.__('Maʼruza, guruhlar:', [], $l).'</b> '.e($series->groupsLabel())
+                : '<b>'.__('Guruh:', [], $l).'</b> '.e($series->group->name),
             '<b>'.__('Vaqt:', [], $l).'</b> '.__('bugun', [], $l).', '.$time,
             '<b>'.__('Sabab:', [], $l).'</b> '.e($reason),
             '',

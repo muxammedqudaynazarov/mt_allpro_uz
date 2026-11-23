@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\LessonSeries;
+use App\Support\GroupRef;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,9 @@ class LessonSeriesResource extends JsonResource
             'id' => $this->id,
             'weekday' => $this->weekday,
             'topic' => $this->topic,
-            'group' => ['id' => $this->group->id, 'name' => $this->group->name, 'course' => $this->group->course],
+            'group' => GroupRef::make($this->group),
+            'is_lecture' => (bool) $this->is_lecture,
+            'groups' => GroupRef::list($this->groupList()),
             'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->displayName()],
             'slot' => ['id' => $this->slot->id, 'name' => $this->slot->label(), 'starts_at' => $this->slot->starts_at, 'ends_at' => $this->slot->endsAtLabel()],
             'host' => $this->host ? ['id' => $this->host->id, 'name' => $this->host->name, 'email' => $this->host->email] : null,

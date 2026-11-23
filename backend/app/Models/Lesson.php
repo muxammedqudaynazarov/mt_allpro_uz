@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property LessonStatus $status
@@ -34,8 +37,15 @@ class Lesson extends Model
 
     public const ZOOM_MISSED = 'missed';
 
+    /** Ma'ruzaga birga qo'shiladigan guruhlar soni chegarasi. */
+    public const MAX_LECTURE_GROUPS = 6;
+
+    private const PIVOT = 'lesson_group';
+
+    private const PIVOT_KEY = 'lesson_id';
+
     protected $fillable = [
-        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'semester_id', 'zoom_account_id', 'record_cloud', 'auto_end',
+        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'semester_id', 'zoom_account_id', 'record_cloud', 'auto_end', 'is_lecture',
         'zoom_meeting_id', 'zoom_host_email', 'topic', 'join_url', 'start_url', 'passcode',
         'status', 'starts_at', 'ends_at', 'ended_at', 'ended_by_id',
         'zoom_state', 'zoom_started_at', 'zoom_ended_at', 'zoom_minutes', 'zoom_checked_at',
@@ -58,6 +68,7 @@ class Lesson extends Model
             'zoom_checked_at' => 'datetime',
             'record_cloud' => 'boolean',
             'auto_end' => 'boolean',
+            'is_lecture' => 'boolean',
             'recordings_checked_at' => 'datetime',
             'attendance_due_at' => 'datetime',
             'attendance_synced_at' => 'datetime',
@@ -73,6 +84,12 @@ class Lesson extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class)->withTrashed();
+    }
+
+    /** Darsning barcha guruhlari (asosiy guruh ham shu ro'yxatda). */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, self::PIVOT)->withTrashed();
     }
 
     public function slot(): BelongsTo
@@ -97,6 +114,10 @@ class Lesson extends Model
             if (! $lesson->semester_id && $lesson->starts_at) {
                 $lesson->semester_id = Semester::forDate($lesson->starts_at)?->id;
             }
+        });
+        // Asosiy guruh doim guruhlar ro'yxatida bo'ladi (filtrlar va hisobotlar shu jadvaldan).
+        static::created(function (Lesson $lesson) {
+            DB::table(self::PIVOT)->insertOrIgnore([self::PIVOT_KEY => $lesson->id, 'group_id' => $lesson->group_id]);
         });
     }
 
@@ -213,6 +234,51 @@ class Lesson extends Model
     public function scopeVisibleTo(Builder $query, User $viewer): Builder
     {
         return $viewer->canViewAll() ? $query : $query->where('user_id', $viewer->id);
+    }
+
+    /**
+     * Darsning barcha guruhlari (ma'ruzada — bir nechta). Oddiy darsda — faqat o'z guruhi.
+     *
+     * @return Collection<int, Group>
+     */
+    public function groupList(): Collection
+    {
+        if (! $this->is_lecture) {
+            return collect([$this->group]);
+        }
+        $groups = $this->relationLoaded('groups') ? $this->groups : $this->groups()->get();
+
+        return ($groups->isEmpty() ? collect([$this->group]) : $groups)->sortBy(fn (Group $group) => sprintf('%03d|%s', $group->course, mb_strtolower($group->name)))->values();
+    }
+
+    /** @return list<int> */
+    public function groupIds(): array
+    {
+        return $this->groupList()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+    }
+
+    /** Guruh nomlari: "101, 102, 103". */
+    public function groupsLabel(): string
+    {
+        return $this->groupList()->pluck('name')->implode(', ');
+    }
+
+    /** Shu guruhning darslari (ma'ruzalar ham). */
+    public function scopeForGroup(Builder $query, int $groupId): Builder
+    {
+        $table = $this->getTable();
+
+        return $query->where(fn (Builder $q) => $q
+            ->where($table.'.group_id', $groupId)
+            ->orWhereIn($table.'.id', fn ($sub) => $sub->select(self::PIVOT_KEY)->from(self::PIVOT)->where('group_id', $groupId)));
+    }
+
+    /** Guruhlarni saqlaydi; birinchisi — asosiy (group_id). */
+    public function syncGroups(iterable $groupIds): void
+    {
+        $ids = collect($groupIds)->map(fn ($id) => (int) $id)->push((int) $this->group_id)->unique()->values()->all();
+        $this->groups()->sync($ids);
+        $this->unsetRelation('groups');
     }
 
     public function durationMinutes(): int

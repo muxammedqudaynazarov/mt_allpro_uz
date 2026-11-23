@@ -38,7 +38,18 @@ final class SemesterReport
         $presence = $criteria['presence_percent'] / 100;
         $isPresent = fn (LessonAttendance $row) => $lessonSeconds->has($row->lesson_id) && $row->seconds >= $lessonSeconds[$row->lesson_id] * $presence;
 
-        $rows = $students->map(function (Student $student) use ($attendance, $held, $totalSeconds, $isPresent, $criteria) {
+        // Ma'ruza va amaliy darslar alohida ham hisoblanadi.
+        $lectureIds = array_map('intval', $held->where('is_lecture', true)->modelKeys());
+        $heldLectures = count($lectureIds);
+        $heldPractice = $held->count() - $heldLectures;
+        $split = function (Collection $present, bool $lecture) use ($lectureIds, $heldLectures, $heldPractice): array {
+            $count = $present->filter(fn (LessonAttendance $row) => in_array((int) $row->lesson_id, $lectureIds, true) === $lecture)->count();
+            $total = $lecture ? $heldLectures : $heldPractice;
+
+            return ['attended' => $count, 'percent' => $total > 0 ? (int) round($count * 100 / $total) : null];
+        };
+
+        $rows = $students->map(function (Student $student) use ($attendance, $held, $totalSeconds, $isPresent, $criteria, $split) {
             $items = $attendance->get($student->id, collect());
             $present = $items->filter($isPresent);
             $seconds = (int) $items->sum('seconds');
@@ -59,6 +70,8 @@ final class SemesterReport
                 'avg_late_minutes' => $items->isEmpty() ? null : (int) round($items->avg('late_seconds') / 60),
                 'level' => $level?->value,
                 'level_label' => $level?->label(),
+                'lectures' => $split($present, true),
+                'practice' => $split($present, false),
                 // Har bir dars bo'yicha qatnashgan daqiqalar (lessons tartibida).
                 'per_lesson' => $held->map(fn (Lesson $lesson) => $byLesson->has($lesson->id) ? intdiv($byLesson[$lesson->id]->seconds, 60) : 0)->all(),
             ];
@@ -74,6 +87,8 @@ final class SemesterReport
             'criteria' => $criteria,
             'totals' => [
                 'held' => $held->count(),
+                'held_lectures' => $heldLectures,
+                'held_practice' => $heldPractice,
                 'missed' => $lessons->where('zoom_state', Lesson::ZOOM_MISSED)->count(),
                 'pending' => $lessons->filter(fn (Lesson $lesson) => $lesson->zoom_state === Lesson::ZOOM_ENDED && ! $lesson->attendance_synced_at)->count(),
                 'zoom_minutes' => intdiv($totalSeconds, 60),
@@ -86,6 +101,7 @@ final class SemesterReport
             'lessons' => $held->map(fn (Lesson $lesson, int $index) => [
                 'id' => $lesson->id,
                 'starts_at' => $lesson->starts_at->toIso8601String(),
+                'is_lecture' => (bool) $lesson->is_lecture,
                 'teacher' => $lesson->teacher->displayName(),
                 'minutes' => $lesson->actualMinutes(),
                 'present' => $perLessonPresent[$index],
@@ -102,11 +118,13 @@ final class SemesterReport
     public static function overview(Semester $semester): Collection
     {
         $criteria = Assessment::criteria();
+        // Ma'ruzadagi barcha guruhlar ham.
         $groupIds = Lesson::query()
-            ->whereBetween('starts_at', [$semester->starts_on->copy()->startOfDay(), $semester->ends_on->copy()->endOfDay()])
-            ->where('status', '!=', LessonStatus::Cancelled->value)
+            ->join('lesson_group', 'lesson_group.lesson_id', '=', 'lessons.id')
+            ->whereBetween('lessons.starts_at', [$semester->starts_on->copy()->startOfDay(), $semester->ends_on->copy()->endOfDay()])
+            ->where('lessons.status', '!=', LessonStatus::Cancelled->value)
             ->distinct()
-            ->pluck('group_id');
+            ->pluck('lesson_group.group_id');
 
         return Group::withTrashed()->whereIn('id', $groupIds)->orderBy('course')->orderBy('name')->get()
             ->map(function (Group $group) use ($semester, $criteria) {
@@ -134,7 +152,7 @@ final class SemesterReport
     private static function lessons(Semester $semester, Group $group): Collection
     {
         return Lesson::query()
-            ->where('group_id', $group->id)
+            ->forGroup($group->id)
             ->where('status', '!=', LessonStatus::Cancelled->value)
             ->whereBetween('starts_at', [$semester->starts_on->copy()->startOfDay(), $semester->ends_on->copy()->endOfDay()])
             ->with('teacher')

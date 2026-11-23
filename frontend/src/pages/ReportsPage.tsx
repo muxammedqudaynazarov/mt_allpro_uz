@@ -115,7 +115,11 @@ function PeriodReport() {
         <>
           <dl className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-panel bg-steel-100 ring-1 ring-steel-200/70 lg:grid-cols-4">
             {[
-              { label: t('Darslar'), value: data.totals.lessons.toLocaleString('ru-RU') },
+              {
+                label: t('Darslar'),
+                value: data.totals.lessons.toLocaleString('ru-RU'),
+                note: data.totals.lectures > 0 ? t('shundan maʼruza {count}', { count: data.totals.lectures }) : undefined,
+              },
               { label: t('Rejadagi vaqt'), value: formatDuration(data.totals.minutes) },
               { label: t('Oʻqituvchilar'), value: data.totals.teachers },
               { label: t('Guruhlar'), value: data.totals.groups },
@@ -165,7 +169,10 @@ function PeriodReport() {
                             </p>
                           )}
                         </td>
-                        <td className="px-3 py-3 text-right font-semibold tabular-nums">{row.lessons}</td>
+                        <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                          {row.lessons}
+                          {row.lectures > 0 && <span className="block text-xs font-normal text-steel-500">{t('maʼruza {count}', { count: row.lectures })}</span>}
+                        </td>
                         <td className="px-5 py-3 text-right whitespace-nowrap text-steel-600">{formatDuration(row.minutes)}</td>
                       </tr>
                     )
@@ -192,7 +199,10 @@ function PeriodReport() {
                         </div>
                         {row.avg_participants !== null && <p className="mt-1.5 text-xs text-steel-600">{t('Darsda oʻrtacha {count} talaba', { count: row.avg_participants })}</p>}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold tabular-nums">{row.lessons}</td>
+                      <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                        {row.lessons}
+                        {row.lectures > 0 && <span className="block text-xs font-normal text-steel-500">{t('maʼruza {count}', { count: row.lectures })}</span>}
+                      </td>
                       <td className="px-5 py-3 text-right whitespace-nowrap text-steel-600">{formatDuration(row.minutes)}</td>
                     </tr>
                   ))}

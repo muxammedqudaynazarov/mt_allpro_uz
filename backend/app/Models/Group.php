@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Group extends Model
@@ -49,9 +49,10 @@ class Group extends Model
         return $this->belongsTo(ZoomAccount::class);
     }
 
-    public function lessons(): HasMany
+    /** Guruhning barcha darslari, ma'ruzalar ham. */
+    public function lessons(): BelongsToMany
     {
-        return $this->hasMany(Lesson::class);
+        return $this->belongsToMany(Lesson::class, 'lesson_group');
     }
 
     /** Guruhlar ro'yxati: Administrator va O'quv bo'limi hammasini ko'radi. */

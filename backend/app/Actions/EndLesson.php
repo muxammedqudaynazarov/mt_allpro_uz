@@ -45,7 +45,7 @@ class EndLesson
             $wasStarted ? 'Dars yakunlandi: :group' : 'Dars bekor qilindi: :group',
             $lesson,
             actor: $actor,
-            replace: ['group' => $lesson->group->name],
+            replace: ['group' => $lesson->groupsLabel()],
         );
 
         return $lesson;

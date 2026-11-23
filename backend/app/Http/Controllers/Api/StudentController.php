@@ -37,7 +37,7 @@ class StudentController extends Controller
         $to = isset($data['to']) ? Carbon::parse($data['to'])->endOfDay() : now()->endOfDay();
 
         $lessons = Lesson::query()
-            ->where('group_id', $group->id)
+            ->forGroup($group->id)
             ->where('zoom_state', Lesson::ZOOM_ENDED)
             ->whereNotNull('attendance_synced_at')
             ->whereBetween('starts_at', [$from, $to])

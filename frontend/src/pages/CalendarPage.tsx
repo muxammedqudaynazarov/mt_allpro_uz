@@ -1,10 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Presentation, Repeat } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage } from '@/lib/api'
 import { addDays, dayDate, formatDayMonth, formatTime, formatWeekday, isoDate, isoWeekday, weekStart } from '@/lib/format'
+import { groupsLabel } from '@/lib/groups'
 import type { CalendarData, Group, Lesson, PlannedLesson } from '@/lib/types'
 import { StaffName } from '@/components/ui/StaffName'
 import { OnAirDot } from '@/components/ui/Badge'
@@ -46,7 +47,10 @@ function LessonCard({ lesson, showTeacher, showTime }: { lesson: Lesson; showTea
       <span className={cn('flex items-center gap-1.5 font-medium text-ink-900', lesson.status === 'cancelled' && 'text-steel-500 line-through')}>
         {lesson.status === 'live' && <OnAirDot className="size-2 shrink-0" />}
         {lesson.series_id && <Repeat className="size-3 shrink-0 text-steel-500" aria-label={t('Haftalik dars')} />}
-        <span className="truncate">{lesson.group.name}</span>
+        {lesson.is_lecture && <Presentation className="size-3 shrink-0 text-ink-600" aria-label={t('Maʼruza')} />}
+        <span className="truncate" title={groupsLabel(lesson)}>
+          {groupsLabel(lesson)}
+        </span>
       </span>
       {showTeacher && <StaffName name={lesson.teacher.name} className="block truncate text-steel-600" />}
       <span className="block text-steel-500 tabular-nums">
@@ -79,7 +83,10 @@ function PlannedCard({ item, showTeacher, showTime, onOpen }: { item: PlannedLes
     >
       <span className={cn('flex items-center gap-1.5 font-medium', item.skipped ? 'text-steel-500 line-through' : 'text-ink-900')}>
         <Repeat className="size-3 shrink-0 text-steel-500" />
-        <span className="truncate">{item.group.name}</span>
+        {item.is_lecture && <Presentation className="size-3 shrink-0 text-ink-600" aria-label={t('Maʼruza')} />}
+        <span className="truncate" title={groupsLabel(item)}>
+          {groupsLabel(item)}
+        </span>
       </span>
       {showTeacher && <StaffName name={item.teacher.name} className="block truncate text-steel-600" />}
       <span className={cn('block tabular-nums', item.error ? 'text-onair-600' : 'text-steel-500')}>

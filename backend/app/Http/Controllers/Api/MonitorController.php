@@ -22,7 +22,7 @@ class MonitorController extends Controller
     public function index(Request $request): JsonResponse
     {
         $now = now();
-        $with = ['group', 'teacher', 'slot', 'zoomAccount'];
+        $with = ['group', 'groups', 'teacher', 'slot', 'zoomAccount'];
         // Hozir darsdagi qatnashchilar (hostsiz).
         $presentCount = ['liveParticipants as present_count' => fn (Builder $q) => $q->whereNull('left_at')->where('is_host', false)];
 

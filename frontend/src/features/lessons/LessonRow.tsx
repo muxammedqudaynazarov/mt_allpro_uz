@@ -6,6 +6,8 @@ import { buttonClass } from '@/components/ui/Button'
 import { useT } from '@/i18n/I18nProvider'
 import { formatDayMonth, formatTime, isSameDay } from '@/lib/format'
 import type { Lesson } from '@/lib/types'
+import { groupsLabel } from '@/lib/groups'
+import { LectureBadge } from './LectureBadge'
 import { LessonActions } from './LessonActions'
 import { LessonStatusBadge } from './LessonStatusBadge'
 import { ZoomTrackingLine } from './ZoomTracking'
@@ -29,9 +31,14 @@ export function LessonRow({ lesson, showDate = true }: { lesson: Lesson; showDat
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Link to={`/lessons/${lesson.id}`} className="truncate font-medium text-ink-900 underline-offset-4 hover:text-azure-700 hover:underline">
-            {lesson.group.name}
+          <Link
+            to={`/lessons/${lesson.id}`}
+            title={groupsLabel(lesson)}
+            className="min-w-0 truncate font-medium text-ink-900 underline-offset-4 hover:text-azure-700 hover:underline"
+          >
+            {groupsLabel(lesson)}
           </Link>
+          {lesson.is_lecture && <LectureBadge />}
           <LessonStatusBadge status={lesson.status} />
         </div>
         {!own && <p className="truncate text-sm text-steel-500"><StaffName name={lesson.teacher.name} /></p>}

@@ -86,7 +86,16 @@ function CriteriaNote({ criteria }: { criteria: AssessmentCriteria }) {
 function Facts({ totals }: { totals: SemesterTotals }) {
   const t = useT()
   const items = [
-    { label: t('Oʻtkazilgan darslar'), value: String(totals.held), note: totals.missed ? t('{count} tasi oʻtkazilmagan', { count: totals.missed }) : null },
+    {
+      label: t('Oʻtkazilgan darslar'),
+      value: String(totals.held),
+      note: [
+        totals.held_lectures > 0 ? t('Maʼruza {lectures}, amaliy {practice}', { lectures: totals.held_lectures, practice: totals.held_practice }) : null,
+        totals.missed ? t('{count} tasi oʻtkazilmagan', { count: totals.missed }) : null,
+      ]
+        .filter(Boolean)
+        .join('. '),
+    },
     {
       label: t('Zoom’dagi umumiy vaqt'),
       value: formatDuration(totals.zoom_minutes),
@@ -112,6 +121,18 @@ function Facts({ totals }: { totals: SemesterTotals }) {
   )
 }
 
+/** Ma'ruza yoki amaliy darslarda qatnashgan: "3 / 4" va foiz. */
+function SplitCell({ value, held, low }: { value: { attended: number; percent: number | null }; held: number; low: number }) {
+  if (held === 0) return <td className="px-3 py-2.5 text-right text-steel-400">—</td>
+  return (
+    <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
+      {value.attended}
+      <span className="text-steel-500"> / {held}</span>
+      {value.percent !== null && <span className={cn('ml-1.5 text-xs', value.percent < low ? 'text-onair-600' : 'text-steel-500')}>{value.percent}%</span>}
+    </td>
+  )
+}
+
 function GroupDetail({ semester, groupId }: { semester: Semester; groupId: string }) {
   const t = useT()
   const [, setParams] = useSearchParams()
@@ -123,6 +144,8 @@ function GroupDetail({ semester, groupId }: { semester: Semester; groupId: strin
   if (!query.data) return <EmptyState title={t('Maʼlumotni yuklab boʻlmadi')} description={errorMessage(query.error)} />
   const report = query.data
   const back = () => setParams({ tab: 'semester', semester: String(semester.id) }, { replace: true })
+  // Ma'ruzalar bo'lsa — ma'ruza va amaliy darslardagi qatnashuv alohida ustunlarda.
+  const split = report.totals.held_lectures > 0
 
   return (
     <div className="space-y-6">
@@ -153,11 +176,17 @@ function GroupDetail({ semester, groupId }: { semester: Semester; groupId: strin
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-left text-sm">
+            <table className={cn('w-full text-left text-sm', split ? 'min-w-[58rem]' : 'min-w-[46rem]')}>
               <thead className="border-b border-steel-100 text-steel-600">
                 <tr>
                   <th className="px-5 py-3 font-medium">{t('Talaba')}</th>
                   <th className="px-3 py-3 text-right font-medium">{t('Qatnashgan darslar')}</th>
+                  {split && (
+                    <>
+                      <th className="px-3 py-3 text-right font-medium">{t('Maʼruza')}</th>
+                      <th className="px-3 py-3 text-right font-medium">{t('Amaliy')}</th>
+                    </>
+                  )}
                   <th className="px-3 py-3 text-right font-medium">{t('Jami vaqt')}</th>
                   <th className="px-3 py-3 text-right font-medium">{t('Vaqt foizi')}</th>
                   <th className="px-3 py-3 text-right font-medium">{t('Oʻrtacha kechikish')}</th>
@@ -172,6 +201,12 @@ function GroupDetail({ semester, groupId }: { semester: Semester; groupId: strin
                       {row.attended}
                       <span className="text-steel-500"> / {report.totals.held}</span>
                     </td>
+                    {split && (
+                      <>
+                        <SplitCell value={row.lectures} held={report.totals.held_lectures} low={report.criteria.thresholds.sust} />
+                        <SplitCell value={row.practice} held={report.totals.held_practice} low={report.criteria.thresholds.sust} />
+                      </>
+                    )}
                     <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">{formatDuration(row.minutes)}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
                       <span className={cn(row.percent_time !== null && row.percent_time < report.criteria.thresholds.sust && 'text-onair-600')}>
@@ -294,6 +329,9 @@ export function SemesterReportSection() {
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
                       {row.totals.held}
+                      {row.totals.held_lectures > 0 && (
+                        <span className="block text-xs text-steel-500">{t('shundan maʼruza {count}', { count: row.totals.held_lectures })}</span>
+                      )}
                       {row.totals.missed > 0 && <span className="block text-xs text-amber-600">{t('{count} tasi oʻtkazilmagan', { count: row.totals.missed })}</span>}
                     </td>
                     <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">{formatDuration(row.totals.zoom_minutes)}</td>

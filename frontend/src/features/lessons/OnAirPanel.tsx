@@ -6,6 +6,8 @@ import { formatDuration, formatTime, minutesUntil } from '@/lib/format'
 import type { Lesson } from '@/lib/types'
 import { LessonActions } from './LessonActions'
 import { useT } from '@/i18n/I18nProvider'
+import { groupsLabel } from '@/lib/groups'
+import { LectureBadge } from './LectureBadge'
 
 /**
  * "Efirda" paneli — hozir davom etayotgan darslar. Bosh sahifadagi eng
@@ -36,7 +38,10 @@ export function OnAirPanel({ lessons }: { lessons: Lesson[] }) {
             <li key={lesson.id} className="px-5 py-5 sm:px-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                  <p className="truncate text-xl font-semibold">{lesson.group.name}</p>
+                  {lesson.is_lecture && <LectureBadge className="mb-1.5" />}
+                  <p className="truncate text-xl font-semibold" title={groupsLabel(lesson)}>
+                    {groupsLabel(lesson)}
+                  </p>
                   <p className="mt-1 truncate text-sm text-ink-200">{lesson.topic || t('Mavzu koʻrsatilmagan')}</p>
                   {!own && <p className="truncate text-sm text-ink-300"><StaffName name={lesson.teacher.name} /></p>}
                 </div>

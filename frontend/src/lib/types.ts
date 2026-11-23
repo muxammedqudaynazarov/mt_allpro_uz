@@ -77,7 +77,12 @@ export interface Lesson {
   ended_at: string | null
   join_url: string | null
   passcode: string | null
+  /** Asosiy guruh; ma'ruzada barcha guruhlar — groups. */
   group: GroupRef
+  /** Ma'ruza: bir uchrashuvda bir nechta guruh. */
+  is_lecture: boolean
+  /** Darsning barcha guruhlari (oddiy darsda — bitta). */
+  groups: GroupRef[]
   teacher: UserRef
   /** Dars o'tkazilayotgan Zoom host (email). */
   host: string | null
@@ -145,6 +150,8 @@ export interface LessonOptions {
   from: string
   to: string
   default_duration: number
+  /** Zoom avtomatik yakunlanadi: from–to juftlikning shu qismi. */
+  auto_end: boolean
   groups: LessonOptionGroup[]
   hosts: LessonOptionHost[]
   slots: LessonOptionSlot[]
@@ -182,6 +189,8 @@ export interface LessonSeries {
   weekday: number
   topic: string | null
   group: GroupRef
+  is_lecture: boolean
+  groups: GroupRef[]
   teacher: UserRef
   slot: { id: number; name: string; starts_at: string; ends_at: string }
   host: { id: number; name: string; email: string } | null
@@ -203,6 +212,8 @@ export interface PlannedLesson {
   starts_at: string
   ends_at: string
   group: GroupRef
+  is_lecture: boolean
+  groups: GroupRef[]
   teacher: UserRef
   slot: { id: number; name: string }
   topic: string | null
@@ -325,13 +336,16 @@ export interface ZoomStats {
 export interface ReportSummary {
   from: string
   to: string
-  totals: { lessons: number; minutes: number; teachers: number; groups: number } & ZoomStats
-  by_teacher: ({ teacher: UserRef; lessons: number; minutes: number } & ZoomStats)[]
-  by_group: ({ group: GroupRef; lessons: number; minutes: number } & ZoomStats)[]
+  /** lectures — shundan ma'ruzalar (ma'ruza har bir guruhida hisoblanadi). */
+  totals: { lessons: number; lectures: number; minutes: number; teachers: number; groups: number } & ZoomStats
+  by_teacher: ({ teacher: UserRef; lessons: number; lectures: number; minutes: number } & ZoomStats)[]
+  by_group: ({ group: GroupRef; lessons: number; lectures: number; minutes: number } & ZoomStats)[]
 }
 
 export interface AttendanceRow {
   student_id: number
+  /** Talabaning guruhi (ma'ruzada guruhlar bo'yicha ajratiladi). */
+  group_id: number
   name: string
   ignored: boolean
   /** Talaba Zoom'da qanday ismlar bilan kirgan. */
@@ -346,10 +360,26 @@ export interface AttendanceRow {
   segments: [string, string][]
 }
 
+/** Ma'ruza: guruhi aniqlanmagan qatnashchi (o'qituvchi guruhga biriktiradi). */
+export interface UnassignedParticipant {
+  key: string
+  name: string
+  names: string[]
+  first_joined_at: string | null
+  last_left_at: string | null
+  minutes: number
+  percent: number | null
+  sessions: number
+  segments: [string, string][]
+}
+
 export interface LessonAttendance {
   lesson: Lesson
+  groups: GroupRef[]
   host: { first_joined_at: string | null; names: string[]; segments: [string, string][] } | null
   students: AttendanceRow[]
+  unassigned: UnassignedParticipant[]
+  can_assign: boolean
   can_manage_students: boolean
 }
 
@@ -412,6 +442,9 @@ export interface AssessmentCriteria {
 
 export interface SemesterTotals {
   held: number
+  /** Shundan ma'ruza va amaliy darslar. */
+  held_lectures: number
+  held_practice: number
   missed: number
   pending: number
   zoom_minutes: number
@@ -432,6 +465,9 @@ export interface SemesterStudentRow {
   avg_late_minutes: number | null
   level: AssessmentLevel | null
   level_label: string | null
+  /** Ma'ruza va amaliy darslarda alohida: qatnashgan darslar soni va foizi. */
+  lectures: { attended: number; percent: number | null }
+  practice: { attended: number; percent: number | null }
   per_lesson: number[]
 }
 
@@ -441,7 +477,7 @@ export interface SemesterGroupReport {
   criteria: AssessmentCriteria
   totals: SemesterTotals
   levels: Record<AssessmentLevel, number>
-  lessons: { id: number; starts_at: string; teacher: string; minutes: number; present: number }[]
+  lessons: { id: number; starts_at: string; is_lecture: boolean; teacher: string; minutes: number; present: number }[]
   students: SemesterStudentRow[]
 }
 
@@ -487,7 +523,7 @@ export interface Recording {
   downloaded_at: string | null
   zoom_deleted_at: string | null
   url: string | null
-  lesson?: { id: number; starts_at: string; group: string | null; teacher: string | null } | null
+  lesson?: { id: number; starts_at: string; group: string | null; is_lecture: boolean; teacher: string | null } | null
 }
 
 export interface SystemSettings {

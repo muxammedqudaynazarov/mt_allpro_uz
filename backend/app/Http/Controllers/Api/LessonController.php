@@ -17,7 +17,9 @@ use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
 use App\Support\HostAvailability;
 use App\Support\LessonDays;
+use App\Support\LessonGroupsInput;
 use App\Support\Xlsx;
+use App\Support\ZoomAutoEnd;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +35,7 @@ class LessonController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $lessons = $this->filtered($request)
-            ->with(['group', 'teacher', 'slot', 'zoomAccount'])
+            ->with(['group', 'groups', 'teacher', 'slot', 'zoomAccount'])
             ->withParticipantsCount()
             ->orderByDesc('starts_at')
             ->paginate(min(100, max(5, (int) $request->integer('per_page', 20))))
@@ -64,7 +66,11 @@ class LessonController extends Controller
             [$from, $to] = $slot ? [$slot->startOn($day), $slot->endOn($day)] : [$now, $now->copy()->addMinutes((int) config('lessons.default_duration', 80))];
         }
 
-        $groupLessons = Lesson::query()->overlapping($from, $to)->get(['group_id', 'ends_at'])->groupBy('group_id');
+        // Ma'ruzadagi barcha guruhlar ham band hisoblanadi.
+        $groupLessons = Lesson::query()->overlapping($from, $to)
+            ->join('lesson_group', 'lesson_group.lesson_id', '=', 'lessons.id')
+            ->get(['lesson_group.group_id', 'lessons.ends_at'])
+            ->groupBy('group_id');
         $groups = Group::query()->where('is_active', true)->orderBy('course')->orderBy('name')->get()->map(fn (Group $group) => [
             'id' => $group->id,
             'name' => $group->name,
@@ -95,6 +101,8 @@ class LessonController extends Controller
             'from' => $from->toIso8601String(),
             'to' => $to->toIso8601String(),
             'default_duration' => (int) config('lessons.default_duration'),
+            // Zoom avtomatik yakunlanadi (Umumiy sozlamalar): from–to shu qismni ko'rsatadi.
+            'auto_end' => ZoomAutoEnd::enabled(),
             'groups' => $groups,
             'hosts' => $hosts,
             'slots' => $slots,
@@ -106,7 +114,6 @@ class LessonController extends Controller
         Gate::authorize('create', Lesson::class);
 
         $data = $request->validate([
-            'group_id' => ['required', 'integer', Rule::exists('groups', 'id')->whereNull('deleted_at')],
             // Faqat jadvaldagi juftlikka: oldindan rejalashtirilmagan ("hozir") dars yaratilmaydi.
             'slot_id' => ['required', 'integer', Rule::exists('lesson_slots', 'id')->where('is_active', true)],
             'host_id' => ['nullable', 'integer', Rule::exists('zoom_hosts', 'id')],
@@ -114,9 +121,9 @@ class LessonController extends Controller
             'topic' => ['nullable', 'string', 'max:200'],
             // Har hafta shu kuni, shu juftlikda takrorlash.
             'repeat_weekly' => ['nullable', 'boolean'],
+            // Ma'ruza: bir uchrashuvda bir nechta guruh (group_ids).
+            'is_lecture' => ['nullable', 'boolean'],
         ], [
-            'group_id.required' => __('Guruhni tanlang.'),
-            'group_id.exists' => __('Tanlangan guruh topilmadi.'),
             'slot_id.required' => __('Dars vaqtini (juftlikni) tanlang.'),
             'slot_id.exists' => __('Tanlangan dars vaqti topilmadi.'),
             'host_id.exists' => __('Tanlangan Zoom host topilmadi.'),
@@ -128,7 +135,7 @@ class LessonController extends Controller
             abort(403, __('Sizga kalendarni boshqarish (boshqa kunlarga dars rejalashtirish) taqiqlangan.'));
         }
 
-        $group = Group::findOrFail($data['group_id']);
+        [$groups, $lecture] = LessonGroupsInput::from($request);
         $slot = LessonSlot::findOrFail($data['slot_id']);
         $host = isset($data['host_id']) ? ZoomHost::with('zoomAccount')->findOrFail($data['host_id']) : null;
 
@@ -136,18 +143,18 @@ class LessonController extends Controller
         if ($request->boolean('repeat_weekly')) {
             Gate::authorize('create', LessonSeries::class);
             $day = $date ?? today();
-            $series = $createSeries->handle($request->user(), $group, $slot, $day->isoWeekday(), $host, $data['topic'] ?? null, $day, null, $request->user());
+            $series = $createSeries->handle($request->user(), $groups, $slot, $day->isoWeekday(), $host, $data['topic'] ?? null, $day, null, $request->user(), $lecture);
         }
 
         try {
-            $lesson = $action->handle($request->user(), $group, $slot, $data['topic'] ?? null, $host, $date, $series?->id);
+            $lesson = $action->handle($request->user(), $groups, $slot, $data['topic'] ?? null, $host, $date, $series?->id, lecture: $lecture);
         } catch (\Throwable $e) {
             // Birinchi dars yaratilmasa, jadval ham saqlanmaydi.
             $series?->delete();
             throw $e;
         }
 
-        return (new LessonResource($lesson->load(['group', 'teacher', 'slot'])))->response()->setStatusCode(201);
+        return (new LessonResource($lesson->load(['group', 'groups', 'teacher', 'slot'])))->response()->setStatusCode(201);
     }
 
     /** Zoom'dan yangi host havolasini olib beradi (saqlangan ZAK 2 soatda eskiradi). */
@@ -172,7 +179,7 @@ class LessonController extends Controller
     {
         Gate::authorize('end', $lesson);
 
-        return new LessonResource($action->handle($lesson->load(['group', 'zoomAccount']), $request->user())->load(['teacher', 'slot']));
+        return new LessonResource($action->handle($lesson->load(['group', 'groups', 'zoomAccount']), $request->user())->load(['teacher', 'slot']));
     }
 
     /** Hisobot: filtrlangan darslar ro'yxati .xlsx. */
@@ -180,22 +187,23 @@ class LessonController extends Controller
     {
         abort_unless($request->user()->canViewAll(), 403);
 
-        $query = $this->filtered($request)->with(['group', 'teacher', 'slot'])->withParticipantsCount()->orderBy('starts_at');
+        $query = $this->filtered($request)->with(['group', 'groups', 'teacher', 'slot'])->withParticipantsCount()->orderBy('starts_at');
         $header = array_map(fn (string $title) => __($title), [
-            'Sana', 'Boshlanish', 'Tugash', 'Guruh', 'Kurs', 'Oʻqituvchi', 'Zoom host', 'Mavzu', 'Holat', 'Davomiyligi (daqiqa)',
+            'Sana', 'Boshlanish', 'Tugash', 'Turi', 'Guruh', 'Kurs', 'Oʻqituvchi', 'Zoom host', 'Mavzu', 'Holat', 'Davomiyligi (daqiqa)',
             'Zoom’da boshlandi', 'Kechikish (daqiqa)', 'Haqiqiy davomiylik (daqiqa)', 'Qatnashgan talabalar',
         ]);
 
         return Xlsx::download(__('darslar').'-'.now()->format('Y-m-d-His').'.xlsx', function (Xlsx $xlsx) use ($query, $header) {
-            $xlsx->sheet(__('Darslar'), [11, 10, 9, 16, 6, 30, 26, 30, 14, 12, 12, 12, 12, 12], freezeRow: 1)->header($header);
+            $xlsx->sheet(__('Darslar'), [11, 10, 9, 10, 22, 6, 30, 26, 30, 14, 12, 12, 12, 12, 12], freezeRow: 1)->header($header);
             $query->chunk(500, function ($lessons) use ($xlsx) {
                 foreach ($lessons as $lesson) {
                     $xlsx->row([
                         $lesson->starts_at->format('d.m.Y'),
                         $lesson->starts_at->format('H:i'),
                         ($lesson->ended_at && $lesson->ended_at->lessThan($lesson->ends_at) ? $lesson->ended_at : $lesson->ends_at)->format('H:i'),
-                        $lesson->group->name,
-                        $lesson->group->course,
+                        $lesson->is_lecture ? __('Maʼruza') : __('Amaliy'),
+                        $lesson->groupsLabel(),
+                        $lesson->groupList()->pluck('course')->unique()->implode(', '),
                         $lesson->teacher->displayName(),
                         $lesson->zoom_host_email,
                         $lesson->topic,
@@ -242,7 +250,7 @@ class LessonController extends Controller
         };
 
         if (! empty($data['group_id'])) {
-            $query->where('group_id', $data['group_id']);
+            $query->forGroup((int) $data['group_id']);
         }
         if (! empty($data['teacher_id'])) {
             $query->where('user_id', $data['teacher_id']);

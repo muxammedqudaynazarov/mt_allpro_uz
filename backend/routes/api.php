@@ -69,6 +69,8 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::get('/lessons/{lesson}/attendance', [LessonAttendanceController::class, 'show']);
         Route::get('/lessons/{lesson}/attendance/export', [LessonAttendanceController::class, 'export']);
         Route::post('/lessons/{lesson}/attendance/sync', [LessonAttendanceController::class, 'sync'])->middleware('throttle:10,1');
+        // Ma'ruza: guruhi aniqlanmagan qatnashchini guruhga biriktirish.
+        Route::post('/lessons/{lesson}/attendance/assign', [LessonAttendanceController::class, 'assign'])->middleware('throttle:60,1');
 
         Route::middleware('role:education,super_admin')->group(function () {
             Route::get('/users', [UserController::class, 'index']);

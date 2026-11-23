@@ -15,6 +15,8 @@ import { SectionLoader } from '@/components/ui/Spinner'
 import { LIVE_REFRESH_MS, LiveParticipantsPanel } from '@/features/lessons/LiveParticipants'
 import { delayToneClass, startDelay } from '@/features/lessons/ZoomTracking'
 import { useT } from '@/i18n/I18nProvider'
+import { groupsLabel } from '@/lib/groups'
+import { LectureBadge } from '@/features/lessons/LectureBadge'
 
 function LiveLessonButton({ lesson, active, onSelect }: { lesson: Lesson; active: boolean; onSelect: () => void }) {
   const t = useT()
@@ -35,7 +37,10 @@ function LiveLessonButton({ lesson, active, onSelect }: { lesson: Lesson; active
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 font-medium text-ink-900">
             {!waiting && <OnAirDot className="size-2" />}
-            <span className="truncate">{lesson.group.name}</span>
+            <span className="truncate" title={groupsLabel(lesson)}>
+              {groupsLabel(lesson)}
+            </span>
+            {lesson.is_lecture && <LectureBadge />}
           </p>
           <p className="truncate text-sm text-steel-600"><StaffName name={lesson.teacher.name} /></p>
           <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-steel-500 tabular-nums">
@@ -132,7 +137,8 @@ export default function MonitorPage() {
                     <CalendarClock className="size-4 shrink-0 text-steel-400" />
                     <span className="w-11 shrink-0 font-medium tabular-nums">{formatTime(lesson.starts_at)}</span>
                     <span className="min-w-0 flex-1 truncate">
-                      {lesson.group.name}
+                      {lesson.is_lecture && `${t('Maʼruza')}: `}
+                      {groupsLabel(lesson)}
                       <span className="text-steel-500">, <StaffName name={lesson.teacher.name} /></span>
                     </span>
                   </li>
@@ -146,10 +152,13 @@ export default function MonitorPage() {
           {selected ? (
             <>
               <div>
-                <h2 className="font-display text-xl font-semibold text-ink-900">{selected.group.name}</h2>
+                <h2 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-xl font-semibold text-ink-900">
+                  {groupsLabel(selected)}
+                  {selected.is_lecture && <LectureBadge />}
+                </h2>
                 <p className="mt-1 text-sm text-steel-600">
                   <StaffName name={selected.teacher.name} />
-                  {selected.topic && selected.topic !== selected.group.name && `. ${selected.topic}`}
+                  {selected.topic && selected.topic !== selected.group.name && !selected.topic.endsWith(groupsLabel(selected)) && `. ${selected.topic}`}
                 </p>
                 <p className="mt-0.5 text-sm text-steel-500 tabular-nums">
                   {t('Jadval: {from}–{to}', { from: formatTime(selected.starts_at), to: formatTime(selected.ends_at) })}
@@ -176,7 +185,10 @@ export default function MonitorPage() {
                         {formatTime(lesson.tracking.started_at ?? lesson.starts_at)}–{formatTime(lesson.tracking.ended_at ?? lesson.ended_at ?? lesson.ends_at)}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="font-medium text-ink-900">{lesson.group.name}</span>
+                        <span className="font-medium text-ink-900">
+                          {lesson.is_lecture && `${t('Maʼruza')}: `}
+                          {groupsLabel(lesson)}
+                        </span>
                         <span className="text-steel-500">, <StaffName name={lesson.teacher.name} /></span>
                       </span>
                     </div>

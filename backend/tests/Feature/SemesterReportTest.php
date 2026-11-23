@@ -71,7 +71,7 @@ class SemesterReportTest extends TestCase
         $data = $this->report();
         $rows = collect($data['students'])->keyBy('name');
 
-        $this->assertSame(['held' => 3, 'missed' => 1, 'pending' => 0, 'zoom_minutes' => 240, 'avg_lesson_minutes' => 80, 'students' => 3, 'avg_students_per_lesson' => 1.7, 'avg_attendance_percent' => 56], $data['totals']);
+        $this->assertSame(['held' => 3, 'held_lectures' => 0, 'held_practice' => 3, 'missed' => 1, 'pending' => 0, 'zoom_minutes' => 240, 'avg_lesson_minutes' => 80, 'students' => 3, 'avg_students_per_lesson' => 1.7, 'avg_attendance_percent' => 56], $data['totals']);
         $this->assertSame([240, 100, 100, 'alo', 3], [$rows['ALI VALIYEV']['minutes'], $rows['ALI VALIYEV']['percent_time'], $rows['ALI VALIYEV']['percent_lessons'], $rows['ALI VALIYEV']['level'], $rows['ALI VALIYEV']['attended']]);
         // 80 / 240 = 33% → Sust (≥30). Darsning yarmida bo'lgan — qatnashgan hisoblanadi.
         $this->assertSame([80, 33, 67, 'sust', 2, 10], [$rows['VALI KARIMOV']['minutes'], $rows['VALI KARIMOV']['percent_time'], $rows['VALI KARIMOV']['percent_lessons'], $rows['VALI KARIMOV']['level'], $rows['VALI KARIMOV']['attended'], $rows['VALI KARIMOV']['avg_late_minutes']]);

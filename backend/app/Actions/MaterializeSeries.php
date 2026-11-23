@@ -40,7 +40,7 @@ class MaterializeSeries
             ->whereDate('starts_on', '<=', $today)
             ->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', $today))
             ->whereDoesntHave('skips', fn ($q) => $q->whereDate('date', $today))
-            ->with(['teacher', 'group', 'slot', 'host.zoomAccount'])
+            ->with(['teacher', 'group', 'groups', 'slot', 'host.zoomAccount'])
             ->get();
 
         foreach ($series as $item) {
@@ -87,7 +87,7 @@ class MaterializeSeries
             ? $preferred
             : null;
 
-        $this->create->handle($series->teacher, $series->group, $series->slot, $series->topic, $host, $today, $series->id, allowStartedSlot: true);
+        $this->create->handle($series->teacher, $series->groupList(), $series->slot, $series->topic, $host, $today, $series->id, allowStartedSlot: true, lecture: $series->is_lecture);
 
         if ($series->last_error) {
             $series->forceFill(['last_error' => null, 'last_error_on' => null])->save();

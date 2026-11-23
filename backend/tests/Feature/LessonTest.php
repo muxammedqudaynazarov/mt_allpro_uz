@@ -383,7 +383,9 @@ class LessonTest extends TestCase
         $rows = reset($sheets);
 
         $this->assertCount(2, $rows);
-        $this->assertSame('=HYPERLINK("http://evil")', $rows[1][7]);
+        // Sana, Boshlanish, Tugash, Turi, Guruh, Kurs, O'qituvchi, Zoom host, Mavzu...
+        $this->assertSame('Amaliy', $rows[1][3]);
+        $this->assertSame('=HYPERLINK("http://evil")', $rows[1][8]);
     }
 
     public function test_teacher_cannot_export(): void

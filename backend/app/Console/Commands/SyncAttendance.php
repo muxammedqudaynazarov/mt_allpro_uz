@@ -40,7 +40,7 @@ class SyncAttendance extends Command
             ->where('status', '!=', LessonStatus::Cancelled->value)
             ->whereBetween('starts_at', [$from, $to])
             ->where('ends_at', '<', now())
-            ->when($this->option('group'), fn ($q, $group) => $q->where('group_id', $group))
+            ->when($this->option('group'), fn ($q, $group) => $q->forGroup((int) $group))
             ->when(! $this->option('force'), fn ($q) => $q->whereNull('attendance_synced_at'))
             ->with('zoomAccount')
             ->orderBy('starts_at')

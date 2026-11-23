@@ -7,13 +7,16 @@ use App\Enums\LessonStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Lesson;
+use App\Models\LessonAttendance;
 use App\Models\Semester;
+use App\Support\GroupRef;
 use App\Support\SemesterReport;
 use App\Support\Xlsx;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -37,29 +40,50 @@ class ReportController extends Controller
             ->where('status', '!=', LessonStatus::Cancelled->value)
             ->where('starts_at', '<=', now())
             ->whereBetween('starts_at', [$from, $to])
-            ->with(['group', 'teacher'])
+            ->with(['group', 'groups', 'teacher'])
             ->withParticipantsCount()
             ->get();
 
         $byTeacher = $lessons->groupBy('user_id')->map(fn ($items) => [
             'teacher' => ['id' => $items->first()->teacher->id, 'name' => $items->first()->teacher->displayName()],
             'lessons' => $items->count(),
+            'lectures' => $items->where('is_lecture', true)->count(),
             'minutes' => $items->sum(fn (Lesson $lesson) => $lesson->durationMinutes()),
             ...self::zoomStats($items),
         ])->sortByDesc('lessons')->values();
 
-        $byGroup = $lessons->groupBy('group_id')->map(fn ($items) => [
-            'group' => ['id' => $items->first()->group->id, 'name' => $items->first()->group->name, 'course' => $items->first()->group->course],
-            'lessons' => $items->count(),
-            'minutes' => $items->sum(fn (Lesson $lesson) => $lesson->durationMinutes()),
-            ...self::zoomStats($items),
-        ])->sortByDesc('lessons')->values();
+        // Ma'ruza har bir guruhida hisoblanadi; qatnashchilar — faqat shu guruh talabalari.
+        $lectureIds = $lessons->where('is_lecture', true)->modelKeys();
+        $lectureParticipants = $lectureIds ? LessonAttendance::query()
+            ->join('students', 'students.id', '=', 'lesson_attendances.student_id')
+            ->whereIn('lesson_attendances.lesson_id', $lectureIds)
+            ->where('students.is_ignored', false)
+            ->groupBy('lesson_attendances.lesson_id', 'students.group_id')
+            ->get(['lesson_attendances.lesson_id', 'students.group_id', DB::raw('count(*) as total')])
+            ->mapWithKeys(fn ($row) => [$row->lesson_id.'|'.$row->group_id => (int) $row->total]) : collect();
+
+        $byGroup = $lessons
+            ->flatMap(fn (Lesson $lesson) => $lesson->groupList()->map(fn (Group $group) => ['group' => $group, 'lesson' => $lesson]))
+            ->groupBy(fn (array $pair) => $pair['group']->id)
+            ->map(function ($pairs) use ($lectureParticipants) {
+                $group = $pairs->first()['group'];
+                $items = $pairs->pluck('lesson');
+
+                return [
+                    'group' => GroupRef::make($group),
+                    'lessons' => $items->count(),
+                    'lectures' => $items->where('is_lecture', true)->count(),
+                    'minutes' => $items->sum(fn (Lesson $lesson) => $lesson->durationMinutes()),
+                    ...self::zoomStats($items, fn (Lesson $lesson) => $lesson->is_lecture ? (int) ($lectureParticipants[$lesson->id.'|'.$group->id] ?? 0) : (int) $lesson->participants_count),
+                ];
+            })->sortByDesc('lessons')->values();
 
         return response()->json(['data' => [
             'from' => $from->toIso8601String(),
             'to' => $to->toIso8601String(),
             'totals' => [
                 'lessons' => $lessons->count(),
+                'lectures' => $lessons->where('is_lecture', true)->count(),
                 'minutes' => $lessons->sum(fn (Lesson $lesson) => $lesson->durationMinutes()),
                 'teachers' => $byTeacher->count(),
                 'groups' => $byGroup->count(),
@@ -104,17 +128,17 @@ class ReportController extends Controller
             }
 
             $overview = SemesterReport::overview($semester);
-            $xlsx->sheet(__('Guruhlar'), [30, 7, 12, 14, 14, 16, 9, 9, 11, 10, 9, 9], freezeRow: 4)
+            $xlsx->sheet(__('Guruhlar'), [30, 7, 12, 12, 14, 14, 16, 9, 9, 11, 10, 9, 9], freezeRow: 4)
                 ->title(__('Semestr yakuni').': '.$semester->fullLabel())
                 ->note($semester->starts_on->format('d.m.Y').' – '.$semester->ends_on->format('d.m.Y'))
                 ->blank()
                 ->header([
-                    __('Guruh'), __('Kurs'), __('Oʻtkazilgan darslar'), __('Zoom vaqti (soat)'), __('Talabalar'), __('Oʻrtacha qatnashuv, %'),
+                    __('Guruh'), __('Kurs'), __('Oʻtkazilgan darslar'), __('Shundan maʼruza'), __('Zoom vaqti (soat)'), __('Talabalar'), __('Oʻrtacha qatnashuv, %'),
                     ...array_map(fn (Assessment $level) => $level->label(), array_reverse(Assessment::cases())),
                 ]);
             foreach ($overview as $row) {
                 $xlsx->row([
-                    $row['group']['name'], $row['group']['course'], $row['totals']['held'], round($row['totals']['zoom_minutes'] / 60, 1),
+                    $row['group']['name'], $row['group']['course'], $row['totals']['held'], $row['totals']['held_lectures'], round($row['totals']['zoom_minutes'] / 60, 1),
                     $row['totals']['students'], $row['totals']['avg_attendance_percent'],
                     ...array_map(fn (Assessment $level) => $row['levels'][$level->value], array_reverse(Assessment::cases())),
                 ]);
@@ -148,11 +172,15 @@ class ReportController extends Controller
         $t = $report['totals'];
         $c = $report['criteria'];
         $basis = $c['basis'] === Assessment::BASIS_LESSONS ? __('qatnashgan darslar foizi') : __('qatnashgan vaqt foizi');
-        $xlsx->sheet($name, [5, 34, 14, 12, 12, 12, 12, 14, 18], freezeRow: 14)
+        $split = $t['held_lectures'] > 0;
+        $xlsx->sheet($name, [5, 34, 14, ...($split ? [12, 10, 12, 10] : []), 12, 12, 12, 12, 14, 18], freezeRow: $split ? 15 : 14)
             ->title($report['group']['name'].', '.$report['semester']['name'])
             ->meta(__('Davr'), Carbon::parse($report['semester']['starts_on'])->format('d.m.Y').' – '.Carbon::parse($report['semester']['ends_on'])->format('d.m.Y'))
-            ->meta(__('Oʻtkazilgan darslar'), $t['held'])
-            ->meta(__('Oʻtkazilmagan darslar'), $t['missed'])
+            ->meta(__('Oʻtkazilgan darslar'), $t['held']);
+        if ($split) {
+            $xlsx->meta(__('Shundan maʼruza / amaliy'), $t['held_lectures'].' / '.$t['held_practice']);
+        }
+        $xlsx->meta(__('Oʻtkazilmagan darslar'), $t['missed'])
             ->meta(__('Zoom’dagi umumiy vaqt (soat)'), round($t['zoom_minutes'] / 60, 1))
             ->meta(__('Darsning oʻrtacha davomiyligi (daqiqa)'), $t['avg_lesson_minutes'])
             ->meta(__('Talabalar'), $t['students'])
@@ -162,12 +190,19 @@ class ReportController extends Controller
             ->note(__('Chegaralar: Sust :sust%, Qoniqarli :qoniqarli%, Oʻrtacha :ortacha%, Yaxshi :yaxshi%, Aʼlo :alo%.', $c['thresholds']))
             ->blank()
             ->header([
-                '№', __('Talaba'), __('Qatnashgan darslar'), __('Jami vaqt (soat)'), __('Vaqt foizi, %'), __('Darslar foizi, %'),
+                '№', __('Talaba'), __('Qatnashgan darslar'),
+                ...($split ? [__('Maʼruza: qatnashgan'), __('Maʼruza, %'), __('Amaliy: qatnashgan'), __('Amaliy, %')] : []),
+                __('Jami vaqt (soat)'), __('Vaqt foizi, %'), __('Darslar foizi, %'),
                 __('Oʻrtacha kechikish (daqiqa)'), __('Kirgan darslar'), __('Oʻzlashtirish taxmini'),
             ]);
         foreach ($report['students'] as $index => $row) {
             $xlsx->row([
-                $index + 1, $row['name'], $row['attended'].' / '.$t['held'], round($row['minutes'] / 60, 1), $row['percent_time'], $row['percent_lessons'],
+                $index + 1, $row['name'], $row['attended'].' / '.$t['held'],
+                ...($split ? [
+                    $row['lectures']['attended'].' / '.$t['held_lectures'], $row['lectures']['percent'],
+                    $t['held_practice'] > 0 ? $row['practice']['attended'].' / '.$t['held_practice'] : null, $row['practice']['percent'],
+                ] : []),
+                round($row['minutes'] / 60, 1), $row['percent_time'], $row['percent_lessons'],
                 $row['avg_late_minutes'], $row['joined'], $row['level_label'],
             ]);
         }
@@ -180,10 +215,14 @@ class ReportController extends Controller
     private function matrixSheet(Xlsx $xlsx, array $report): void
     {
         $lessons = $report['lessons'];
-        $xlsx->sheet(__('Darslar boʻyicha'), [34, ...array_fill(0, max(1, $lessons->count()), 9)], freezeRow: 3)
-            ->title(__('Har bir darsda qatnashgan vaqt (daqiqa)'))
-            ->blank()
-            ->header([__('Talaba'), ...$lessons->map(fn (array $lesson) => Carbon::parse($lesson['starts_at'])->format('d.m H:i'))->all()]);
+        $lectures = $lessons->contains('is_lecture', true);
+        $xlsx->sheet(__('Darslar boʻyicha'), [34, ...array_fill(0, max(1, $lessons->count()), 9)], freezeRow: $lectures ? 4 : 3)
+            ->title(__('Har bir darsda qatnashgan vaqt (daqiqa)'));
+        if ($lectures) {
+            $xlsx->note(__('(M) — maʼruza (bir nechta guruh bilan birga).'));
+        }
+        $xlsx->blank()
+            ->header([__('Talaba'), ...$lessons->map(fn (array $lesson) => Carbon::parse($lesson['starts_at'])->format('d.m H:i').($lesson['is_lecture'] ? ' '.__('(M)') : ''))->all()]);
         $xlsx->row([__('Dars davomiyligi'), ...$lessons->pluck('minutes')->all()], bold: true);
         foreach ($report['students'] as $row) {
             $xlsx->row([$row['name'], ...$row['per_lesson']]);
@@ -195,9 +234,10 @@ class ReportController extends Controller
      * hostning o'rtacha kechikishi, haqiqiy davomiylik va o'rtacha qatnashchilar.
      *
      * @param  Collection<int, Lesson>  $lessons
+     * @param  (\Closure(Lesson): int)|null  $participants  darsdagi qatnashchilar (ma'ruzada — guruh bo'yicha)
      * @return array<string, int|null>
      */
-    private static function zoomStats(Collection $lessons): array
+    private static function zoomStats(Collection $lessons, ?\Closure $participants = null): array
     {
         $held = $lessons->where('zoom_state', Lesson::ZOOM_ENDED);
         $delays = $held->map(fn (Lesson $lesson) => $lesson->startDelayMinutes())->filter(fn ($value) => $value !== null);
@@ -209,7 +249,7 @@ class ReportController extends Controller
             'late_starts' => $delays->filter(fn (int $delay) => $delay > self::LATE_START_MINUTES)->count(),
             'avg_start_delay' => $delays->isEmpty() ? null : (int) round($delays->avg()),
             'actual_minutes' => (int) $held->sum(fn (Lesson $lesson) => $lesson->actualMinutes() ?? 0),
-            'avg_participants' => $synced->isEmpty() ? null : (int) round($synced->avg('participants_count')),
+            'avg_participants' => $synced->isEmpty() ? null : (int) round($participants ? $synced->avg($participants) : $synced->avg('participants_count')),
         ];
     }
 }

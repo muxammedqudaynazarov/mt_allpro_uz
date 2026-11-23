@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Lesson;
+use App\Support\GroupRef;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,11 +26,10 @@ class LessonResource extends JsonResource
             // Talabalar havolasi faqat dars davom etayotganda kerak (Zoom'da jadvaldan uzoqroq davom etsa ham).
             'join_url' => $open || $this->zoom_state === Lesson::ZOOM_STARTED ? $this->join_url : null,
             'passcode' => $open ? $this->passcode : null,
-            'group' => [
-                'id' => $this->group->id,
-                'name' => $this->group->name,
-                'course' => $this->group->course,
-            ],
+            // Asosiy guruh; ma'ruzada barcha guruhlar — groups.
+            'group' => GroupRef::make($this->group),
+            'is_lecture' => (bool) $this->is_lecture,
+            'groups' => GroupRef::list($this->groupList()),
             'teacher' => ['id' => $this->teacher->id, 'name' => $this->teacher->displayName()],
             'host' => $this->zoom_host_email,
             // Har haftalik jadvaldan yaratilgan bo'lsa.

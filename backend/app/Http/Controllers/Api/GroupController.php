@@ -61,7 +61,7 @@ class GroupController extends Controller
     public function destroy(Group $group): Response
     {
         Gate::authorize('delete', $group);
-        if (Lesson::query()->where('group_id', $group->id)->open()->exists()) {
+        if (Lesson::query()->forGroup($group->id)->open()->exists()) {
             throw ValidationException::withMessages(['group' => __('Guruhda davom etayotgan yoki rejalashtirilgan dars bor. Avval uni yakunlang.')]);
         }
         $group->delete();

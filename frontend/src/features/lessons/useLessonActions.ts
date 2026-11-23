@@ -3,11 +3,12 @@ import { toast } from 'sonner'
 import { tGlobal as t } from '@/i18n/I18nProvider'
 import { api, errorMessage } from '@/lib/api'
 import { formatTime } from '@/lib/format'
+import { groupsLabel } from '@/lib/groups'
 import type { Lesson } from '@/lib/types'
 
 export function telegramShareUrl(lesson: Lesson): string {
   const lines = [
-    `${lesson.group.name}`,
+    lesson.is_lecture ? t('Maʼruza: {groups}', { groups: groupsLabel(lesson) }) : lesson.group.name,
     lesson.topic ? t('Mavzu: {topic}', { topic: lesson.topic }) : null,
     t('Vaqti: {time}', { time: `${formatTime(lesson.starts_at)}–${formatTime(lesson.ends_at)}` }),
     lesson.passcode ? t('Kod: {code}', { code: lesson.passcode }) : null,

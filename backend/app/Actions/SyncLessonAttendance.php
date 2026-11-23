@@ -112,13 +112,19 @@ class SyncLessonAttendance
             'zoom_minutes' => (int) round($seconds / 60),
         ]);
 
-        // Bir guruhning talabalari parallel yaratilib qolmasligi uchun.
-        Cache::lock('attendance:group:'.$lesson->group_id, 60)->block(30, function () use ($lesson, $segments) {
-            DB::transaction(function () use ($lesson, $segments) {
+        // Bir guruhning talabalari parallel yaratilib qolmasligi uchun (ma'ruzada — barcha guruhlar, doim bir xil tartibda).
+        $groupIds = $lesson->groupIds();
+        self::withGroupLocks($groupIds, function () use ($lesson, $segments, $groupIds) {
+            DB::transaction(function () use ($lesson, $segments, $groupIds) {
                 $resolver = new StudentResolver;
                 ZoomParticipation::query()->where('lesson_id', $lesson->id)->delete();
                 foreach ($segments as $segment) {
-                    $student = $segment['is_host'] ? null : $resolver->resolve($lesson->group_id, $segment['name'], $segment['email'], $segment['zoom_user_id']);
+                    $student = match (true) {
+                        $segment['is_host'] => null,
+                        // Bir nechta guruhli ma'ruza: talaba faqat topilsa bog'lanadi, aks holda "guruhi aniqlanmagan".
+                        count($groupIds) > 1 => $resolver->find($groupIds, $segment['name'], $segment['email'], $segment['zoom_user_id']),
+                        default => $resolver->resolve($groupIds[0] ?? $lesson->group_id, $segment['name'], $segment['email'], $segment['zoom_user_id']),
+                    };
                     ZoomParticipation::create(['email' => null] + $segment + ['lesson_id' => $lesson->id, 'student_id' => $student?->id]);
                 }
                 $this->finish($lesson, Lesson::ZOOM_ENDED);
@@ -127,6 +133,23 @@ class SyncLessonAttendance
         });
 
         return true;
+    }
+
+    /**
+     * Guruhlar qulfini o'sish tartibida olib, $callback'ni bajaradi.
+     *
+     * @param  list<int>  $groupIds
+     */
+    public static function withGroupLocks(array $groupIds, \Closure $callback): mixed
+    {
+        $ids = array_values(array_unique($groupIds));
+        sort($ids);
+        if (! $ids) {
+            return $callback();
+        }
+        $first = array_shift($ids);
+
+        return Cache::lock('attendance:group:'.$first, 60)->block(30, fn () => self::withGroupLocks($ids, $callback));
     }
 
     /** Scheduler uchun: xato va "hali tayyor emas" holatida keyingi urinishni rejalashtiradi. */

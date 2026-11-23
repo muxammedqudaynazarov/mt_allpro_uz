@@ -40,7 +40,7 @@ class RecordingController extends Controller
             ->where('status', '!=', Recording::SKIPPED)
             ->when(! $user->canViewAll(), fn ($q) => $q->whereHas('lesson', fn ($lesson) => $lesson->where('user_id', $user->id)))
             ->when($data['status'] ?? null, fn ($q, $status) => $status === 'pending' ? $q->whereIn('status', [Recording::PENDING]) : $q->where('status', $status))
-            ->with(['lesson.group', 'lesson.teacher'])
+            ->with(['lesson.group', 'lesson.groups', 'lesson.teacher'])
             ->latest('id')
             ->paginate(30);
 
