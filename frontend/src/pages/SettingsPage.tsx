@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HardDrive } from 'lucide-react'
+import { AlertTriangle, HardDrive } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, errorMessage, fieldErrors } from '@/lib/api'
 import { formatBytes } from '@/lib/format'
@@ -339,6 +339,14 @@ function ZoomPanel() {
     },
     onError: (error) => toast.error(errorMessage(error)),
   })
+  const rename = useMutation({
+    mutationFn: async (value: boolean) => (await api.put<{ data: SystemSettings }>('/api/settings', { zoom: { rename_host: value } })).data.data,
+    onSuccess: (data) => {
+      toast.success(t('Sozlama saqlandi'))
+      queryClient.setQueryData(['settings'], data)
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
   if (!settings.data) return <SectionLoader />
 
   const duration = settings.data.zoom.default_duration
@@ -378,6 +386,21 @@ function ZoomPanel() {
           {t('Saqlash')}
         </Button>
       </form>
+      <div className="mt-6 max-w-xl border-t border-steel-100">
+        <SettingRow
+          title={t('Host ismini oʻqituvchi nomiga oʻzgartirish')}
+          hint={t('Darsni boshlashda Zoom host akkauntining ismi oʻqituvchining nomiga oʻzgaradi, masalan: QUDAYNAZAROV M.S. Zoom ilovasida user:update:user:admin ruxsati boʻlishi kerak.')}
+          checked={settings.data.zoom.rename_host}
+          disabled={rename.isPending}
+          onChange={(value) => rename.mutate(value)}
+        />
+        {settings.data.zoom.rename_error && (
+          <p className="flex items-start gap-2 rounded-field bg-amber-50 p-3 text-sm text-amber-700">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <span>{t('Oxirgi urinishda ismni oʻzgartirib boʻlmadi: {reason}', { reason: settings.data.zoom.rename_error })}</span>
+          </p>
+        )}
+      </div>
     </Panel>
   )
 }

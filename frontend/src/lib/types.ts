@@ -532,5 +532,6 @@ export interface SystemSettings {
   recording: RecordingSettings
   storage: RecordingStorage
   /** Zoom'ni avtomatik yakunlash: juftlikning foizi (0 — uzilmaydi). */
-  zoom: { auto_end_percent: number; default_duration: number }
+  /** rename_host — darsni boshlashda Zoom host ismi o'qituvchi nomiga o'zgaradi; rename_error — oxirgi xato. */
+  zoom: { auto_end_percent: number; default_duration: number; rename_host: boolean; rename_error: string | null }
 }

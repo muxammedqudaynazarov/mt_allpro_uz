@@ -176,6 +176,17 @@ class User extends Authenticatable
         return PersonName::upper(implode(' ', array_slice(preg_split('/\s+/u', trim((string) $this->name)) ?: [], 0, 2)));
     }
 
+    /** Zoom'da ko'rinadigan qisqa ism: "QUDAYNAZAROV M.S." (HEMIS'dagi F.I.Sh. bo'yicha). */
+    public function zoomName(): string
+    {
+        if (filled($this->last_name)) {
+            return PersonName::short($this->last_name, $this->first_name, $this->middle_name);
+        }
+        $parts = preg_split('/\s+/u', trim((string) $this->name)) ?: [];
+
+        return PersonName::short($parts[0] ?? '', $parts[1] ?? null, $parts[2] ?? null);
+    }
+
     /** Foydalanuvchilar ro'yxati: Administrator va O'quv bo'limi hammani ko'radi. */
     public function scopeVisibleTo(Builder $query, User $viewer): Builder
     {

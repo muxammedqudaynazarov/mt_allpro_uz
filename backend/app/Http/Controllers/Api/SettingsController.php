@@ -6,6 +6,7 @@ use App\Enums\Assessment;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Support\Audit;
+use App\Support\HostDisplayName;
 use App\Support\RecordingSettings;
 use App\Support\ZoomAutoEnd;
 use Illuminate\Http\JsonResponse;
@@ -35,18 +36,25 @@ class SettingsController extends Controller
             'recording.delete_action' => ['required_with:recording', Rule::in(['trash', 'delete'])],
             'recording.include_audio' => ['required_with:recording', 'boolean'],
             'zoom' => ['sometimes', 'array'],
-            'zoom.auto_end_percent' => ['required_with:zoom', 'integer', 'between:0,100'],
+            'zoom.auto_end_percent' => ['sometimes', 'integer', 'between:0,100'],
+            'zoom.rename_host' => ['sometimes', 'boolean'],
         ], [
             'zoom.auto_end_percent.between' => __('Foiz 0 dan 100 gacha boʻlishi kerak.'),
             'zoom.auto_end_percent.integer' => __('Foiz butun son boʻlishi kerak.'),
         ]);
 
         if (isset($data['zoom'])) {
-            $before = ZoomAutoEnd::percent();
-            $percent = (int) $data['zoom']['auto_end_percent'];
-            Setting::put('zoom', ['auto_end_percent' => $percent]);
-            if ($before !== $percent) {
-                Audit::log('settings.zoom', $percent > 0 ? 'Zoom avtomatik yakunlanadi: juftlikning :percent%' : 'Zoom avtomatik yakunlanishi oʻchirildi', replace: ['percent' => $percent]);
+            $current = ['auto_end_percent' => ZoomAutoEnd::percent(), 'rename_host' => HostDisplayName::enabled()];
+            $next = [
+                'auto_end_percent' => (int) ($data['zoom']['auto_end_percent'] ?? $current['auto_end_percent']),
+                'rename_host' => (bool) ($data['zoom']['rename_host'] ?? $current['rename_host']),
+            ];
+            Setting::put('zoom', $next);
+            if ($current['auto_end_percent'] !== $next['auto_end_percent']) {
+                Audit::log('settings.zoom', $next['auto_end_percent'] > 0 ? 'Zoom avtomatik yakunlanadi: juftlikning :percent%' : 'Zoom avtomatik yakunlanishi oʻchirildi', replace: ['percent' => $next['auto_end_percent']]);
+            }
+            if ($current['rename_host'] !== $next['rename_host']) {
+                Audit::log('settings.zoom', $next['rename_host'] ? 'Zoom host ismi oʻqituvchi nomiga oʻzgartiriladi' : 'Zoom host ismini oʻzgartirish oʻchirildi');
             }
         }
 
@@ -92,7 +100,13 @@ class SettingsController extends Controller
             'assessment' => Assessment::criteria(),
             'assessment_defaults' => Assessment::DEFAULTS,
             'recording' => RecordingSettings::get(),
-            'zoom' => ['auto_end_percent' => ZoomAutoEnd::percent(), 'default_duration' => (int) config('lessons.default_duration', 80)],
+            'zoom' => [
+                'auto_end_percent' => ZoomAutoEnd::percent(),
+                'default_duration' => (int) config('lessons.default_duration', 80),
+                'rename_host' => HostDisplayName::enabled(),
+                // Oxirgi urinish xatosi (masalan, Zoom ilovasida ruxsat yo'q).
+                'rename_error' => HostDisplayName::enabled() ? HostDisplayName::lastError() : null,
+            ],
             'storage' => RecordingController::storage(),
         ];
     }

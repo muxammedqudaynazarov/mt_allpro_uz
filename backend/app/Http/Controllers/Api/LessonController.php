@@ -16,6 +16,7 @@ use App\Models\Semester;
 use App\Models\ZoomHost;
 use App\Services\Zoom\ZoomClient;
 use App\Support\HostAvailability;
+use App\Support\HostDisplayName;
 use App\Support\LessonDays;
 use App\Support\LessonGroupsInput;
 use App\Support\Xlsx;
@@ -158,9 +159,11 @@ class LessonController extends Controller
     }
 
     /** Zoom'dan yangi host havolasini olib beradi (saqlangan ZAK 2 soatda eskiradi). */
-    public function start(Request $request, Lesson $lesson, ZoomClient $zoom): JsonResponse
+    public function start(Request $request, Lesson $lesson, ZoomClient $zoom, HostDisplayName $hostName): JsonResponse
     {
         Gate::authorize('start', $lesson);
+        // Host uchrashuvga o'qituvchi nomi bilan kiradi ("QUDAYNAZAROV M.S.").
+        $hostName->apply($lesson);
 
         $url = $lesson->zoomAccount && $lesson->zoom_meeting_id
             ? ($zoom->freshStartUrl($lesson->zoomAccount, $lesson->zoom_meeting_id) ?? $lesson->start_url)

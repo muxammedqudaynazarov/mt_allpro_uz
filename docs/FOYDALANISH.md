@@ -77,6 +77,8 @@ Administrator kalendarni boshqarish huquqini o'chirib qo'ygan bo'lsa, siz jadval
 
 Bosh sahifadagi **"Efirda"** paneli hozir davom etayotgan darslarni ko'rsatadi: qancha vaqt qolgani, Zoom'ni ochish va havolani yuborish tugmalari shu yerda.
 
+**Darsni boshlash** bosilganda (saytda yoki Telegram'da) Zoom host akkauntining ismi sizning nomingizga o'zgaradi — masalan, **QUDAYNAZAROV M.S.**: talabalar darsni kim o'tayotganini ko'radi. Bitta host bir vaqtda faqat bitta darsda bo'lgani uchun ismlar aralashmaydi. Zoom'ga host akkaunti bilan to'g'ridan-to'g'ri (tizimni chetlab) kirsangiz, ism o'zgarmaydi.
+
 **Yakunlash** tugmasi Zoom uchrashuvini barcha ishtirokchilar uchun yopadi. Hali boshlanmagan dars yakunlansa, u **"Bekor qilingan"** bo'ladi. Vaqti tugagan dars avtomatik **"Yakunlangan"** holatiga o'tadi.
 
 > Host havolasi faqat sizga beriladi va har safar yangidan olinadi. Uni boshqalarga yubormang. Talabalarga faqat **talabalar havolasini** yuboring.
@@ -193,6 +195,8 @@ O'zgartirish barcha semestr hisobotlariga darhol ta'sir qiladi.
 **Zoom darslari:**
 
 - **Zoom'ni avtomatik yakunlash, %** — juftlik davomiyligining necha foizida Zoom avtomatik yopilsin. **0** — uzilmaydi; **50** — 80 daqiqalik juftlikda 40-daqiqada; **10** — 8-daqiqada. Masalan, darsning 40 daqiqasi Zoom'da, qolgani Moodle'da topshiriq bo'lsa — 50 kiriting. Yangi yaratiladigan darslar shu davomiylik bilan yaratiladi (dars vaqti va davomat foizi ham shu qismga nisbatan), host vaqtidan keyin ham davom ettirsa, tizim bir daqiqa ichida uchrashuvni yopadi.
+
+- **Host ismini o'qituvchi nomiga o'zgartirish** — darsni boshlashda Zoom host akkauntining ismi o'qituvchining nomiga o'zgaradi (Familiya I.Sh., masalan **QUDAYNAZAROV M.S.**). Zoom ilovasida `user:update:user:admin` ruxsati kerak; ruxsat bo'lmasa dars baribir boshlanadi, sababi shu yerda sariq ogohlantirishda ko'rsatiladi. Tizimdagi host nomi ("KarSU Zoom 1") o'zgarmaydi.
 
 **Video yozuvlar:**
 

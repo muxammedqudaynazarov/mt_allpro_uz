@@ -279,6 +279,7 @@ Har bir Zoom akkaunt (litsenziyalar to'plami) uchun bitta **Server-to-Server OAu
 | Ruxsat | Nima uchun |
 |---|---|
 | `user:read:list_users:admin` | Zoom foydalanuvchilari (hostlar) ro'yxati |
+| `user:update:user:admin` | Darsni boshlashda host ismini o'qituvchi nomiga o'zgartirish ("QUDAYNAZAROV M.S."). Bo'lmasa, dars baribir boshlanadi — ism o'zgarmaydi |
 | `meeting:write:meeting:admin` | Dars uchun uchrashuv yaratish |
 | `meeting:read:meeting:admin` | Host havolasini yangilash, holatni kuzatish |
 | `meeting:update:status:admin` | Darsni yakunlash |

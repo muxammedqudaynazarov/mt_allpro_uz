@@ -29,9 +29,11 @@ class SyncZoomHosts
             $seen[] = $email;
             $host = ZoomHost::firstOrNew(['zoom_account_id' => $account->id, 'email' => $email]);
             $isNew = ! $host->exists;
+            // Zoom'dagi ism darsni boshlashda o'qituvchi nomiga o'zgartirilgan bo'lsa — tizimdagi nom saqlanadi.
+            $renamed = $host->exists && $host->renamed_to !== null && $user['name'] === $host->renamed_to;
             $host->fill([
                 'zoom_user_id' => $user['id'] ?: $host->zoom_user_id,
-                'name' => $user['name'] !== '' ? $user['name'] : $email,
+                'name' => $renamed ? $host->name : ($user['name'] !== '' ? $user['name'] : $email),
                 'type' => $user['type'] === ZoomHost::BASIC ? ZoomHost::BASIC : ZoomHost::LICENSED,
             ]);
             if ($isNew) {

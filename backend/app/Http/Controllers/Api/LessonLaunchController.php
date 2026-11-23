@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Services\Zoom\ZoomClient;
 use App\Support\Audit;
+use App\Support\HostDisplayName;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -15,12 +16,13 @@ use Illuminate\Http\RedirectResponse;
  */
 class LessonLaunchController extends Controller
 {
-    public function __invoke(Lesson $lesson, ZoomClient $zoom): RedirectResponse
+    public function __invoke(Lesson $lesson, ZoomClient $zoom, HostDisplayName $hostName): RedirectResponse
     {
         $front = rtrim((string) config('app.frontend_url'), '/');
         if (! $lesson->isOpen() || ! $lesson->zoomAccount || ! $lesson->zoom_meeting_id) {
             return redirect()->away($front.'/lessons');
         }
+        $hostName->apply($lesson);
 
         $url = $zoom->freshStartUrl($lesson->zoomAccount, $lesson->zoom_meeting_id) ?? $lesson->start_url;
         if (! $url) {

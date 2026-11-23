@@ -144,6 +144,23 @@ class ZoomClient
         $this->fail(__('Zoom uchrashuvini yakunlab boʻlmadi'), $delete, ['meeting' => $meetingId]);
     }
 
+    /**
+     * Zoom foydalanuvchisining uchrashuvlarda ko'rinadigan ismi (display name).
+     * Ilovada user:update:user:admin ruxsati kerak.
+     */
+    public function setDisplayName(ZoomAccount $account, string $userIdOrEmail, string $name): void
+    {
+        $response = $this->send($account, 'patch', '/users/'.rawurlencode($userIdOrEmail), ['display_name' => mb_substr($name, 0, 128)]);
+        if ($response->successful()) {
+            return;
+        }
+        if ($this->missingScope($response)) {
+            throw new ExternalServiceException(__('Zoom ilovasida user:update:user:admin ruxsati (scope) yoʻq — host ismini oʻzgartirib boʻlmaydi.'));
+        }
+
+        throw $this->error(__('Zoom host ismini oʻzgartirib boʻlmadi'), $response);
+    }
+
     /** @return list<array{id: string, email: string, name: string, type: int}> */
     public function users(ZoomAccount $account): array
     {

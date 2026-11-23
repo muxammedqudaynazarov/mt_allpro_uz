@@ -23,7 +23,7 @@ class ZoomHost extends Model
 
     protected function casts(): array
     {
-        return ['type' => 'integer', 'is_active' => 'boolean'];
+        return ['type' => 'integer', 'is_active' => 'boolean', 'renamed_at' => 'datetime'];
     }
 
     public function zoomAccount(): BelongsTo
