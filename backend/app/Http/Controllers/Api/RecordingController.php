@@ -36,7 +36,9 @@ class RecordingController extends Controller
     {
         $data = $request->validate(['status' => ['nullable', 'in:pending,downloaded,failed']]);
         $user = $request->user();
+        // "Video yozuvlar" sahifasi: faqat video va audio (chat va matnli fayllar dars sahifasida qoladi).
         $items = Recording::query()
+            ->media()
             ->where('status', '!=', Recording::SKIPPED)
             ->when(! $user->canViewAll(), fn ($q) => $q->whereHas('lesson', fn ($lesson) => $lesson->where('user_id', $user->id)))
             ->when($data['status'] ?? null, fn ($q, $status) => $status === 'pending' ? $q->whereIn('status', [Recording::PENDING]) : $q->where('status', $status))
@@ -129,8 +131,9 @@ class RecordingController extends Controller
             'path' => $root,
             'used_bytes' => (int) Recording::query()->where('status', Recording::DOWNLOADED)->sum('size'),
             'files' => Recording::query()->where('status', Recording::DOWNLOADED)->count(),
-            'pending' => Recording::query()->where('status', Recording::PENDING)->count(),
-            'failed' => Recording::query()->where('status', Recording::FAILED)->count(),
+            // Navbatda / xato — ro'yxatdagi kabi faqat video va audio.
+            'pending' => Recording::query()->media()->where('status', Recording::PENDING)->count(),
+            'failed' => Recording::query()->media()->where('status', Recording::FAILED)->count(),
             'zoom_bytes' => (int) Recording::query()->whereNull('zoom_deleted_at')->sum('size'),
             'free_bytes' => $free === false ? null : (int) $free,
             'min_free_gb' => (int) config('recordings.min_free_gb'),

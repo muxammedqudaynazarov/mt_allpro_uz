@@ -132,7 +132,8 @@ class RecordingTest extends TestCase
         $this->actingAsUser($teacher)->get("/api/recordings/{$videoFile->id}/file", ['Range' => 'bytes=0-99'])
             ->assertStatus(206)->assertHeader('Content-Type', 'video/mp4');
         $this->actingAsUser(User::factory()->create())->get("/api/recordings/{$videoFile->id}/file")->assertForbidden();
-        $this->actingAsUser($teacher)->getJson('/api/recordings')->assertOk()->assertJsonCount(2, 'data');
+        // Umumiy ro'yxatda faqat video (chat dars sahifasida qoladi).
+        $this->actingAsUser($teacher)->getJson('/api/recordings')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.file_type', 'MP4');
 
         // nginx rejimi: PHP faqat ruxsatni tekshiradi, faylni nginx beradi.
         config(['recordings.accel_prefix' => '/_zoom_recordings/']);

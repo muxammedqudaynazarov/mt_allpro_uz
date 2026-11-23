@@ -23,6 +23,9 @@ class Recording extends Model
 
     public const FAILED = 'failed';
 
+    /** Video va audio. Chat, transkript va boshqa matnli fayllar faqat dars sahifasida ko'rinadi. */
+    public const MEDIA_TYPES = ['MP4', 'M4A'];
+
     protected $fillable = [
         'lesson_id', 'zoom_account_id', 'zoom_meeting_id', 'zoom_meeting_uuid', 'zoom_file_id', 'file_type', 'file_extension',
         'recording_type', 'recording_start', 'recording_end', 'size', 'download_url', 'download_token', 'download_token_expires_at', 'status', 'path', 'attempts', 'error',
@@ -71,6 +74,11 @@ class Recording extends Model
     public function isVideo(): bool
     {
         return $this->file_type === 'MP4';
+    }
+
+    public function scopeMedia(Builder $query): Builder
+    {
+        return $query->whereIn('file_type', self::MEDIA_TYPES);
     }
 
     public function mimeType(): string
