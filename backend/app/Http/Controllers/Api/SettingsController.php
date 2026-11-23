@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Support\Audit;
 use App\Support\RecordingSettings;
+use App\Support\ZoomAutoEnd;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -33,7 +34,21 @@ class SettingsController extends Controller
             'recording.delete_from_zoom' => ['required_with:recording', 'boolean'],
             'recording.delete_action' => ['required_with:recording', Rule::in(['trash', 'delete'])],
             'recording.include_audio' => ['required_with:recording', 'boolean'],
+            'zoom' => ['sometimes', 'array'],
+            'zoom.auto_end_percent' => ['required_with:zoom', 'integer', 'between:0,100'],
+        ], [
+            'zoom.auto_end_percent.between' => __('Foiz 0 dan 100 gacha boʻlishi kerak.'),
+            'zoom.auto_end_percent.integer' => __('Foiz butun son boʻlishi kerak.'),
         ]);
+
+        if (isset($data['zoom'])) {
+            $before = ZoomAutoEnd::percent();
+            $percent = (int) $data['zoom']['auto_end_percent'];
+            Setting::put('zoom', ['auto_end_percent' => $percent]);
+            if ($before !== $percent) {
+                Audit::log('settings.zoom', $percent > 0 ? 'Zoom avtomatik yakunlanadi: juftlikning :percent%' : 'Zoom avtomatik yakunlanishi oʻchirildi', replace: ['percent' => $percent]);
+            }
+        }
 
         if (isset($data['recording'])) {
             $before = RecordingSettings::get();
@@ -77,6 +92,7 @@ class SettingsController extends Controller
             'assessment' => Assessment::criteria(),
             'assessment_defaults' => Assessment::DEFAULTS,
             'recording' => RecordingSettings::get(),
+            'zoom' => ['auto_end_percent' => ZoomAutoEnd::percent(), 'default_duration' => (int) config('lessons.default_duration', 80)],
             'storage' => RecordingController::storage(),
         ];
     }

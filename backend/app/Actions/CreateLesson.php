@@ -15,6 +15,7 @@ use App\Support\Audit;
 use App\Support\HostAvailability;
 use App\Support\LessonDays;
 use App\Support\Notifier;
+use App\Support\ZoomAutoEnd;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -125,6 +126,7 @@ class CreateLesson
                     'start_url' => $meeting['start_url'],
                     'passcode' => $meeting['password'] ?: $passcode,
                     'record_cloud' => $record,
+                    'auto_end' => ZoomAutoEnd::enabled(),
                     'status' => $startsAt->isFuture() ? LessonStatus::Scheduled : LessonStatus::Live,
                     'starts_at' => $startsAt,
                     'ends_at' => $endsAt,
@@ -168,14 +170,15 @@ class CreateLesson
                 throw ValidationException::withMessages(['slot_id' => __('Boshqa kun uchun juftlikni tanlang.')]);
             }
 
-            return [$slot->startOn($date), $slot->endOn($date)];
+            return [$slot->startOn($date), $slot->startOn($date)->addMinutes(ZoomAutoEnd::minutes($slot->duration_minutes))];
         }
         if (! $slot) {
-            return [$now, $now->copy()->addMinutes((int) config('lessons.default_duration', 80))];
+            return [$now, $now->copy()->addMinutes(ZoomAutoEnd::minutes((int) config('lessons.default_duration', 80)))];
         }
 
         $start = $slot->startOn($now);
-        $end = $slot->endOn($now);
+        // Zoom'ni avtomatik yakunlash yoqilgan bo'lsa — dars juftlikning shu qismi (masalan, 50% = 40 daqiqa).
+        $end = $slot->startOn($now)->addMinutes(ZoomAutoEnd::minutes($slot->duration_minutes));
         if ($end->lessThanOrEqualTo($now->copy()->addMinutes(5))) {
             throw ValidationException::withMessages(['slot_id' => __('“:name” vaqti tugagan. Boshqa juftlikni yoki boshqa kunni tanlang.', ['name' => $slot->label()])]);
         }

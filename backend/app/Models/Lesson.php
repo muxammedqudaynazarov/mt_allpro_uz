@@ -35,7 +35,7 @@ class Lesson extends Model
     public const ZOOM_MISSED = 'missed';
 
     protected $fillable = [
-        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'semester_id', 'zoom_account_id', 'record_cloud',
+        'user_id', 'group_id', 'lesson_slot_id', 'lesson_series_id', 'semester_id', 'zoom_account_id', 'record_cloud', 'auto_end',
         'zoom_meeting_id', 'zoom_host_email', 'topic', 'join_url', 'start_url', 'passcode',
         'status', 'starts_at', 'ends_at', 'ended_at', 'ended_by_id',
         'zoom_state', 'zoom_started_at', 'zoom_ended_at', 'zoom_minutes', 'zoom_checked_at',
@@ -57,6 +57,7 @@ class Lesson extends Model
             'zoom_minutes' => 'integer',
             'zoom_checked_at' => 'datetime',
             'record_cloud' => 'boolean',
+            'auto_end' => 'boolean',
             'recordings_checked_at' => 'datetime',
             'attendance_due_at' => 'datetime',
             'attendance_synced_at' => 'datetime',

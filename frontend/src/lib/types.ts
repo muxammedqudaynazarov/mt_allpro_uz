@@ -495,4 +495,6 @@ export interface SystemSettings {
   assessment_defaults: AssessmentCriteria
   recording: RecordingSettings
   storage: RecordingStorage
+  /** Zoom'ni avtomatik yakunlash: juftlikning foizi (0 — uzilmaydi). */
+  zoom: { auto_end_percent: number; default_duration: number }
 }

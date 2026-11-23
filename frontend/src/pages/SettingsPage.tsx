@@ -318,12 +318,79 @@ function RecordingPanel() {
   )
 }
 
+/** Zoom'ni avtomatik yakunlash: juftlik davomiyligining foizi (0 — uzilmaydi). */
+function ZoomPanel() {
+  const t = useT()
+  const queryClient = useQueryClient()
+  const settings = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => (await api.get<{ data: SystemSettings }>('/api/settings')).data.data,
+  })
+  const [percent, setPercent] = useState('')
+  const saved = settings.data?.zoom.auto_end_percent
+  useEffect(() => {
+    if (saved !== undefined) setPercent(String(saved))
+  }, [saved])
+  const save = useMutation({
+    mutationFn: async (value: number) => (await api.put<{ data: SystemSettings }>('/api/settings', { zoom: { auto_end_percent: value } })).data.data,
+    onSuccess: (data) => {
+      toast.success(t('Sozlama saqlandi'))
+      queryClient.setQueryData(['settings'], data)
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+  if (!settings.data) return <SectionLoader />
+
+  const duration = settings.data.zoom.default_duration
+  const value = Number(percent)
+  const valid = percent.trim() !== '' && Number.isInteger(value) && value >= 0 && value <= 100
+  const minutes = valid && value > 0 ? Math.max(1, Math.round((duration * value) / 100)) : null
+  const error = fieldErrors(save.error)['zoom.auto_end_percent'] ?? (percent.trim() !== '' && !valid ? t('0 dan 100 gacha butun son kiriting.') : undefined)
+
+  return (
+    <Panel title={t('Zoom darslari')}>
+      <form
+        className="max-w-xl space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (valid) save.mutate(value)
+        }}
+      >
+        <Input
+          wrapperClassName="sm:w-80"
+          type="number"
+          min={0}
+          max={100}
+          step={1}
+          label={t('Zoom’ni avtomatik yakunlash, %')}
+          value={percent}
+          onChange={(event) => setPercent(event.target.value)}
+          error={error}
+          hint={t('Juftlik davomiyligining necha foizida Zoom avtomatik yakunlansin. 0 — uzilmaydi.')}
+        />
+        <p className="text-sm text-ink-800">
+          {minutes !== null
+            ? t('{duration} daqiqalik juftlikda Zoom {minutes}-daqiqada avtomatik yakunlanadi.', { duration, minutes })
+            : t('Zoom avtomatik yakunlanmaydi.')}
+        </p>
+        <p className="text-sm text-steel-500">{t('Oʻzgarish yangi yaratiladigan darslarga taʼsir qiladi.')}</p>
+        <Button type="submit" disabled={!valid || value === saved} loading={save.isPending}>
+          {t('Saqlash')}
+        </Button>
+      </form>
+    </Panel>
+  )
+}
+
 export default function SettingsPage() {
   const t = useT()
   return (
     <>
-      <PageHeader title={t('Umumiy sozlamalar')} description={t('Oʻzlashtirish taxmini mezoni va darslarning video yozuvlari. Oʻquv yillari va semestrlar — alohida sahifada.')} />
+      <PageHeader title={t('Umumiy sozlamalar')} description={t('Oʻzlashtirish taxmini mezoni, Zoom darslarining davomiyligi va video yozuvlar. Oʻquv yillari va semestrlar — alohida sahifada.')} />
       <AssessmentPanel />
+      <div className="mt-6">
+        <ZoomPanel />
+      </div>
       <div className="mt-6">
         <RecordingPanel />
       </div>
