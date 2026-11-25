@@ -92,7 +92,7 @@ Bosh sahifadagi **"Efirda"** paneli hozir davom etayotgan darslarni ko'rsatadi: 
 Guruh nomini yoki **Davomat** (qoraqalpoqchada **Qatnastı biliw**) tugmasini bosing:
 
 - **Jadval bo'yicha / Zoom'da boshlandi / Davom etdi / Qatnashdi** — rejadagi va haqiqiy vaqt;
-- har bir talaba uchun vaqt chizig'i: darsda qachon bo'lgani (uzilib qayta kirgan bo'lsa — bo'laklar bilan), necha daqiqa kechikkani, jami vaqti va foizi;
+- har bir talaba uchun vaqt chizig'i: darsda qachon bo'lgani (uzilib qayta kirgan bo'lsa — bo'laklar bilan), necha daqiqa kechikkani, jami vaqti va foizi; foizi **"Darsda qatnashgan hisoblanish chegarasi"**dan (Umumiy sozlamalar) kam bo'lgan talaba xira yozuv va sariq chiziq bilan ko'rsatiladi — u darsda bo'lgan hisoblanmaydi;
 - **Excel (.xlsx)** — ro'yxatni yuklab olish;
 - **Video yozuv** — yozish yoqilgan bo'lsa, dars tugagach yozuv shu yerda paydo bo'ladi: sahifaning o'zida ko'riladi (istalgan joyiga o'tish mumkin) yoki **Yuklab olish**.
 
@@ -206,6 +206,8 @@ O'zgartirish barcha semestr hisobotlariga darhol ta'sir qiladi.
 - **Server xotirasi** — saqlangan hajm, bo'sh joy, Zoom bulutida qolganlar va xato bilan qolganlar.
 
 **Video yozuvlar** sahifasida barcha yozuvlar va ularning holati (Serverda, Navbatda, Xato) ko'rinadi. Xato bilan qolgan yozuvni **Qayta urinish** bilan qayta yuklaysiz.
+
+Tizim faqat **o'z darslarining** yozuvlarini yuklab oladi va Zoom'dan o'chiradi. Shu Zoom akkauntlar bilan tizimdan tashqari o'tkazilgan uchrashuvlar (masalan, PhD seminar) yozuviga tegilmaydi — ular Zoom bulutida qoladi. Avvalroq yuklab olinib qolganlari **"Darsga tegishli emas"** bo'limida ko'rinadi. Ularni Administrator savatcha belgisi bilan serverdan o'chiradi; xuddi shu yo'l bilan keraksiz dars yozuvini ham o'chirish mumkin. O'chirish Zoom bulutidagi nusxaga tegmaydi va o'chirilgan yozuv qayta yuklab olinmaydi. Zoom'dagi nusxa avvalroq o'chirilgan bo'lsa, oyna buni ogohlantiradi: Zoom savatida 30 kun saqlanadi, kerak bo'lsa avval yuklab oling.
 
 ### Amallar tarixi
 

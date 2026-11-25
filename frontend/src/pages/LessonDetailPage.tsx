@@ -38,15 +38,18 @@ function Axis({ from, to }: { from: number; to: number }) {
   )
 }
 
-function StudentRow({ row, from, to, muted = false }: { row: AttendanceRow; from: number; to: number; muted?: boolean }) {
+function StudentRow({ row, from, to, presence, muted = false }: { row: AttendanceRow; from: number; to: number; presence: number; muted?: boolean }) {
   const t = useT()
   const otherNames = row.names.filter((name) => name !== row.name)
+  // Qatnashgan hisoblanish chegarasidan kam: darsda bo'lmagan hisoblanadi — xira matn, boshqa rangdagi chiziq.
+  const below = !muted && row.percent !== null && row.percent < presence
   return (
     <li
       className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-5 py-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_5.5rem_8.5rem]', muted && 'opacity-60')}
+      title={below ? t('Qatnashgan hisoblanmaydi: {percent}% (chegara {presence}%)', { percent: row.percent ?? 0, presence }) : undefined}
     >
       <div className="min-w-0">
-        <p className="font-medium break-words text-ink-900 md:truncate" title={row.name}>
+        <p className={cn('font-medium break-words md:truncate', below ? 'text-steel-500' : 'text-ink-900')} title={row.name}>
           {row.name}
         </p>
         {otherNames.length > 0 && (
@@ -59,17 +62,17 @@ function StudentRow({ row, from, to, muted = false }: { row: AttendanceRow; from
         from={from}
         to={to}
         segments={row.segments}
-        tone={muted ? 'steel' : 'azure'}
+        tone={muted ? 'steel' : below ? 'amber' : 'azure'}
         label={t('{name} darsda boʻlgan vaqt', { name: row.name })}
         className="order-last col-span-2 md:order-none md:col-span-1"
       />
       <div className="text-right text-sm tabular-nums md:text-left">
         {/* Telefonda alohida ustun yo'q: qatnashgan vaqt shu yerda. */}
-        <p className="font-medium text-ink-900 md:hidden">
+        <p className={cn('font-medium md:hidden', below ? 'text-steel-500' : 'text-ink-900')}>
           {formatDuration(row.minutes)}
-          {row.percent !== null && <span className={cn('ml-1.5 font-normal', row.percent < 50 ? 'text-amber-600' : 'text-steel-500')}>{row.percent}%</span>}
+          {row.percent !== null && <span className={cn('ml-1.5 font-normal', below ? 'text-amber-600' : 'text-steel-500')}>{row.percent}%</span>}
         </p>
-        <p className="text-steel-600 md:text-ink-800">
+        <p className={cn(below ? 'text-steel-500' : 'text-steel-600 md:text-ink-800')}>
           {row.first_joined_at ? formatTime(row.first_joined_at) : '—'}
           {row.late_minutes > 0 && (
             <span className={cn('ml-1.5 md:ml-0 md:block', row.late_minutes > LATE_START_MINUTES ? 'text-amber-600' : 'text-steel-500')}>+{formatDuration(row.late_minutes)}</span>
@@ -77,9 +80,9 @@ function StudentRow({ row, from, to, muted = false }: { row: AttendanceRow; from
         </p>
       </div>
       <div className="hidden text-right text-sm md:block">
-        <p className="font-medium text-ink-900 tabular-nums">{formatDuration(row.minutes)}</p>
+        <p className={cn('font-medium tabular-nums', below ? 'text-steel-500' : 'text-ink-900')}>{formatDuration(row.minutes)}</p>
         <p className="text-steel-500">
-          {row.percent !== null && <span className={cn('tabular-nums', row.percent < 50 && 'text-amber-600')}>{row.percent}%</span>}
+          {row.percent !== null && <span className={cn('tabular-nums', below && 'text-amber-600')}>{row.percent}%</span>}
           {row.sessions > 1 && <span className="ml-2">{t('{count} marta kirgan', { count: row.sessions })}</span>}
         </p>
       </div>
@@ -406,12 +409,12 @@ export default function LessonDetailPage() {
                         <Fragment key={group.id}>
                           <GroupHeading group={group} count={rows.length} link={data.can_manage_students} />
                           {rows.map((row) => (
-                            <StudentRow key={row.student_id} row={row} from={from} to={to} />
+                            <StudentRow key={row.student_id} row={row} from={from} to={to} presence={data.presence_percent} />
                           ))}
                         </Fragment>
                       )
                     })
-                  : counted.map((row) => <StudentRow key={row.student_id} row={row} from={from} to={to} />)}
+                  : counted.map((row) => <StudentRow key={row.student_id} row={row} from={from} to={to} presence={data.presence_percent} />)}
               </ul>
               {byGroups && unassigned.length > 0 && (
                 <section className="border-t border-steel-100" aria-labelledby="unassigned-title">
@@ -447,7 +450,7 @@ export default function LessonDetailPage() {
                   </summary>
                   <ul className="divide-y divide-steel-100">
                     {ignored.map((row) => (
-                      <StudentRow key={row.student_id} row={row} from={from} to={to} muted />
+                      <StudentRow key={row.student_id} row={row} from={from} to={to} presence={data.presence_percent} muted />
                     ))}
                   </ul>
                 </details>

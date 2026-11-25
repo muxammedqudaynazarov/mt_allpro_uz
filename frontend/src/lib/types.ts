@@ -380,6 +380,8 @@ export interface LessonAttendance {
   students: AttendanceRow[]
   unassigned: UnassignedParticipant[]
   can_assign: boolean
+  /** Darsda qatnashgan hisoblanish chegarasi, % (undan kami — hisoblanmaydi). */
+  presence_percent: number
   can_manage_students: boolean
 }
 
@@ -513,7 +515,7 @@ export interface Recording {
   recording_type: string | null
   extension: string | null
   size: number
-  status: 'pending' | 'downloaded' | 'failed' | 'skipped'
+  status: 'pending' | 'downloaded' | 'failed' | 'skipped' | 'deleted'
   error: string | null
   attempts: number
   /** Shuncha urinishgacha tizim o'zi qayta yuklaydi (har 5 daqiqada). */
@@ -522,6 +524,8 @@ export interface Recording {
   recording_end: string | null
   downloaded_at: string | null
   zoom_deleted_at: string | null
+  /** Darsga tegishli bo'lmagan uchrashuvni tanish uchun. */
+  zoom_meeting_id: string
   url: string | null
   lesson?: { id: number; starts_at: string; group: string | null; is_lecture: boolean; teacher: string | null } | null
 }

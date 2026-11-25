@@ -25,7 +25,7 @@ class RecordingController extends Controller
     {
         Gate::authorize('view', $lesson);
 
-        return RecordingResource::collection($lesson->recordings()->where('status', '!=', Recording::SKIPPED)->orderBy('recording_start')->orderBy('id')->get());
+        return RecordingResource::collection($lesson->recordings()->visible()->orderBy('recording_start')->orderBy('id')->get());
     }
 
     /**
@@ -34,19 +34,50 @@ class RecordingController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $data = $request->validate(['status' => ['nullable', 'in:pending,downloaded,failed']]);
+        $data = $request->validate(['status' => ['nullable', 'in:pending,downloaded,failed,unlinked']]);
         $user = $request->user();
         // "Video yozuvlar" sahifasi: faqat video va audio (chat va matnli fayllar dars sahifasida qoladi).
+        // Darsga tegishli bo'lmagan uchrashuvlar yozuvlarini faqat Administrator ko'radi (va o'chiradi).
         $items = Recording::query()
             ->media()
-            ->where('status', '!=', Recording::SKIPPED)
+            ->visible()
             ->when(! $user->canViewAll(), fn ($q) => $q->whereHas('lesson', fn ($lesson) => $lesson->where('user_id', $user->id)))
-            ->when($data['status'] ?? null, fn ($q, $status) => $status === 'pending' ? $q->whereIn('status', [Recording::PENDING]) : $q->where('status', $status))
+            ->when(! $user->isSuperAdmin(), fn ($q) => $q->whereNotNull('lesson_id'))
+            ->when($data['status'] ?? null, fn ($q, $status) => $status === 'unlinked' ? $q->whereNull('lesson_id') : $q->where('status', $status))
             ->with(['lesson.group', 'lesson.groups', 'lesson.teacher'])
             ->latest('id')
             ->paginate(30);
 
-        return RecordingResource::collection($items)->additional(['meta' => ['storage' => $user->canViewAll() ? self::storage() : null]])->response();
+        return RecordingResource::collection($items)->additional(['meta' => [
+            'storage' => $user->canViewAll() ? self::storage() : null,
+            'unlinked' => $user->isSuperAdmin() ? Recording::query()->media()->visible()->whereNull('lesson_id')->count() : null,
+        ]])->response();
+    }
+
+    /**
+     * Yozuvni serverdan o'chirish (Administrator): masalan, tizim darsiga tegishli bo'lmagan uchrashuv
+     * videosi. Zoom bulutiga tegilmaydi. Uchrashuv nusxasida video/audio qolmasa — uning chat va
+     * matnli fayllari ham o'chiriladi.
+     */
+    public function destroy(Recording $recording): JsonResponse
+    {
+        abort_if(in_array($recording->status, [Recording::SKIPPED, Recording::DELETED], true), 404, __('Yozuv topilmadi.'));
+
+        $files = collect([$recording]);
+        $rest = Recording::query()->where('zoom_meeting_uuid', $recording->zoom_meeting_uuid)->whereKeyNot($recording->id)->visible()->get();
+        if (! $rest->contains(fn (Recording $file) => in_array($file->file_type, Recording::MEDIA_TYPES, true))) {
+            $files = $files->merge($rest);
+        }
+        $size = $files->where('status', Recording::DOWNLOADED)->sum('size');
+        $files->each(fn (Recording $file) => $file->removeFromServer());
+
+        Audit::log('recording.deleted', $recording->lesson ? 'Video yozuv serverdan oʻchirildi: :size MB' : 'Darsga tegishli boʻlmagan video yozuv serverdan oʻchirildi: :size MB', $recording->lesson, [
+            'recording_ids' => $files->pluck('id')->all(),
+            'zoom_meeting_id' => $recording->zoom_meeting_id,
+            'uuid' => $recording->zoom_meeting_uuid,
+        ], replace: ['size' => (string) round($size / 1024 ** 2, 1)]);
+
+        return response()->json(['data' => ['deleted' => $files->count()]]);
     }
 
     /**
@@ -114,7 +145,7 @@ class RecordingController extends Controller
     /** Xato bilan qolgan faylni qayta navbatga qo'yish. */
     public function retry(Recording $recording): RecordingResource
     {
-        abort_unless($recording->status === Recording::FAILED, 422, __('Faqat xato bilan qolgan yozuvni qayta yuklash mumkin.'));
+        abort_unless($recording->status === Recording::FAILED && $recording->lesson_id, 422, __('Faqat xato bilan qolgan yozuvni qayta yuklash mumkin.'));
         $recording->forceFill(['status' => Recording::PENDING, 'attempts' => 0, 'error' => null])->save();
         Audit::log('recording.retry', 'Video yozuv qayta navbatga qoʻyildi', $recording->lesson);
 
@@ -134,7 +165,7 @@ class RecordingController extends Controller
             // Navbatda / xato — ro'yxatdagi kabi faqat video va audio.
             'pending' => Recording::query()->media()->where('status', Recording::PENDING)->count(),
             'failed' => Recording::query()->media()->where('status', Recording::FAILED)->count(),
-            'zoom_bytes' => (int) Recording::query()->whereNull('zoom_deleted_at')->sum('size'),
+            'zoom_bytes' => (int) Recording::query()->whereNotNull('lesson_id')->whereNull('zoom_deleted_at')->sum('size'),
             'free_bytes' => $free === false ? null : (int) $free,
             'min_free_gb' => (int) config('recordings.min_free_gb'),
         ];

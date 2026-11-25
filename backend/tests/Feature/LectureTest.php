@@ -117,6 +117,7 @@ class LectureTest extends TestCase
         $this->assertSame([$a->id, $b->id, $b->id], collect($data['students'])->sortBy('name')->pluck('group_id')->values()->all());
         $this->assertSame([['NOMAʼLUM TALABA', 'z:zoom-x', 40]], collect($data['unassigned'])->map(fn ($row) => [$row['name'], $row['key'], $row['minutes']])->all());
         $this->assertTrue($data['can_assign']);
+        $this->assertSame(50, $data['presence_percent']);
 
         // Excel: guruh ustuni, aniqlanmaganlar oxirida.
         $sheets = $this->xlsx($this->actingAsUser($lesson->teacher)->get("/api/lessons/{$lesson->id}/attendance/export"));

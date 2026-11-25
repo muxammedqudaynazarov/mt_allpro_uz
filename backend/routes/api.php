@@ -121,6 +121,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
             Route::get('/settings', [SettingsController::class, 'show']);
             Route::put('/settings', [SettingsController::class, 'update']);
             Route::post('/recordings/{recording}/retry', [RecordingController::class, 'retry']);
+            Route::delete('/recordings/{recording}', [RecordingController::class, 'destroy']);
         });
     });
 });

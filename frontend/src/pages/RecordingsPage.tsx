@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, RotateCcw, Video } from 'lucide-react'
+import { Download, RotateCcw, Trash2, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage } from '@/lib/api'
@@ -10,6 +10,7 @@ import type { Paginated, Recording, RecordingStorage } from '@/lib/types'
 import { StaffName } from '@/components/ui/StaffName'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader, Panel } from '@/components/ui/Page'
 import { Pagination } from '@/components/ui/Pagination'
@@ -17,9 +18,14 @@ import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { useT } from '@/i18n/I18nProvider'
 
-type Filter = 'all' | 'downloaded' | 'pending' | 'failed'
+type Filter = 'all' | 'downloaded' | 'pending' | 'failed' | 'unlinked'
 
 const TYPE_LABELS: Record<string, string> = { MP4: 'Video', M4A: 'Audio', CHAT: 'Chat', TRANSCRIPT: 'Transkript', CC: 'Subtitr' }
+
+/** Zoom uchrashuv raqami: 812 3456 7890. */
+function meetingNumber(id: string): string {
+  return id.length > 9 ? `${id.slice(0, 3)} ${id.slice(3, 7)} ${id.slice(7)}` : id
+}
 
 export default function RecordingsPage() {
   const t = useT()
@@ -27,10 +33,15 @@ export default function RecordingsPage() {
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<Filter>('all')
   const [page, setPage] = useState(1)
+  const [removing, setRemoving] = useState<Recording | null>(null)
   const query = useQuery({
     queryKey: ['recordings', filter, page],
     queryFn: async () =>
-      (await api.get<Paginated<Recording> & { meta: { storage: RecordingStorage | null } }>('/api/recordings', { params: { status: filter === 'all' ? undefined : filter, page } })).data,
+      (
+        await api.get<Paginated<Recording> & { meta: { storage: RecordingStorage | null; unlinked: number | null } }>('/api/recordings', {
+          params: { status: filter === 'all' ? undefined : filter, page },
+        })
+      ).data,
     placeholderData: (previous) => previous,
   })
   const retry = useMutation({
@@ -41,7 +52,17 @@ export default function RecordingsPage() {
     },
     onError: (error) => toast.error(errorMessage(error)),
   })
+  const remove = useMutation({
+    mutationFn: async (id: number) => api.delete(`/api/recordings/${id}`),
+    onSuccess: () => {
+      toast.success(t('Yozuv serverdan oʻchirildi'))
+      setRemoving(null)
+      queryClient.invalidateQueries({ queryKey: ['recordings'] })
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
   const storage = query.data?.meta.storage
+  const unlinked = query.data?.meta.unlinked ?? 0
 
   return (
     <>
@@ -78,6 +99,8 @@ export default function RecordingsPage() {
           { value: 'downloaded', label: t('Yuklangan') },
           { value: 'pending', label: t('Navbatda'), count: storage?.pending },
           { value: 'failed', label: t('Xato'), count: storage?.failed },
+          // Shu Zoom akkauntlar bilan tizimdan tashqari o'tkazilgan uchrashuvlar (masalan, seminar).
+          ...(isSuperAdmin && (unlinked > 0 || filter === 'unlinked') ? [{ value: 'unlinked' as const, label: t('Darsga tegishli emas'), count: unlinked }] : []),
         ]}
       />
       {query.isPending ? (
@@ -86,7 +109,7 @@ export default function RecordingsPage() {
         <EmptyState
           className="rounded-panel bg-white ring-1 ring-steel-200"
           icon={<Video className="size-5" />}
-          title={t('Video yozuvlar yoʻq')}
+          title={filter === 'unlinked' ? t('Darsga tegishli boʻlmagan yozuvlar yoʻq') : t('Video yozuvlar yoʻq')}
           description={
             isSuperAdmin
               ? t('Umumiy sozlamalarda “Darslarni avtomatik yozib olish”ni yoqing.')
@@ -115,11 +138,13 @@ export default function RecordingsPage() {
                           {item.lesson.group}
                         </Link>
                       ) : (
-                        <span className="text-steel-500">{t('Dars topilmadi')}</span>
+                        <span className="font-medium text-ink-900">{t('Darsga tegishli emas')}</span>
                       )}
                       <p className="text-steel-500">
                         {item.lesson?.teacher && <StaffName name={item.lesson.teacher} />}
                         {item.lesson && `, ${formatDateTime(item.lesson.starts_at)}`}
+                        {!item.lesson &&
+                          `${t('Zoom uchrashuvi {id}', { id: meetingNumber(item.zoom_meeting_id) })}${item.recording_start ? `, ${formatDateTime(item.recording_start)}` : ''}`}
                       </p>
                     </td>
                     <td className="px-3 py-3">{t(TYPE_LABELS[item.file_type] ?? item.file_type)}</td>
@@ -154,12 +179,47 @@ export default function RecordingsPage() {
                           {t('Qayta urinish')}
                         </Button>
                       )}
+                      {isSuperAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="ml-2 text-onair-600 hover:bg-onair-50"
+                          icon={<Trash2 className="size-4" />}
+                          onClick={() => setRemoving(item)}
+                          aria-label={t('Serverdan oʻchirish')}
+                          title={t('Serverdan oʻchirish')}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <ConfirmDialog
+            open={removing !== null}
+            title={t('Yozuvni serverdan oʻchirish?')}
+            description={
+              removing && (
+                <>
+                  {removing.lesson
+                    ? t('Dars yozuvi serverdan butunlay oʻchiriladi va qayta yuklab olinmaydi.')
+                    : t('Bu yozuv tizim darsiga tegishli emas (masalan, shu Zoom akkaunt bilan oʻtkazilgan seminar). Fayl serverdan butunlay oʻchiriladi.')}{' '}
+                  {t('Zoom bulutidagi nusxaga tegilmaydi.')}
+                  {removing.zoom_deleted_at && (
+                    <strong className="mt-2 block font-medium text-amber-700">
+                      {t('Zoom’dagi nusxa avvalroq oʻchirilgan (Zoom savatida 30 kun saqlanadi). Kerak boʻlsa, avval yuklab oling.')}
+                    </strong>
+                  )}
+                </>
+              )
+            }
+            confirmLabel={t('Oʻchirish')}
+            tone="danger"
+            loading={remove.isPending}
+            onConfirm={() => removing && remove.mutate(removing.id)}
+            onClose={() => setRemoving(null)}
+          />
           {query.data.meta.last_page > 1 && (
             <div className="border-t border-steel-100 px-5 py-3">
               <Pagination page={page} lastPage={query.data.meta.last_page} total={query.data.meta.total} onChange={setPage} />

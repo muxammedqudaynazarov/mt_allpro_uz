@@ -36,6 +36,13 @@ class RecordingSync
             return 0;
         }
         $lesson = Lesson::query()->where('zoom_account_id', $account->id)->where('zoom_meeting_id', $meetingId)->latest('starts_at')->first();
+        // Tizim darsiga tegishli bo'lmagan uchrashuv (masalan, shu akkaunt bilan o'tkazilgan seminar) — tegilmaydi:
+        // yuklab olinmaydi va Zoom bulutidan o'chirilmaydi.
+        if (! $lesson) {
+            Log::info('Zoom yozuvi tizim darsiga tegishli emas — oʻtkazib yuborildi', ['account' => $account->id, 'meeting_id' => $meetingId]);
+
+            return 0;
+        }
 
         $created = 0;
         foreach ((array) ($object['recording_files'] ?? []) as $file) {
@@ -45,7 +52,7 @@ class RecordingSync
                 continue;
             }
             $recording = Recording::firstOrNew(['zoom_file_id' => $fileId]);
-            if ($recording->status === Recording::DOWNLOADED) {
+            if (in_array($recording->status, [Recording::DOWNLOADED, Recording::DELETED], true)) {
                 continue;
             }
             $isNew = ! $recording->exists;
@@ -210,8 +217,10 @@ class RecordingSync
             return 0;
         }
 
+        // Faqat tizim darslarining yozuvlari (boshqa uchrashuvlarniki Zoom'da qoladi).
         $uuids = Recording::query()
             ->whereNull('zoom_deleted_at')
+            ->whereNotNull('lesson_id')
             ->where('status', Recording::DOWNLOADED)
             ->distinct()
             ->pluck('zoom_meeting_uuid');

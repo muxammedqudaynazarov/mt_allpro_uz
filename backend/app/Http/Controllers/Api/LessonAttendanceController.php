@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\SyncLessonAttendance;
+use App\Enums\Assessment;
 use App\Exceptions\ExternalServiceException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LessonResource;
@@ -201,6 +202,8 @@ class LessonAttendanceController extends Controller
                 'segments' => $timeline($row['segments']),
             ])->values() : [],
             'can_assign' => $lesson->is_lecture,
+            // Shundan kam qatnashgan talaba darsda bo'lgan hisoblanmaydi (Umumiy sozlamalar).
+            'presence_percent' => Assessment::criteria()['presence_percent'],
             'can_manage_students' => (bool) $request->user()?->can('manageStudents', $lesson->group),
         ];
     }

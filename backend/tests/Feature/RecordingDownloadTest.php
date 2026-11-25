@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exceptions\ExternalServiceException;
+use App\Models\Lesson;
 use App\Models\Recording;
 use App\Models\ZoomAccount;
 use App\Services\Zoom\RecordingSync;
@@ -85,6 +86,8 @@ class RecordingDownloadTest extends TestCase
     public function test_download_token_from_webhook_is_stored_encrypted_and_hidden(): void
     {
         $account = ZoomAccount::factory()->create();
+        // Faqat tizim darslarining yozuvlari ro'yxatga olinadi.
+        Lesson::factory()->finished()->create(['zoom_account_id' => $account->id, 'zoom_meeting_id' => '81234567890']);
         app(RecordingSync::class)->register($account, [
             'id' => 81234567890,
             'uuid' => 'abc==',

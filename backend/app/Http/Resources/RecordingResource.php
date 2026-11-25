@@ -27,6 +27,8 @@ class RecordingResource extends JsonResource
             'recording_end' => $this->recording_end?->toIso8601String(),
             'downloaded_at' => $this->downloaded_at?->toIso8601String(),
             'zoom_deleted_at' => $this->zoom_deleted_at?->toIso8601String(),
+            // Darsga tegishli bo'lmagan uchrashuvni tanish uchun.
+            'zoom_meeting_id' => $this->zoom_meeting_id,
             'url' => $ready ? url('/api/recordings/'.$this->id.'/file') : null,
             'lesson' => $this->whenLoaded('lesson', fn () => $this->lesson ? [
                 'id' => $this->lesson->id,

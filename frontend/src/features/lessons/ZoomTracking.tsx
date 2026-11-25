@@ -108,7 +108,7 @@ export function PresenceStrip({
   from: number
   to: number
   segments: [string, string][]
-  tone?: 'azure' | 'ink' | 'steel'
+  tone?: 'azure' | 'ink' | 'steel' | 'amber'
   label?: string
   className?: string
 }) {
@@ -117,6 +117,8 @@ export function PresenceStrip({
     azure: 'bg-azure-500',
     ink: 'bg-ink-800',
     steel: 'bg-steel-300',
+    // Qatnashgan hisoblanish chegarasidan kam.
+    amber: 'bg-amber-500/60',
   }[tone]
 
   return (

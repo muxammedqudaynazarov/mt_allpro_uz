@@ -23,6 +23,9 @@ class Recording extends Model
 
     public const FAILED = 'failed';
 
+    /** Administrator serverdan o'chirgan: qayta ro'yxatga olinmaydi va yuklanmaydi. */
+    public const DELETED = 'deleted';
+
     /** Video va audio. Chat, transkript va boshqa matnli fayllar faqat dars sahifasida ko'rinadi. */
     public const MEDIA_TYPES = ['MP4', 'M4A'];
 
@@ -61,7 +64,7 @@ class Recording extends Model
 
     public function scopeDue(Builder $query): Builder
     {
-        return $query->where(fn (Builder $q) => $q
+        return $query->whereNotNull('lesson_id')->where(fn (Builder $q) => $q
             ->where('status', self::PENDING)
             ->orWhere(fn (Builder $q) => $q->where('status', self::FAILED)->where('attempts', '<', (int) config('recordings.max_attempts'))));
     }
@@ -79,6 +82,29 @@ class Recording extends Model
     public function scopeMedia(Builder $query): Builder
     {
         return $query->whereIn('file_type', self::MEDIA_TYPES);
+    }
+
+    /** Ro'yxatlarda ko'rinadiganlar: yuklab olinmaydigan (skipped) va o'chirilganlardan tashqari. */
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->whereNotIn('status', [self::SKIPPED, self::DELETED]);
+    }
+
+    /** Faylni serverdan o'chiradi; yozuv "o'chirilgan" bo'lib qoladi (Zoom'dan qayta yuklanmasligi uchun). */
+    public function removeFromServer(): void
+    {
+        $path = $this->absolutePath();
+        if ($path && is_file($path)) {
+            @unlink($path);
+        }
+        $this->forceFill([
+            'status' => self::DELETED,
+            'path' => null,
+            'download_url' => null,
+            'download_token' => null,
+            'download_token_expires_at' => null,
+            'error' => null,
+        ])->save();
     }
 
     public function mimeType(): string

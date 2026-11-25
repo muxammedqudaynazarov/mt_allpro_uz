@@ -177,4 +177,73 @@ class RecordingTest extends TestCase
         // 30 daqiqa ichida qayta so'ralmaydi.
         $this->assertSame(0, app(RecordingSync::class)->poll());
     }
+
+    public function test_meetings_outside_lessons_are_not_downloaded(): void
+    {
+        $account = ZoomAccount::factory()->create();
+        // Shu akkaunt bilan o'tkazilgan PhD seminar: tizimda bunday dars yo'q.
+        $created = app(RecordingSync::class)->register($account, ['id' => 99911122233, 'uuid' => 'seminar==', 'recording_files' => [
+            ['id' => 's-video', 'file_type' => 'MP4', 'file_size' => 10, 'status' => 'completed', 'download_url' => 'https://zoom.us/rec/download/s'],
+        ]]);
+
+        $this->assertSame(0, $created);
+        $this->assertSame(0, Recording::count());
+    }
+
+    public function test_admin_deletes_recordings_from_server(): void
+    {
+        Setting::put('recording', ['enabled' => true, 'delete_from_zoom' => true, 'delete_action' => 'trash', 'include_audio' => false]);
+        $account = ZoomAccount::factory()->create();
+        $lesson = Lesson::factory()->finished()->create(['zoom_account_id' => $account->id]);
+        $file = function (string $id, string $type, ?Lesson $lesson, string $uuid) use ($account) {
+            $path = '2026/11/'.$uuid.'/'.$id.'.bin';
+            File::ensureDirectoryExists($this->root.'/2026/11/'.$uuid);
+            file_put_contents($this->root.'/'.$path, str_repeat('x', 1024));
+
+            return Recording::create([
+                'lesson_id' => $lesson?->id, 'zoom_account_id' => $account->id, 'zoom_meeting_id' => '123', 'zoom_meeting_uuid' => $uuid, 'zoom_file_id' => $id,
+                'file_type' => $type, 'size' => 1024, 'status' => Recording::DOWNLOADED, 'path' => $path,
+            ]);
+        };
+        // Avvalroq yuklab olingan begona uchrashuv (seminar): video va chat.
+        $seminar = $file('s-video', 'MP4', null, 'seminar');
+        $seminarChat = $file('s-chat', 'CHAT', null, 'seminar');
+        $lessonVideo = $file('l-video', 'MP4', $lesson, 'lesson');
+        $lessonSpeaker = $file('l-speaker', 'MP4', $lesson, 'lesson');
+        $lessonChat = $file('l-chat', 'CHAT', $lesson, 'lesson');
+        $admin = User::factory()->superAdmin()->create();
+        $education = User::factory()->education()->create();
+
+        // Begona uchrashuv yozuvlarini faqat Administrator ko'radi; Zoom'dan o'chirilmaydi.
+        $this->actingAsUser($admin)->getJson('/api/recordings?status=unlinked')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.unlinked', 1)->assertJsonPath('data.0.zoom_meeting_id', '123');
+        $this->actingAsUser($education)->getJson('/api/recordings')->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.unlinked', null);
+        Http::fake(['zoom.us/oauth/token*' => Http::response(['access_token' => 'token', 'expires_in' => 3600]), 'api.zoom.us/*' => Http::response(null, 204)]);
+        app(RecordingSync::class)->purge();
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'seminar'));
+        Http::fake();
+
+        $this->actingAsUser($education)->deleteJson("/api/recordings/{$seminar->id}")->assertForbidden();
+        $this->actingAsUser(User::factory()->create())->deleteJson("/api/recordings/{$seminar->id}")->assertForbidden();
+
+        // Uchrashuvda boshqa video qolmadi — chat ham o'chadi.
+        $this->actingAsUser($admin)->deleteJson("/api/recordings/{$seminar->id}")->assertOk()->assertJsonPath('data.deleted', 2);
+        $this->assertFileDoesNotExist($this->root.'/2026/11/seminar/s-video.bin');
+        $this->assertFileDoesNotExist($this->root.'/2026/11/seminar/s-chat.bin');
+        $this->assertSame([Recording::DELETED, Recording::DELETED], [$seminar->fresh()->status, $seminarChat->fresh()->status]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'recording.deleted']);
+        $this->actingAsUser($admin)->getJson('/api/recordings?status=unlinked')->assertJsonCount(0, 'data');
+        $this->actingAsUser($admin)->deleteJson("/api/recordings/{$seminar->id}")->assertNotFound();
+
+        // Dars videolaridan biri: ikkinchi video va chat qoladi.
+        $this->actingAsUser($admin)->deleteJson("/api/recordings/{$lessonVideo->id}")->assertOk()->assertJsonPath('data.deleted', 1);
+        $this->assertSame(Recording::DOWNLOADED, $lessonChat->fresh()->status);
+        $this->actingAsUser($lesson->teacher)->getJson("/api/lessons/{$lesson->id}/recordings")->assertJsonCount(2, 'data');
+
+        // Zoom webhook'i qayta kelsa ham o'chirilgan fayl tiklanmaydi.
+        app(RecordingSync::class)->register($account, ['id' => 123, 'uuid' => 'lesson', 'recording_files' => [
+            ['id' => 'l-video', 'file_type' => 'MP4', 'file_size' => 1024, 'status' => 'completed', 'download_url' => 'https://zoom.us/rec/download/l'],
+        ]]);
+        $this->assertSame(Recording::DELETED, $lessonVideo->fresh()->status);
+        $this->assertSame(Recording::DOWNLOADED, $lessonSpeaker->fresh()->status);
+    }
 }
