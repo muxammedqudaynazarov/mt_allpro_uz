@@ -207,7 +207,7 @@ O'zgartirish barcha semestr hisobotlariga darhol ta'sir qiladi.
 
 **Video yozuvlar** sahifasida barcha yozuvlar va ularning holati (Serverda, Navbatda, Xato) ko'rinadi. Xato bilan qolgan yozuvni **Qayta urinish** bilan qayta yuklaysiz.
 
-Tizim faqat **o'z darslarining** yozuvlarini yuklab oladi va Zoom'dan o'chiradi. Shu Zoom akkauntlar bilan tizimdan tashqari o'tkazilgan uchrashuvlar (masalan, PhD seminar) yozuviga tegilmaydi — ular Zoom bulutida qoladi. Avvalroq yuklab olinib qolganlari **"Darsga tegishli emas"** bo'limida ko'rinadi. Ularni Administrator savatcha belgisi bilan serverdan o'chiradi; xuddi shu yo'l bilan keraksiz dars yozuvini ham o'chirish mumkin. O'chirish Zoom bulutidagi nusxaga tegmaydi va o'chirilgan yozuv qayta yuklab olinmaydi. Zoom'dagi nusxa avvalroq o'chirilgan bo'lsa, oyna buni ogohlantiradi: Zoom savatida 30 kun saqlanadi, kerak bo'lsa avval yuklab oling.
+Tizim faqat **o'z darslarining** yozuvlarini yuklab oladi va Zoom'dan o'chiradi. Shu Zoom akkauntlar bilan tizimdan tashqari o'tkazilgan uchrashuvlar (masalan, PhD seminar) yozuviga tegilmaydi — ular Zoom bulutida qoladi. Avvalroq yuklab olinib qolganlari **"Darsga tegishli emas"** bo'limida ko'rinadi. Ularni Administrator savatcha belgisi bilan serverdan o'chiradi. Dars yozuvlarini o'chirib bo'lmaydi. O'chirish Zoom bulutidagi nusxaga tegmaydi va o'chirilgan yozuv qayta yuklab olinmaydi. Zoom'dagi nusxa avvalroq o'chirilgan bo'lsa, oyna buni ogohlantiradi: Zoom savatida 30 kun saqlanadi, kerak bo'lsa avval yuklab oling.
 
 ### Amallar tarixi
 

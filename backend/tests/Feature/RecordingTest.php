@@ -234,16 +234,16 @@ class RecordingTest extends TestCase
         $this->actingAsUser($admin)->getJson('/api/recordings?status=unlinked')->assertJsonCount(0, 'data');
         $this->actingAsUser($admin)->deleteJson("/api/recordings/{$seminar->id}")->assertNotFound();
 
-        // Dars videolaridan biri: ikkinchi video va chat qoladi.
-        $this->actingAsUser($admin)->deleteJson("/api/recordings/{$lessonVideo->id}")->assertOk()->assertJsonPath('data.deleted', 1);
-        $this->assertSame(Recording::DOWNLOADED, $lessonChat->fresh()->status);
-        $this->actingAsUser($lesson->teacher)->getJson("/api/lessons/{$lesson->id}/recordings")->assertJsonCount(2, 'data');
+        // Dars yozuvlari o'chirilmaydi.
+        $this->actingAsUser($admin)->deleteJson("/api/recordings/{$lessonVideo->id}")->assertStatus(422);
+        $this->assertFileExists($this->root.'/2026/11/lesson/l-video.bin');
+        $this->assertSame([Recording::DOWNLOADED, Recording::DOWNLOADED, Recording::DOWNLOADED], [$lessonVideo->fresh()->status, $lessonSpeaker->fresh()->status, $lessonChat->fresh()->status]);
 
         // Zoom webhook'i qayta kelsa ham o'chirilgan fayl tiklanmaydi.
-        app(RecordingSync::class)->register($account, ['id' => 123, 'uuid' => 'lesson', 'recording_files' => [
-            ['id' => 'l-video', 'file_type' => 'MP4', 'file_size' => 1024, 'status' => 'completed', 'download_url' => 'https://zoom.us/rec/download/l'],
+        $seminar->forceFill(['lesson_id' => $lesson->id])->save();
+        app(RecordingSync::class)->register($account, ['id' => 123, 'uuid' => 'seminar', 'recording_files' => [
+            ['id' => 's-video', 'file_type' => 'MP4', 'file_size' => 1024, 'status' => 'completed', 'download_url' => 'https://zoom.us/rec/download/s'],
         ]]);
-        $this->assertSame(Recording::DELETED, $lessonVideo->fresh()->status);
-        $this->assertSame(Recording::DOWNLOADED, $lessonSpeaker->fresh()->status);
+        $this->assertSame(Recording::DELETED, $seminar->fresh()->status);
     }
 }

@@ -179,7 +179,8 @@ export default function RecordingsPage() {
                           {t('Qayta urinish')}
                         </Button>
                       )}
-                      {isSuperAdmin && (
+                      {/* Faqat darsga tegishli bo'lmagan yozuvlar o'chiriladi. */}
+                      {isSuperAdmin && !item.lesson && (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -202,9 +203,7 @@ export default function RecordingsPage() {
             description={
               removing && (
                 <>
-                  {removing.lesson
-                    ? t('Dars yozuvi serverdan butunlay oʻchiriladi va qayta yuklab olinmaydi.')
-                    : t('Bu yozuv tizim darsiga tegishli emas (masalan, shu Zoom akkaunt bilan oʻtkazilgan seminar). Fayl serverdan butunlay oʻchiriladi.')}{' '}
+                  {t('Bu yozuv tizim darsiga tegishli emas (masalan, shu Zoom akkaunt bilan oʻtkazilgan seminar). Fayl serverdan butunlay oʻchiriladi.')}{' '}
                   {t('Zoom bulutidagi nusxaga tegilmaydi.')}
                   {removing.zoom_deleted_at && (
                     <strong className="mt-2 block font-medium text-amber-700">

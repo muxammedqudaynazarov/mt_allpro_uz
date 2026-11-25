@@ -275,7 +275,6 @@ export const kaa: Record<string, string> = {
   "Foydalanuvchi faollashtirildi": "Paydalanıwshı aktivlestirildi",
   "Bloklash": "Bloklaw",
   "Bu yozuv tizim darsiga tegishli emas (masalan, shu Zoom akkaunt bilan oʻtkazilgan seminar). Fayl serverdan butunlay oʻchiriladi.": "Bul jazba sistema sabaǵına tiyisli emes (mısalı, usı Zoom akkaunt penen ótkerilgen seminar). Fayl serverden pútkilley óshiriledi.",
-  "Dars yozuvi serverdan butunlay oʻchiriladi va qayta yuklab olinmaydi.": "Sabaq jazbası serverden pútkilley óshiriledi hám qayta júklep alınbaydı.",
   "Darsga tegishli boʻlmagan yozuvlar yoʻq": "Sabaqqa tiyisli bolmaǵan jazbalar joq",
   "Darsga tegishli emas": "Sabaqqa tiyisli emes",
   "Qatnashgan hisoblanmaydi: {percent}% (chegara {presence}%)": "Qatnasqan esaplanbaydı: {percent}% (shegara {presence}%)",

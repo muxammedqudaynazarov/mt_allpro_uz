@@ -55,13 +55,14 @@ class RecordingController extends Controller
     }
 
     /**
-     * Yozuvni serverdan o'chirish (Administrator): masalan, tizim darsiga tegishli bo'lmagan uchrashuv
-     * videosi. Zoom bulutiga tegilmaydi. Uchrashuv nusxasida video/audio qolmasa — uning chat va
-     * matnli fayllari ham o'chiriladi.
+     * Darsga tegishli bo'lmagan uchrashuv yozuvini serverdan o'chirish (Administrator): masalan,
+     * shu akkaunt bilan o'tkazilgan seminar videosi. Dars yozuvlari o'chirilmaydi. Zoom bulutiga
+     * tegilmaydi. Uchrashuv nusxasida video/audio qolmasa — uning chat va matnli fayllari ham.
      */
     public function destroy(Recording $recording): JsonResponse
     {
         abort_if(in_array($recording->status, [Recording::SKIPPED, Recording::DELETED], true), 404, __('Yozuv topilmadi.'));
+        abort_if($recording->lesson_id !== null, 422, __('Dars yozuvini oʻchirib boʻlmaydi — faqat darsga tegishli boʻlmagan yozuvlar oʻchiriladi.'));
 
         $files = collect([$recording]);
         $rest = Recording::query()->where('zoom_meeting_uuid', $recording->zoom_meeting_uuid)->whereKeyNot($recording->id)->visible()->get();
@@ -71,7 +72,7 @@ class RecordingController extends Controller
         $size = $files->where('status', Recording::DOWNLOADED)->sum('size');
         $files->each(fn (Recording $file) => $file->removeFromServer());
 
-        Audit::log('recording.deleted', $recording->lesson ? 'Video yozuv serverdan oʻchirildi: :size MB' : 'Darsga tegishli boʻlmagan video yozuv serverdan oʻchirildi: :size MB', $recording->lesson, [
+        Audit::log('recording.deleted', 'Darsga tegishli boʻlmagan video yozuv serverdan oʻchirildi: :size MB', null, [
             'recording_ids' => $files->pluck('id')->all(),
             'zoom_meeting_id' => $recording->zoom_meeting_id,
             'uuid' => $recording->zoom_meeting_uuid,
