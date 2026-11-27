@@ -24,6 +24,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/auth/AuthProvider'
 import { api } from '@/lib/api'
+import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat'
 import { ROLE_LABELS, topRole } from '@/lib/labels'
 import type { Role } from '@/lib/types'
 import { StaffName } from '@/components/ui/StaffName'
@@ -208,6 +209,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AppShell() {
   const t = useT()
+  usePresenceHeartbeat()
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 

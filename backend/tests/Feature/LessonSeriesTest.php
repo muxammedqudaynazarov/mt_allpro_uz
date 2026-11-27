@@ -84,11 +84,22 @@ class LessonSeriesTest extends TestCase
         $this->assertSame($series->id, $lesson->lesson_series_id);
         $this->assertSame('13:00', $lesson->starts_at->format('H:i'));
         $this->assertSame(LessonStatus::Scheduled, $lesson->status);
-        Queue::assertPushed(SendTelegramMessage::class, fn (SendTelegramMessage $job) => $job->chatId === '777' && str_contains($job->html, 'Haftalik dars'));
+        // Xabar yaratilganda emas — darsdan 30 daqiqa oldin (lessons:remind).
+        Queue::assertNothingPushed();
 
         // Qayta ishga tushsa — ikkinchi dars yaratilmaydi.
         $this->travelTo($this->wednesday->copy()->setTime(12, 1));
         $this->assertSame(['created' => 0, 'failed' => 0], $materialize->run());
+
+        $this->artisan('lessons:remind')->assertSuccessful();
+        Queue::assertNothingPushed();
+        $this->travelTo($this->wednesday->copy()->setTime(12, 30));
+        $this->artisan('lessons:remind')->assertSuccessful();
+        Queue::assertPushed(SendTelegramMessage::class, fn (SendTelegramMessage $job) => $job->chatId === '777'
+            && str_contains($job->html, '30 daqiqadan')
+            && str_contains($job->html, 'har hafta')
+            && str_contains($job->buttons[0][0]['url'], '/l/'.$lesson->id.'/start')
+            && str_contains($job->buttons[1][0]['url'], 't.me/share'));
         // Boshqa kun (payshanba) — hech narsa.
         $this->travelTo($this->wednesday->copy()->addDay()->setTime(12, 30));
         $materialize->run();

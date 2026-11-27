@@ -7,8 +7,10 @@ use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Models\UserVisit;
 use App\Support\Audit;
 use App\Support\Notifier;
+use App\Support\UserPresence;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +22,38 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    /** Kirish tarixi: qachon kirgan va chiqqan (oxirgi 180 kun). */
+    public function visits(Request $request, User $user): JsonResponse
+    {
+        Gate::authorize('viewAny', User::class);
+        abort_unless(User::query()->visibleTo($request->user())->whereKey($user->id)->exists(), 404);
+
+        $online = UserPresence::isOnline($user);
+        $visits = UserVisit::query()->where('user_id', $user->id)->orderByDesc('started_at')->orderByDesc('id')->paginate(20);
+        $latestOpen = $visits->getCollection()->first(fn (UserVisit $visit) => $visit->ended_at === null)?->id;
+
+        return response()->json([
+            'data' => $visits->getCollection()->map(function (UserVisit $visit) use ($online, $latestOpen) {
+                $current = $online && $visit->id === $latestOpen;
+                $end = $visit->ended_at ?? ($current ? null : $visit->last_seen_at);
+
+                return [
+                    'id' => $visit->id,
+                    'started_at' => $visit->started_at->toIso8601String(),
+                    'ended_at' => $end?->toIso8601String(),
+                    'online' => $current,
+                    // logout — o'zi chiqdi; idle — sahifani yopgan yoki faolligi to'xtagan.
+                    'end_reason' => $current ? null : ($visit->end_reason ?? UserVisit::IDLE),
+                    'minutes' => (int) round($visit->started_at->diffInSeconds($end ?? now()) / 60),
+                    'device' => $visit->device(),
+                    'ip' => $visit->ip,
+                ];
+            })->values(),
+            'meta' => ['current_page' => $visits->currentPage(), 'last_page' => $visits->lastPage(), 'total' => $visits->total()],
+            'user' => ['id' => $user->id, 'name' => $user->displayName(), 'online' => $online, 'last_seen_at' => $user->last_seen_at?->toIso8601String()],
+        ]);
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', User::class);

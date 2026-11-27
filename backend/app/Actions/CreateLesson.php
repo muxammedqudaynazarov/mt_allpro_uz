@@ -186,7 +186,10 @@ class CreateLesson
                 $lesson->setRelation('teacher', $teacher);
 
                 Audit::log('lesson.created', $lecture ? 'Maʼruza yaratildi: :group, :time' : 'Dars yaratildi: :group, :time', $lesson, ['zoom_meeting_id' => $meeting['id'], 'host' => $host->email, 'groups' => $groups->pluck('id')->all()], $teacher, ['group' => $names, 'time' => $startsAt->format('d.m.Y H:i')]);
-                $this->notifier->lessonCreated($lesson);
+                // Haftalik dars uchun xabar 30 daqiqa oldin yuboriladi (lessons:remind).
+                if (! $seriesId) {
+                    $this->notifier->lessonCreated($lesson);
+                }
 
                 return $lesson;
             });

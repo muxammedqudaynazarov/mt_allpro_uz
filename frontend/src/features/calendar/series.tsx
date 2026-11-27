@@ -136,7 +136,7 @@ export function SeriesModal({ open, onClose, initial }: { open: boolean; onClose
       onClose={onClose}
       size="lg"
       title={t('Haftalik dars qoʻshish')}
-      description={t('Zoom uchrashuvi har hafta dars kuni, boshlanishidan 1 soat oldin avtomatik yaratiladi va havola sizga Telegram orqali yuboriladi.')}
+      description={t('Zoom uchrashuvi har hafta dars kuni avtomatik yaratiladi, havolalar esa darsdan 30 daqiqa oldin sizga Telegram orqali yuboriladi.')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>

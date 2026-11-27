@@ -11,6 +11,7 @@ use App\Services\Hemis\HemisOAuth;
 use App\Services\Hemis\HemisUser;
 use App\Support\Audit;
 use App\Support\Notifier;
+use App\Support\UserPresence;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -102,6 +103,7 @@ class HemisController extends Controller
 
         Auth::guard('web')->login($user, remember: true);
         $request->session()->regenerate();
+        UserPresence::login($user, $request);
 
         Audit::log($isNew ? 'auth.registered' : 'auth.login', $isNew ? 'HEMIS orqali roʻyxatdan oʻtdi: :name' : 'HEMIS orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
         if ($restored) {

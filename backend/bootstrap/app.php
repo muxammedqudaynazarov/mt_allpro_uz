@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureAccountStatus;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\TrackPresence;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(DetectUntrustedProxy::class);
         $middleware->alias([
             'account' => EnsureAccountStatus::class,
+            'presence' => TrackPresence::class,
             'role' => EnsureRole::class,
         ]);
         // Mehmon foydalanuvchini React login sahifasiga yo'naltiramiz (API uchun 401 JSON qaytadi).

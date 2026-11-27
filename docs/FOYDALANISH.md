@@ -64,7 +64,7 @@ Semestr hisobotida ma'ruza va amaliy darslardagi qatnashuv **alohida ustunlarda*
 
 **Kalendar** sahifasi haftani kunlar bo'yicha ko'rsatadi: yaratilgan darslar va haftalik jadvaldan kelayotgan darslar. **Oldingi hafta / Bu hafta / Keyingi hafta** bilan o'tiladi.
 
-**Haftalik dars qo'shish**: hafta kuni, juftlik, guruh, Zoom host (yoki avtomatik), boshlanish va (ixtiyoriy) tugash sanasi. Tizim har hafta **dars kuni, boshlanishidan 1 soat oldin** Zoom uchrashuvini yaratadi va havolalarni Telegram'ingizga yuboradi. Tanlangan host o'sha kuni band bo'lsa, boshqa bo'sh host olinadi; bo'sh host bo'lmasa, dars yaratilmaydi va sababi Kalendar'da hamda Telegram'da yoziladi.
+**Haftalik dars qo'shish**: hafta kuni, juftlik, guruh, Zoom host (yoki avtomatik), boshlanish va (ixtiyoriy) tugash sanasi. Tizim har hafta **dars kuni, boshlanishidan 1 soat oldin** Zoom uchrashuvini yaratadi, **30 daqiqa oldin** esa Telegram'ingizga eslatma yuboradi: guruh, vaqt, mavzu, kirish kodi, talabalar havolasi hamda **Darsni boshlash** va **Guruhga yuborish** tugmalari. Kalendar orqali boshqa kunga oldindan qo'yilgan darslar uchun ham shunday eslatma keladi. Tanlangan host o'sha kuni band bo'lsa, boshqa bo'sh host olinadi; bo'sh host bo'lmasa, dars yaratilmaydi va sababi Kalendar'da hamda Telegram'da yoziladi.
 
 Kalendar'dagi darsni bossangiz:
 
@@ -135,6 +135,8 @@ Ma'ruzalar bo'lsa, guruh hisobotida **Ma'ruza** va **Amaliy** ustunlari qo'shila
 ### Yangi foydalanuvchilarni tasdiqlash
 
 Xodim birinchi marta HEMIS orqali kirganda **"Tasdiq kutmoqda"** holatida bo'ladi, sizga Telegram'da xabar keladi. **Foydalanuvchilar** sahifasida uning qatoridagi **Tasdiqlash** tugmasini bosing. Rolni (O'qituvchi, O'quv bo'limi, Administrator) berish, bloklash va o'chirish — Administrator vakolatida.
+
+**Faollik** ustunida foydalanuvchi hozir **Onlayn** (avatarida yashil nuqta) yoki **Oflayn** ekani va oxirgi marta qachon faol bo'lgani ("12 daqiqa oldin", "kecha 18:20") ko'rinadi. Sayt ochiq va ko'rinib turgan bo'lsa, foydalanuvchi onlayn hisoblanadi; 3 daqiqa faollik bo'lmasa — oflayn. Ustunni (yoki **⋯ → Kirish tarixi**) bossangiz, **kirish tarixi** ochiladi: har kuni qachon kirgan va chiqqan, qancha vaqt bo'lgan, qaysi qurilma (brauzer, tizim) va IP manzildan. "Chiqdi" — chiqish tugmasini bosgan; "Sahifani yopgan" — sahifani yopgan yoki 15 daqiqadan ko'p faol bo'lmagan. Tarix 180 kun saqlanadi.
 
 ### O'quv yillari
 

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Support\UserPresence;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +28,9 @@ class UserResource extends JsonResource
             'can_manage_calendar' => (bool) $this->can_manage_calendar,
             'lessons_count' => (int) ($this->lessons_count ?? 0),
             'last_login_at' => $this->last_login_at?->toIso8601String(),
+            // Onlayn: oxirgi 3 daqiqada faol bo'lgan; aks holda — oxirgi faollik vaqti.
+            'online' => UserPresence::isOnline($this->resource),
+            'last_seen_at' => $this->last_seen_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

@@ -424,7 +424,7 @@ export default function CreateLessonPage() {
                       {selectedSlot && `: ${formatWeekday(new Date(`${date}T12:00:00+05:00`))}, ${selectedSlot.starts_at}`}
                     </span>
                     <span className="block text-steel-600">
-                      {t('Keyingi haftalarda Zoom uchrashuvi dars kuni, 1 soat oldin avtomatik yaratiladi va Telegram’ga yuboriladi.')}
+                      {t('Keyingi haftalarda Zoom uchrashuvi dars kuni avtomatik yaratiladi, havolalar darsdan 30 daqiqa oldin Telegram’ga yuboriladi.')}
                     </span>
                   </span>
                 </label>

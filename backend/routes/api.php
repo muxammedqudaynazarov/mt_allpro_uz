@@ -33,8 +33,10 @@ Route::post('/auth/login', [SessionController::class, 'store'])->middleware('thr
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:telegram');
 Route::post('/zoom/webhook/{zoomAccount}', ZoomWebhookController::class)->middleware('throttle:zoom-webhook');
 
-Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function () {
+Route::middleware(['auth:sanctum', 'account', 'presence', 'throttle:api'])->group(function () {
     Route::post('/auth/logout', [SessionController::class, 'destroy']);
+    // Sayt ochiq va ko'rinib turganda brauzer har daqiqada yuboradi (onlayn holat).
+    Route::get('/auth/ping', fn () => response()->noContent());
 
     // Tasdiqlanmagan xodimlar ham foydalana oladi
     Route::get('/me', [MeController::class, 'show']);
@@ -75,6 +77,7 @@ Route::middleware(['auth:sanctum', 'account', 'throttle:api'])->group(function (
         Route::middleware('role:education,super_admin')->group(function () {
             Route::get('/users', [UserController::class, 'index']);
             Route::get('/users/counts', [UserController::class, 'counts']);
+            Route::get('/users/{user}/visits', [UserController::class, 'visits']);
             Route::patch('/users/{user}', [UserController::class, 'update']);
             Route::delete('/users/{user}', [UserController::class, 'destroy']);
 

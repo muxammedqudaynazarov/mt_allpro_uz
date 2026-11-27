@@ -297,6 +297,9 @@ export interface UserListItem {
   telegram_linked: boolean
   lessons_count: number
   last_login_at: string | null
+  /** Oxirgi 3 daqiqada faol bo'lgan. */
+  online: boolean
+  last_seen_at: string | null
   created_at: string
 }
 
@@ -538,4 +541,24 @@ export interface SystemSettings {
   /** Zoom'ni avtomatik yakunlash: juftlikning foizi (0 — uzilmaydi). */
   /** rename_host — darsni boshlashda Zoom host ismi o'qituvchi nomiga o'zgaradi; rename_error — oxirgi xato. */
   zoom: { auto_end_percent: number; default_duration: number; rename_host: boolean; rename_error: string | null }
+}
+
+/** Kirish tarixi: bitta tashrif (kirgan — chiqqan). */
+export interface UserVisit {
+  id: number
+  started_at: string
+  /** null — hozir onlayn. */
+  ended_at: string | null
+  online: boolean
+  /** logout — o'zi chiqdi; idle — sahifani yopgan yoki faol bo'lmagan. */
+  end_reason: 'logout' | 'idle' | null
+  minutes: number
+  device: string | null
+  ip: string | null
+}
+
+export interface UserVisits {
+  data: UserVisit[]
+  meta: { current_page: number; last_page: number; total: number }
+  user: { id: number; name: string; online: boolean; last_seen_at: string | null }
 }

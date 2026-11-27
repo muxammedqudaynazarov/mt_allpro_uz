@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\MeResource;
 use App\Models\User;
 use App\Support\Audit;
+use App\Support\UserPresence;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -59,6 +60,7 @@ class SessionController extends Controller
         Auth::guard('web')->login($user, (bool) ($data['remember'] ?? false));
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
+        UserPresence::login($user, $request);
         Audit::log('auth.login_password', 'Login/parol orqali kirdi: :name', $user, actor: $user, replace: ['name' => $user->displayName()]);
 
         return new MeResource($user);
@@ -66,6 +68,9 @@ class SessionController extends Controller
 
     public function destroy(Request $request): Response
     {
+        if ($user = $request->user()) {
+            UserPresence::logout($user);
+        }
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

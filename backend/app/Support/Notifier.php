@@ -17,7 +17,23 @@ class Notifier
 {
     public function __construct(private readonly TelegramBot $bot) {}
 
+    /** Dars yaratildi (qo'lda). Haftalik darslar uchun xabar 30 daqiqa oldin — lessonReminder. */
     public function lessonCreated(Lesson $lesson): void
+    {
+        $this->lessonMessage($lesson, fn (string $l) => __('Dars yaratildi', [], $l));
+    }
+
+    /** Kalendardagi dars: boshlanishidan 30 daqiqa oldin eslatma (lessons:remind). */
+    public function lessonReminder(Lesson $lesson): void
+    {
+        $minutes = (int) ceil(now()->diffInSeconds($lesson->starts_at, false) / 60);
+        $this->lessonMessage($lesson, fn (string $l) => $minutes > 1
+            ? __('Dars :minutes daqiqadan soʻng boshlanadi', ['minutes' => $minutes], $l)
+            : __('Dars hozir boshlanadi', [], $l));
+    }
+
+    /** @param  \Closure(string): string  $title */
+    private function lessonMessage(Lesson $lesson, \Closure $title): void
     {
         $teacher = $lesson->teacher;
         if (! $this->bot->enabled() || ! $teacher?->telegram_chat_id) {
@@ -27,15 +43,19 @@ class Notifier
         $l = $teacher->preferredLocale();
         $time = $lesson->starts_at->format('H:i').'–'.$lesson->ends_at->format('H:i');
         $day = $lesson->starts_at->isToday() ? __('bugun', [], $l) : $lesson->starts_at->format('d.m.Y');
+        $slot = $lesson->slot?->name;
         $lines = [
-            '<b>'.($lesson->lesson_series_id ? __('Haftalik dars: Zoom uchrashuvi tayyor', [], $l) : __('Dars yaratildi', [], $l)).'</b>',
+            '<b>'.e($title($l)).'</b>',
             '',
             $lesson->is_lecture
                 ? '<b>'.__('Maʼruza, guruhlar:', [], $l).'</b> '.e($lesson->groupsLabel())
                 : '<b>'.__('Guruh:', [], $l).'</b> '.e($lesson->group->name),
-            '<b>'.__('Vaqt:', [], $l).'</b> '.$day.', '.$time,
+            '<b>'.__('Vaqt:', [], $l).'</b> '.$day.', '.$time.($slot ? ' ('.e($slot).')' : ''),
             '<b>'.__('Mavzu:', [], $l).'</b> '.e($lesson->topic),
         ];
+        if ($lesson->auto_end) {
+            $lines[] = '<b>'.__('Zoom avtomatik yakunlanadi:', [], $l).'</b> '.$lesson->ends_at->format('H:i');
+        }
         if ($lesson->passcode) {
             $lines[] = '<b>'.__('Kirish kodi:', [], $l).'</b> <code>'.e($lesson->passcode).'</code>';
         }

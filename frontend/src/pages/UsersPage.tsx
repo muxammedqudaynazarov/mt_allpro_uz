@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, CheckCircle2, LockKeyhole, Search, Send, ShieldCheck, Trash2, UserRoundCheck, UsersRound } from 'lucide-react'
+import { Ban, CheckCircle2, History, LockKeyhole, Search, Send, ShieldCheck, Trash2, UserRoundCheck, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { upperName, upperNameInput } from '@/lib/name'
 import { useAuth } from '@/auth/AuthProvider'
 import { api, cleanParams, errorMessage } from '@/lib/api'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, formatTime, isSameDay } from '@/lib/format'
 import { ROLE_LABELS, USER_STATUS_LABELS } from '@/lib/labels'
 import type { Paginated, Role, UserListItem, UserStatus } from '@/lib/types'
 import { useDebounced } from '@/hooks/useDebounced'
@@ -24,7 +24,8 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Segmented } from '@/components/ui/Segmented'
 import { SectionLoader } from '@/components/ui/Spinner'
 import { Switch } from '@/components/ui/Switch'
-import { useT } from '@/i18n/I18nProvider'
+import { useT, type TFunction } from '@/i18n/I18nProvider'
+import { UserVisitsModal } from '@/features/users/UserVisitsModal'
 
 type Tab = 'pending' | 'active' | 'blocked' | 'all'
 type Counts = Record<Tab, number>
@@ -160,6 +161,16 @@ function UserSettingsModal({ user, self, onClose }: { user: UserListItem; self: 
   )
 }
 
+/** Oxirgi faollik: "5 daqiqa oldin", "bugun 09:10", "kecha 18:20" yoki sana. */
+function lastSeen(t: TFunction, value: string): string {
+  const date = new Date(value)
+  const minutes = Math.round((Date.now() - date.getTime()) / 60_000)
+  if (minutes < 60) return t('{count} daqiqa oldin', { count: Math.max(1, minutes) })
+  if (isSameDay(date, new Date())) return t('bugun {time}', { time: formatTime(date) })
+  if (isSameDay(date, new Date(Date.now() - 86_400_000))) return t('kecha {time}', { time: formatTime(date) })
+  return formatDateTime(date)
+}
+
 export default function UsersPage() {
   const t = useT()
   const { user: me, isSuperAdmin, can } = useAuth()
@@ -172,6 +183,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(1)
   const [editing, setEditing] = useState<UserListItem | null>(null)
   const [deleting, setDeleting] = useState<UserListItem | null>(null)
+  const [history, setHistory] = useState<UserListItem | null>(null)
   const debounced = useDebounced(search)
   const update = useUpdateUser()
 
@@ -185,6 +197,8 @@ export default function UsersPage() {
     queryFn: async () =>
       (await api.get<Paginated<UserListItem>>('/api/users', { params: cleanParams({ status: tab === 'all' ? '' : tab, search: debounced, page }) })).data,
     placeholderData: keepPreviousData,
+    // Onlayn/oflayn holat yangilanib tursin.
+    refetchInterval: 60_000,
   })
 
   const remove = useMutation({
@@ -262,7 +276,7 @@ export default function UsersPage() {
                     <th className="w-[38%] px-5 py-3 font-medium">{t('Foydalanuvchi')}</th>
                     <th className="px-3 py-3 font-medium">{t('Rol')}</th>
                     <th className="px-3 py-3 font-medium">{t('Holat')}</th>
-                    <th className="px-3 py-3 font-medium">{t('Oxirgi kirish')}</th>
+                    <th className="px-3 py-3 font-medium">{t('Faollik')}</th>
                     <th className="px-3 py-3 text-right font-medium">{t('Darslar')}</th>
                     <th className="px-5 py-3">
                       <span className="sr-only">{t('Amallar')}</span>
@@ -276,7 +290,10 @@ export default function UsersPage() {
                       <tr key={user.id} className="hover:bg-steel-50/60">
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
-                            <Avatar name={user.name} src={user.picture_url} />
+                            <span className="relative shrink-0">
+                              <Avatar name={user.name} src={user.picture_url} />
+                              {user.online && <span className="absolute right-0 bottom-0 size-2.5 rounded-full bg-leaf-500 ring-2 ring-white" aria-hidden />}
+                            </span>
                             <div className="max-w-72 min-w-0">
                               <p className="flex items-center gap-1.5 font-medium text-ink-900">
                                 <StaffName name={user.name} className="truncate" />
@@ -303,7 +320,28 @@ export default function UsersPage() {
                             {t(USER_STATUS_LABELS[user.status])}
                           </Badge>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-steel-700">{user.last_login_at ? formatDateTime(user.last_login_at) : '—'}</td>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => setHistory(user)}
+                            className="-mx-1.5 rounded-md px-1.5 py-0.5 text-left hover:bg-steel-100 focus-visible:ring-2 focus-visible:ring-azure-500 focus-visible:outline-none"
+                            title={t('Kirish tarixi')}
+                          >
+                            {user.online ? (
+                              <span className="flex items-center gap-1.5 font-medium text-leaf-600">
+                                <span className="size-2 rounded-full bg-leaf-500" aria-hidden />
+                                {t('Onlayn')}
+                              </span>
+                            ) : (
+                              <span className="block text-steel-600">{t('Oflayn')}</span>
+                            )}
+                            {!user.online && (
+                              <span className="block text-xs text-steel-500">
+                                {user.last_seen_at ? lastSeen(t, user.last_seen_at) : user.last_login_at ? formatDateTime(user.last_login_at) : t('Hali kirmagan')}
+                              </span>
+                            )}
+                          </button>
+                        </td>
                         <td className="px-3 py-3 text-right tabular-nums">{user.lessons_count}</td>
                         <td className="px-5 py-2 text-right">
                           {user.status === 'pending' && canApprove && !self ? (
@@ -325,6 +363,11 @@ export default function UsersPage() {
                                     icon: <Ban className="size-4" />,
                                     hidden: self || user.protected || user.status === 'blocked',
                                     onClick: () => setStatus(user, 'blocked', t('Foydalanuvchi bloklandi')),
+                                  },
+                                  {
+                                    label: t('Kirish tarixi'),
+                                    icon: <History className="size-4" />,
+                                    onClick: () => setHistory(user),
                                   },
                                   {
                                     label: t('Rol va sozlamalar'),
@@ -354,6 +397,7 @@ export default function UsersPage() {
         )}
       </Panel>
 
+      {history && <UserVisitsModal userId={history.id} name={history.name} onClose={() => setHistory(null)} />}
       {editing && <UserSettingsModal key={editing.id} user={editing} self={editing.id === me?.id} onClose={() => setEditing(null)} />}
 
       <ConfirmDialog

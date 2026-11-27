@@ -46,6 +46,8 @@ class User extends Authenticatable
             'roles' => 'array',
             'status' => UserStatus::class,
             'last_login_at' => 'datetime',
+            'last_seen_at' => 'datetime',
+            'online_until' => 'datetime',
             'password' => 'hashed',
             'can_manage_calendar' => 'boolean',
         ];
