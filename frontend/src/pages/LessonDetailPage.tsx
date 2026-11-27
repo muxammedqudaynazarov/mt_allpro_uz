@@ -441,7 +441,8 @@ export default function LessonDetailPage() {
                   </ul>
                 </section>
               )}
-              {ignored.length > 0 && (
+              {/* "Talaba emas" deb belgilanganlar — faqat O'quv bo'limi va Administratorga. */}
+              {ignored.length > 0 && data.can_manage_students && (
                 <details className="border-t border-steel-100">
                   <summary className="cursor-pointer px-5 py-3 text-sm text-steel-600 hover:text-ink-900">
                     {t('Hisobga olinmaganlar: {count}', {

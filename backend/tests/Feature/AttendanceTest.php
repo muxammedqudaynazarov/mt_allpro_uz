@@ -333,7 +333,16 @@ class AttendanceTest extends TestCase
 
         $this->actingAsUser($admin)->getJson("/api/lessons/{$lesson->id}/attendance")
             ->assertJsonPath('data.lesson.tracking.participants', 1)
-            ->assertJsonPath('data.can_manage_students', true);
+            ->assertJsonPath('data.can_manage_students', true)
+            ->assertJsonFragment(['name' => 'VALI (OʻQITUVCHI)', 'ignored' => true]);
+
+        // O'qituvchi "Talaba emas" deb belgilanganlarni ko'rmaydi.
+        $students = $this->actingAsUser($lesson->teacher)->getJson("/api/lessons/{$lesson->id}/attendance")
+            ->assertOk()
+            ->assertJsonPath('data.can_manage_students', false)
+            ->json('data.students');
+        $this->assertSame([false], array_values(array_unique(array_column($students, 'ignored'))));
+        $this->assertNotContains($vali->id, array_column($students, 'student_id'));
     }
 
     public function test_report_shows_start_delay_and_missed_lessons(): void

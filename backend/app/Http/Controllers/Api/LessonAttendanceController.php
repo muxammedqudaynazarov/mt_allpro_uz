@@ -179,6 +179,8 @@ class LessonAttendanceController extends Controller
             AttendanceCalculator::merge(collect($items)->map(fn (ZoomParticipation $s) => [$s->joined_at, $s->left_at])),
         );
         $byStudent = $segments->where('is_host', false)->groupBy('student_id');
+        // "Talaba emas" deb belgilanganlarni faqat talabalarni boshqaradiganlar ko'radi (o'qituvchi — yo'q).
+        $canManage = (bool) $request->user()?->can('manageStudents', $lesson->group);
 
         return [
             'lesson' => (new LessonResource($lesson))->resolve($request),
@@ -188,7 +190,7 @@ class LessonAttendanceController extends Controller
                 'names' => $host->pluck('name')->map(fn (string $name) => PersonName::upper($name))->unique()->values(),
                 'segments' => $timeline($host),
             ],
-            'students' => $this->students($lesson)->map(fn (array $row) => [
+            'students' => $this->students($lesson)->when(! $canManage, fn ($rows) => $rows->where('ignored', false))->map(fn (array $row) => [
                 ...$row,
                 'first_joined_at' => $row['first_joined_at']?->toIso8601String(),
                 'last_left_at' => $row['last_left_at']?->toIso8601String(),
@@ -204,7 +206,7 @@ class LessonAttendanceController extends Controller
             'can_assign' => $lesson->is_lecture,
             // Shundan kam qatnashgan talaba darsda bo'lgan hisoblanmaydi (Umumiy sozlamalar).
             'presence_percent' => Assessment::criteria()['presence_percent'],
-            'can_manage_students' => (bool) $request->user()?->can('manageStudents', $lesson->group),
+            'can_manage_students' => $canManage,
         ];
     }
 
