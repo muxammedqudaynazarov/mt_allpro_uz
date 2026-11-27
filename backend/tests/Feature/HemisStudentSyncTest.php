@@ -77,6 +77,17 @@ class HemisStudentSyncTest extends TestCase
             ->assertJsonFragment(['hemis_id' => '322201100001', 'hemis_status' => 'synced']);
     }
 
+    public function test_students_marked_not_student_are_not_synced(): void
+    {
+        $this->fakeHemis();
+        $rector = Student::create(['group_id' => $this->group->id, 'name' => 'QMU Rektorat', 'hemis_id' => '322201100001', 'is_ignored' => true]);
+
+        $this->actingAsUser($this->education)->getJson("/api/groups/{$this->group->id}/students")->assertJsonPath('data.hemis.pending', 0);
+        $this->actingAsUser($this->education)->postJson("/api/groups/{$this->group->id}/students/hemis-sync")->assertOk()->assertJsonPath('data.synced', 0);
+        Http::assertNothingSent();
+        $this->assertSame('QMU Rektorat', $rector->refresh()->name);
+    }
+
     public function test_missing_or_rejected_token_gives_clear_error(): void
     {
         Student::create(['group_id' => $this->group->id, 'name' => 'Ali', 'hemis_id' => '1']);

@@ -107,7 +107,7 @@ Qatnashuv dars tugaganidan bir necha daqiqa keyin Zoom hisobotidan olinadi. Tala
 **Monitoring** sahifasi bugungi darslarni ko'rsatadi:
 
 - **Efirda** — hozir Zoom'da davom etayotgan darslar va har birida nechta talaba borligi. Darsni tanlasangiz, o'ng tomonda kim hozir darsda ekani va qachon kirgani chiqadi. Ro'yxat har **30 soniyada** yangilanadi.
-- **Zoom ochish** — darsga oddiy qatnashchi sifatida kirasiz (host emas). Ismingiz qatnashchilar ro'yxatiga tushadi; u talabalar orasida chiqsa, guruh talabalari sahifasida **"Talaba emas"** deb belgilang.
+- **Zoom ochish** — darsga oddiy qatnashchi sifatida kirasiz (host emas). Ismingiz qatnashchilar ro'yxatiga tushadi; u talabalar orasida chiqsa, guruh talabalari sahifasida **"Talaba emas"** deb belgilang. Belgilangan qatnashchi umumiy ro'yxatdan olinadi (HEMIS ID maydoni ham chiqmaydi, HEMIS SYNC unga so'rov yubormaydi) va jadval ostidagi **"Talaba emas deb belgilanganlar"** bo'limiga o'tadi — u yerdan **Talaba sifatida hisoblash** bilan qaytariladi.
 - **Bugun kutilmoqda** — jadvaldagi, lekin host hali boshlamagan darslar.
 - **Bugun yakunlangan** — tugagan darslar, qatnashgan talabalar soni va **Hisobot** tugmasi (dars sahifasi, Excel).
 

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, CheckCircle2, Combine, EyeOff, Eye, Pencil, RefreshCw, Search, UsersRound } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, Combine, Eye, EyeOff, Pencil, RefreshCw, Search, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, errorMessage, fieldErrors, isStatus } from '@/lib/api'
 import { addDays, formatDayMonth, formatDuration, isoDate } from '@/lib/format'
@@ -9,7 +9,6 @@ import { upperName, upperNameInput } from '@/lib/name'
 import type { GroupStudentRow, GroupStudents } from '@/lib/types'
 import { ActionMenu } from '@/components/ui/ActionMenu'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -206,15 +205,22 @@ export default function GroupStudentsPage() {
 
   const toggleIgnored = useMutation({
     mutationFn: (student: GroupStudentRow) => api.patch(`/api/students/${student.id}`, { ignored: !student.ignored }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['group-students'] }),
+    onSuccess: (_, student) => {
+      queryClient.invalidateQueries({ queryKey: ['group-students'] })
+      setSelected((current) => current.filter((value) => value !== student.id))
+      toast.success(student.ignored ? t('{name} yana talaba sifatida hisoblanadi', { name: student.name }) : t('{name} roʻyxatdan olindi — “Talaba emas” boʻlimida', { name: student.name }))
+    },
     onError: (error) => toast.error(errorMessage(error)),
   })
 
   const data = query.data
-  const rows = useMemo(() => {
+  const matches = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('uz')
     return (data?.students ?? []).filter((row) => !needle || [row.name, ...row.names].some((name) => name.toLocaleLowerCase('uz').includes(needle)))
   }, [data?.students, search])
+  // "Talaba emas" deb belgilanganlar umumiy ro'yxatda emas — pastdagi alohida bo'limda.
+  const rows = matches.filter((row) => !row.ignored)
+  const ignoredRows = matches.filter((row) => row.ignored)
   const selectedRows = (data?.students ?? []).filter((row) => selected.includes(row.id))
 
   if (isStatus(query.error, 404) || isStatus(query.error, 403)) return <NotFoundPage />
@@ -310,7 +316,7 @@ export default function GroupStudentsPage() {
                 {rows.map((row) => {
                   const otherNames = row.names.filter((name) => name !== row.name)
                   return (
-                    <tr key={row.id} className={cn(selected.includes(row.id) && 'bg-azure-50/60', row.ignored && 'text-steel-500')}>
+                    <tr key={row.id} className={cn(selected.includes(row.id) && 'bg-azure-50/60')}>
                       <td className="py-3 pl-5 align-top">
                         <input
                           type="checkbox"
@@ -328,7 +334,6 @@ export default function GroupStudentsPage() {
                           <div className="min-w-0">
                             <p className="flex items-center gap-2 font-medium text-ink-900">
                               <span className="truncate">{row.name}</span>
-                              {row.ignored && <Badge>{t('Talaba emas')}</Badge>}
                             </p>
                             {otherNames.length > 0 && (
                               <p className="truncate text-steel-500" title={otherNames.join(', ')}>
@@ -366,17 +371,11 @@ export default function GroupStudentsPage() {
                               icon: <Pencil className="size-4" />,
                               onClick: () => setRenaming(row),
                             },
-                            row.ignored
-                              ? {
-                                  label: t('Talaba sifatida hisoblash'),
-                                  icon: <Eye className="size-4" />,
-                                  onClick: () => toggleIgnored.mutate(row),
-                                }
-                              : {
-                                  label: t('Talaba emas (hisobga olinmasin)'),
-                                  icon: <EyeOff className="size-4" />,
-                                  onClick: () => toggleIgnored.mutate(row),
-                                },
+                            {
+                              label: t('Talaba emas (hisobga olinmasin)'),
+                              icon: <EyeOff className="size-4" />,
+                              onClick: () => toggleIgnored.mutate(row),
+                            },
                           ]}
                         />
                       </td>
@@ -385,8 +384,41 @@ export default function GroupStudentsPage() {
                 })}
               </tbody>
             </table>
-            {rows.length === 0 && <p className="px-5 py-8 text-center text-sm text-steel-600">{t('Qidiruv boʻyicha talaba topilmadi.')}</p>}
+            {rows.length === 0 && (
+              <p className="px-5 py-8 text-center text-sm text-steel-600">
+                {search.trim() ? t('Qidiruv boʻyicha talaba topilmadi.') : t('Barcha qatnashchilar “Talaba emas” deb belgilangan.')}
+              </p>
+            )}
           </div>
+        )}
+        {ignoredRows.length > 0 && (
+          <details className="group border-t border-steel-100">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm text-steel-600 select-none hover:text-ink-900 [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
+              {t('Talaba emas deb belgilanganlar: {count}', { count: ignoredRows.length })}
+              <span className="text-steel-500">— {t('davomat va hisobotlarda hisobga olinmaydi')}</span>
+            </summary>
+            <ul className="divide-y divide-steel-100 border-t border-steel-100 bg-mist/40">
+              {ignoredRows.map((row) => {
+                const otherNames = row.names.filter((name) => name !== row.name)
+                return (
+                  <li key={row.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5 pr-5 pl-14 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-steel-700">{row.name}</p>
+                      <p className="truncate text-xs text-steel-500" title={otherNames.join(', ')}>
+                        {t('{count} ta darsda', { count: row.lessons_attended })}
+                        {row.last_seen_at && `, ${t('oxirgi marta {date}', { date: formatDayMonth(row.last_seen_at) })}`}
+                        {otherNames.length > 0 && `. ${t('Zoom’da: {names}', { names: otherNames.join(', ') })}`}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="secondary" icon={<Eye className="size-4" />} loading={toggleIgnored.isPending && toggleIgnored.variables?.id === row.id} onClick={() => toggleIgnored.mutate(row)}>
+                      {t('Talaba sifatida hisoblash')}
+                    </Button>
+                  </li>
+                )
+              })}
+            </ul>
+          </details>
         )}
         {data && data.students.length > 0 && (
           <div className="flex flex-col gap-3 border-t border-steel-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

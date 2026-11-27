@@ -28,6 +28,7 @@ class SyncStudentsFromHemis
         $students = Student::query()
             ->where('group_id', $group->id)
             ->whereNotNull('hemis_id')
+            ->where('is_ignored', false)
             ->where(fn ($q) => $q->whereNull('hemis_synced_id')->orWhereColumn('hemis_synced_id', '!=', 'hemis_id'))
             ->get();
 

@@ -68,7 +68,8 @@ class StudentController extends Controller
             'lessons_held' => $lessons->count(),
             'hemis' => [
                 'enabled' => app(HemisStudentApi::class)->enabled(),
-                'pending' => $students->filter(fn (Student $student) => $student->hemisStatus() === 'pending')->count(),
+                // "Talaba emas" deb belgilanganlar HEMIS'dan so'ralmaydi.
+                'pending' => $students->filter(fn (Student $student) => ! $student->is_ignored && $student->hemisStatus() === 'pending')->count(),
             ],
             'students' => $students
                 ->map(fn (Student $student) => [
